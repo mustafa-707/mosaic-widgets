@@ -55,6 +55,23 @@ class MainActivity : FlutterActivity() {
             }
         }
 
+        // Register receiver to forward widget callbacks to Flutter
+        val callbackReceiver = object : android.content.BroadcastReceiver() {
+            override fun onReceive(ctx: Context, intent: Intent) {
+                val name = intent.getStringExtra("callbackName")
+                if (name != null) {
+                    channel.invokeMethod("backgroundCallback", mapOf("callbackName" to name))
+                }
+            }
+        }
+        val filter = android.content.IntentFilter("$packageName.MOSAIC_CALLBACK")
+        if (android.os.Build.VERSION.SDK_INT >= 33) {
+            registerReceiver(callbackReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            @Suppress("UnspecifiedRegisterReceiverFlag")
+            registerReceiver(callbackReceiver, filter)
+        }
+
         // Handle initial intent
         handleIntent(intent, channel)
     }
