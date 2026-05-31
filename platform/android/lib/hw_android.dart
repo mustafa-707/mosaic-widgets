@@ -1146,8 +1146,14 @@ class ListViewHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    // Basic implementation: RemoteViews doesn't support full ListView easily without RemoteViewsService.
-    return '<View android:layout_width="0dp" android:layout_height="0dp" />';
+    // A correct collection view requires a RemoteViewsService + factory wired
+    // through setRemoteAdapter AND the service registered in AndroidManifest.
+    // This generator does not manage the manifest, so a partial implementation
+    // would silently render nothing at runtime. Fail loudly at gen time instead
+    // of emitting an invisible 0x0 stub.
+    throw UnsupportedError(
+      'HWListView Android support is not yet implemented — remove it or use a Column for now.',
+    );
   }
 }
 
