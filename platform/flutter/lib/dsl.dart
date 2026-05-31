@@ -1,37 +1,40 @@
 /// Base class for all home widget nodes.
-abstract class HWNode {
-  const HWNode();
+abstract class MNode {
+  const MNode();
   Map<String, dynamic> toJson();
 }
 
 /// A dynamic binding that resolves from a key-value store.
-class HWBind {
+class MBind {
   final String key;
-  const HWBind(this.key);
+  const MBind(this.key);
 
   @override
-  String toString() => 'HWBind($key)';
+  String toString() => 'MBind($key)';
 
+  // NOTE: the `__type` tag values (e.g. 'HWBind', 'HWText', ...) are a stable
+  // internal wire-protocol identifier shared with the generators and golden
+  // test fixtures. Do NOT rename them when renaming the DSL symbols.
   Map<String, dynamic> toJson() => {'__type': 'HWBind', 'key': key};
 }
 
 /// Text widget for home widgets.
-class HWText extends HWNode {
-  final Object text; // String OR HWBind
-  final HWTextStyle style;
+class MText extends MNode {
+  final Object text; // String OR MBind
+  final MTextStyle style;
 
-  const HWText(this.text, {this.style = const HWTextStyle()});
+  const MText(this.text, {this.style = const MTextStyle()});
 
   @override
   Map<String, dynamic> toJson() => {
     '__type': 'HWText',
-    'text': text is HWBind ? (text as HWBind).toJson() : text,
+    'text': text is MBind ? (text as MBind).toJson() : text,
     'style': style.toJson(),
   };
 }
 
 /// Column layout.
-enum HWMainAxisAlignment {
+enum MMainAxisAlignment {
   start,
   center,
   end,
@@ -40,17 +43,17 @@ enum HWMainAxisAlignment {
   spaceEvenly,
 }
 
-enum HWCrossAxisAlignment { start, center, end, stretch }
+enum MCrossAxisAlignment { start, center, end, stretch }
 
-class HWColumn extends HWNode {
-  final List<HWNode> children;
-  final HWMainAxisAlignment mainAxisAlignment;
-  final HWCrossAxisAlignment crossAxisAlignment;
+class MColumn extends MNode {
+  final List<MNode> children;
+  final MMainAxisAlignment mainAxisAlignment;
+  final MCrossAxisAlignment crossAxisAlignment;
 
-  const HWColumn(
+  const MColumn(
     this.children, {
-    this.mainAxisAlignment = HWMainAxisAlignment.start,
-    this.crossAxisAlignment = HWCrossAxisAlignment.center,
+    this.mainAxisAlignment = MMainAxisAlignment.start,
+    this.crossAxisAlignment = MCrossAxisAlignment.center,
   });
 
   @override
@@ -62,15 +65,15 @@ class HWColumn extends HWNode {
   };
 }
 
-class HWRow extends HWNode {
-  final List<HWNode> children;
-  final HWMainAxisAlignment mainAxisAlignment;
-  final HWCrossAxisAlignment crossAxisAlignment;
+class MRow extends MNode {
+  final List<MNode> children;
+  final MMainAxisAlignment mainAxisAlignment;
+  final MCrossAxisAlignment crossAxisAlignment;
 
-  const HWRow(
+  const MRow(
     this.children, {
-    this.mainAxisAlignment = HWMainAxisAlignment.start,
-    this.crossAxisAlignment = HWCrossAxisAlignment.center,
+    this.mainAxisAlignment = MMainAxisAlignment.start,
+    this.crossAxisAlignment = MCrossAxisAlignment.center,
   });
 
   @override
@@ -83,10 +86,10 @@ class HWRow extends HWNode {
 }
 
 /// Padding widget.
-class HWPadding extends HWNode {
-  final HWInsets insets;
-  final HWNode child;
-  const HWPadding(this.insets, this.child);
+class MPadding extends MNode {
+  final MInsets insets;
+  final MNode child;
+  const MPadding(this.insets, this.child);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -97,18 +100,18 @@ class HWPadding extends HWNode {
 }
 
 /// Container widget (background, radius).
-class HWContainer extends HWNode {
-  final HWNode child;
-  final HWColor? background;
-  final HWGradient? gradient;
+class MContainer extends MNode {
+  final MNode child;
+  final MColor? background;
+  final MGradient? gradient;
   final double radius;
-  final HWBorder? border;
+  final MBorder? border;
   final double? width;
   final double? height;
 
-  final HWInsets? margin;
+  final MInsets? margin;
 
-  const HWContainer({
+  const MContainer({
     required this.child,
     this.background,
     this.gradient,
@@ -133,23 +136,23 @@ class HWContainer extends HWNode {
   };
 }
 
-class HWBorder {
-  final HWColor color;
+class MBorder {
+  final MColor color;
   final double width;
-  const HWBorder({required this.color, this.width = 1.0});
+  const MBorder({required this.color, this.width = 1.0});
 
   Map<String, dynamic> toJson() => {'color': color.toJson(), 'width': width};
 }
 
-abstract class HWGradient {
-  const HWGradient();
+abstract class MGradient {
+  const MGradient();
   Map<String, dynamic> toJson();
 }
 
-class HWLinearGradient extends HWGradient {
-  final List<HWColor> colors;
+class MLinearGradient extends MGradient {
+  final List<MColor> colors;
   final List<double>? stops;
-  const HWLinearGradient({required this.colors, this.stops});
+  const MLinearGradient({required this.colors, this.stops});
 
   @override
   Map<String, dynamic> toJson() => {
@@ -160,17 +163,17 @@ class HWLinearGradient extends HWGradient {
 }
 
 /// Spacer widget.
-class HWSpacer extends HWNode {
-  const HWSpacer();
+class MSpacer extends MNode {
+  const MSpacer();
 
   @override
   Map<String, dynamic> toJson() => {'__type': 'HWSpacer'};
 }
 
 /// Stack layout (overlaps children).
-class HWStack extends HWNode {
-  final List<HWNode> children;
-  const HWStack(this.children);
+class MStack extends MNode {
+  final List<MNode> children;
+  const MStack(this.children);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -179,14 +182,14 @@ class HWStack extends HWNode {
   };
 }
 
-class HWPositioned extends HWNode {
-  final HWNode child;
+class MPositioned extends MNode {
+  final MNode child;
   final double? top;
   final double? left;
   final double? right;
   final double? bottom;
 
-  const HWPositioned({
+  const MPositioned({
     required this.child,
     this.top,
     this.left,
@@ -205,9 +208,9 @@ class HWPositioned extends HWNode {
   };
 }
 
-class HWCenter extends HWNode {
-  final HWNode child;
-  const HWCenter({required this.child});
+class MCenter extends MNode {
+  final MNode child;
+  const MCenter({required this.child});
 
   @override
   Map<String, dynamic> toJson() => {
@@ -217,11 +220,11 @@ class HWCenter extends HWNode {
 }
 
 /// A button that triggers an action.
-class HWButton extends HWNode {
-  final HWNode child;
-  final HWAction action;
+class MButton extends MNode {
+  final MNode child;
+  final MAction action;
 
-  const HWButton({required this.child, required this.action});
+  const MButton({required this.child, required this.action});
 
   @override
   Map<String, dynamic> toJson() => {
@@ -232,12 +235,12 @@ class HWButton extends HWNode {
 }
 
 /// Conditional visibility.
-class HWVisibility extends HWNode {
-  final HWBind bind;
-  final HWNode child;
-  final HWNode? replacement;
+class MVisibility extends MNode {
+  final MBind bind;
+  final MNode child;
+  final MNode? replacement;
 
-  const HWVisibility({
+  const MVisibility({
     required this.bind,
     required this.child,
     this.replacement,
@@ -253,23 +256,23 @@ class HWVisibility extends HWNode {
 }
 
 /// Actions for interactable widgets.
-abstract class HWAction {
-  const HWAction();
+abstract class MAction {
+  const MAction();
   Map<String, dynamic> toJson();
 }
 
-class HWLaunchUrlAction extends HWAction {
+class MLaunchUrlAction extends MAction {
   final String url;
-  const HWLaunchUrlAction(this.url);
+  const MLaunchUrlAction(this.url);
 
   @override
   Map<String, dynamic> toJson() => {'__type': 'HWLaunchUrlAction', 'url': url};
 }
 
 /// Background Callback Action.
-class HWActionCallback extends HWAction {
+class MActionCallback extends MAction {
   final String callbackName;
-  const HWActionCallback(this.callbackName);
+  const MActionCallback(this.callbackName);
 
   @override
   Map<String, dynamic> toJson() => {
@@ -278,23 +281,23 @@ class HWActionCallback extends HWAction {
   };
 }
 
-class HWRefreshAction extends HWAction {
-  const HWRefreshAction();
+class MRefreshAction extends MAction {
+  const MRefreshAction();
 
   @override
   Map<String, dynamic> toJson() => {'__type': 'HWRefreshAction'};
 }
 
 /// Timer widget.
-class HWTimer extends HWNode {
+class MTimer extends MNode {
   final DateTime target;
   final bool countUp;
-  final HWTextStyle style;
+  final MTextStyle style;
 
-  const HWTimer({
+  const MTimer({
     required this.target,
     this.countUp = false,
-    this.style = const HWTextStyle(),
+    this.style = const MTextStyle(),
   });
 
   @override
@@ -307,32 +310,32 @@ class HWTimer extends HWNode {
 }
 
 /// Progress Bar widget.
-class HWProgressBar extends HWNode {
-  final Object value; // double OR HWBind
+class MProgressBar extends MNode {
+  final Object value; // double OR MBind
   final double max;
-  final HWColor color;
+  final MColor color;
 
-  const HWProgressBar({
+  const MProgressBar({
     required this.value,
     this.max = 100.0,
-    this.color = const HWColor.hex("#4444FF"),
+    this.color = const MColor.hex("#4444FF"),
   });
 
   @override
   Map<String, dynamic> toJson() => {
     '__type': 'HWProgressBar',
-    'value': value is HWBind ? (value as HWBind).toJson() : value,
+    'value': value is MBind ? (value as MBind).toJson() : value,
     'max': max,
     'color': color.toJson(),
   };
 }
 
 /// Dynamic List view.
-class HWListView extends HWNode {
-  final HWBind bind;
-  final HWNode itemTemplate;
+class MListView extends MNode {
+  final MBind bind;
+  final MNode itemTemplate;
 
-  const HWListView({required this.bind, required this.itemTemplate});
+  const MListView({required this.bind, required this.itemTemplate});
 
   @override
   Map<String, dynamic> toJson() => {
@@ -343,11 +346,11 @@ class HWListView extends HWNode {
 }
 
 /// Image widget.
-class HWImage extends HWNode {
-  final HWImageSource source;
-  final HWBoxFit fit;
+class MImage extends MNode {
+  final MImageSource source;
+  final MBoxFit fit;
 
-  const HWImage(this.source, {this.fit = HWBoxFit.cover});
+  const MImage(this.source, {this.fit = MBoxFit.cover});
 
   @override
   Map<String, dynamic> toJson() => {
@@ -358,39 +361,39 @@ class HWImage extends HWNode {
 }
 
 /// Image sources.
-abstract class HWImageSource {
-  const HWImageSource();
+abstract class MImageSource {
+  const MImageSource();
   Map<String, dynamic> toJson();
 }
 
-class HWAssetImage extends HWImageSource {
+class MAssetImage extends MImageSource {
   final String path;
-  const HWAssetImage(this.path);
+  const MAssetImage(this.path);
 
   @override
   Map<String, dynamic> toJson() => {'__type': 'HWAssetImage', 'path': path};
 }
 
-class HWFileImage extends HWImageSource {
-  final Object path; // String OR HWBind
-  const HWFileImage(this.path);
+class MFileImage extends MImageSource {
+  final Object path; // String OR MBind
+  const MFileImage(this.path);
 
   @override
   Map<String, dynamic> toJson() => {
     '__type': 'HWFileImage',
-    'path': path is HWBind ? (path as HWBind).toJson() : path,
+    'path': path is MBind ? (path as MBind).toJson() : path,
   };
 }
 
 /// Styling types
 
-class HWTextStyle {
+class MTextStyle {
   final double? size;
-  final HWColor? color;
+  final MColor? color;
   final double? opacity;
   final bool? bold;
 
-  const HWTextStyle({this.size, this.color, this.opacity, this.bold});
+  const MTextStyle({this.size, this.color, this.opacity, this.bold});
 
   Map<String, dynamic> toJson() => {
     'size': size,
@@ -400,33 +403,33 @@ class HWTextStyle {
   };
 }
 
-class HWColor {
+class MColor {
   final String hex;
   final double opacity;
-  const HWColor.hex(this.hex, {this.opacity = 1.0});
+  const MColor.hex(this.hex, {this.opacity = 1.0});
 
   Map<String, dynamic> toJson() => {'hex': hex, 'opacity': opacity};
 }
 
-class HWInsets {
+class MInsets {
   final double left;
   final double top;
   final double right;
   final double bottom;
 
-  const HWInsets.all(double value)
+  const MInsets.all(double value)
     : left = value,
       top = value,
       right = value,
       bottom = value;
 
-  const HWInsets.symmetric({double vertical = 0, double horizontal = 0})
+  const MInsets.symmetric({double vertical = 0, double horizontal = 0})
     : left = horizontal,
       top = vertical,
       right = horizontal,
       bottom = vertical;
 
-  const HWInsets.only({
+  const MInsets.only({
     this.left = 0,
     this.top = 0,
     this.right = 0,
@@ -441,26 +444,26 @@ class HWInsets {
   };
 }
 
-enum HWBoxFit { fill, contain, cover, fitWidth, fitHeight, none, scaleDown }
+enum MBoxFit { fill, contain, cover, fitWidth, fitHeight, none, scaleDown }
 
 /// The final definition of a widget.
-class HWDefinition {
+class MosaicDefinition {
   final String name;
-  final HWNode root;
+  final MNode root;
   final Duration? updateInterval;
   final int width;
   final int height;
   final String? previewImage;
-  final HWResizeMode resizeMode;
+  final MResizeMode resizeMode;
 
-  const HWDefinition({
+  const MosaicDefinition({
     required this.name,
     required this.root,
     this.updateInterval,
     this.width = 2,
     this.height = 2,
     this.previewImage,
-    this.resizeMode = HWResizeMode.none,
+    this.resizeMode = MResizeMode.none,
   });
 
   Map<String, dynamic> toJson() => {
@@ -474,4 +477,4 @@ class HWDefinition {
   };
 }
 
-enum HWResizeMode { none, horizontal, vertical, both }
+enum MResizeMode { none, horizontal, vertical, both }

@@ -4,7 +4,7 @@ import 'package:path/path.dart' as p;
 import 'config.dart';
 
 class WidgetRunner {
-  final HWConfig config;
+  final MosaicConfig config;
   final String projectRoot;
 
   WidgetRunner({required this.config, required this.projectRoot});
@@ -30,11 +30,11 @@ class WidgetRunner {
 
     return '''
 import 'dart:convert';
-import 'package:hw_flutter/hw_dsl.dart';
+import 'package:mosaic/mosaic.dart';
 ${imports.join('\n')}
 
 void main() {
-  final definitions = <HWDefinition>[];
+  final definitions = <MosaicDefinition>[];
   ${calls.join('\n')}
   
   print('<<<MOSAIC_IR>>>' + jsonEncode(definitions.map((e) => e.toJson()).toList()) + '<<<END_MOSAIC_IR>>>');

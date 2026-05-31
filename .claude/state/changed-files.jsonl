@@ -38,3 +38,14 @@
 {"file":"platform/android/test/image_source_test.dart","action":"Write","timestamp":"2026-05-31T13:57:43Z","important":false}
 {"file":"platform/ios/test/image_source_test.dart","action":"Write","timestamp":"2026-05-31T13:58:30Z","important":false}
 {"file":"platform/android/test/listview_test.dart","action":"Write","timestamp":"2026-05-31T13:59:00Z","important":false}
+{"file":"platform/ios/test/listview_test.dart","action":"Write","timestamp":"2026-05-31T14:00:17Z","important":false}
+{"file":"platform/core/pubspec.yaml","action":"Edit","timestamp":"2026-05-31T14:05:22Z","important":false}
+{"file":"platform/core/lib/mosaic_core.dart","action":"Edit","timestamp":"2026-05-31T14:05:29Z","important":false}
+{"file":"platform/core/lib/src/widget_runner.dart","action":"Edit","timestamp":"2026-05-31T14:05:41Z","important":false}
+{"file":"platform/flutter/lib/mosaic.dart","action":"Edit","timestamp":"2026-05-31T14:06:32Z","important":false}
+{"file":"platform/flutter/pubspec.yaml","action":"Edit","timestamp":"2026-05-31T14:06:33Z","important":false}
+{"file":"platform/flutter/lib/dsl.dart","action":"Edit","timestamp":"2026-05-31T14:07:06Z","important":false}
+{"file":"platform/cli/bin/mosaic_cli.dart","action":"Edit","timestamp":"2026-05-31T14:08:42Z","important":false}
+{"file":"platform/cli/lib/src/commands/build_command.dart","action":"Edit","timestamp":"2026-05-31T14:08:58Z","important":false}
+{"file":"platform/cli/lib/src/commands/doctor_command.dart","action":"Edit","timestamp":"2026-05-31T14:09:14Z","important":false}
+{"file":"platform/cli/lib/src/commands/init_command.dart","action":"Edit","timestamp":"2026-05-31T14:09:25Z","important":false}

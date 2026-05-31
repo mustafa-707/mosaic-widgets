@@ -1,9 +1,9 @@
-import 'package:hw_core/hw_core.dart';
+import 'package:mosaic_core/mosaic_core.dart';
 import 'package:test/test.dart';
 
 void main() {
   test('deep_link_scheme defaults to mosaic', () {
-    final c = HWConfig.fromYaml('''
+    final c = MosaicConfig.fromYaml('''
 app:
   bundle_id: com.a.b
   android_package: com.a.b
@@ -14,7 +14,7 @@ widgets: []
   });
 
   test('deep_link_scheme parses explicit value', () {
-    final c = HWConfig.fromYaml('''
+    final c = MosaicConfig.fromYaml('''
 app:
   bundle_id: com.a.b
   android_package: com.a.b

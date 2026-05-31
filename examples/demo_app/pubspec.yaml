@@ -30,9 +30,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  hw_core:
+  mosaic_core:
     path: ../../platform/core
-  hw_flutter:
+  mosaic:
     path: ../../platform/flutter
   http: ^1.1.0
 
@@ -51,7 +51,7 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
 
-  hw_cli:
+  mosaic_cli:
     path: ../../platform/cli
 
 # For information on the generic Dart part of this file, see the

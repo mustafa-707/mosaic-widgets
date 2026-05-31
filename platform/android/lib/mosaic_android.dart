@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:hw_core/hw_core.dart';
+import 'package:mosaic_core/mosaic_core.dart';
 import 'package:path/path.dart' as p;
 
 abstract class AndroidNodeHandler {
@@ -24,7 +24,7 @@ const String xmlSentinel = '<!-- MOSAIC-GENERATED -->';
 const String kotlinSentinel = '// MOSAIC-GENERATED — do not edit';
 
 class AndroidGenerator {
-  final HWConfig config;
+  final MosaicConfig config;
   final List<IRDefinition> definitions;
   final Map<String, AndroidNodeHandler> _handlers = {};
 
@@ -161,14 +161,14 @@ class AndroidGenerator {
         'main',
         'kotlin',
         packagePath,
-        'hw_generated',
+        'mosaic_generated',
       ),
     );
     if (!kotlinDir.existsSync()) kotlinDir.createSync(recursive: true);
 
     final file = File(p.join(kotlinDir.path, 'MosaicData.kt'));
     await file.writeAsString('''$kotlinSentinel
-package ${config.app.androidPackage}.hw_generated
+package ${config.app.androidPackage}.mosaic_generated
 
 import android.content.Context
 import org.json.JSONArray
@@ -255,7 +255,7 @@ object MosaicData {
         'main',
         'kotlin',
         packagePath,
-        'hw_generated',
+        'mosaic_generated',
       ),
     );
     if (!kotlinDir.existsSync()) kotlinDir.createSync(recursive: true);
@@ -296,7 +296,7 @@ object MosaicData {
         .join('\n');
 
     await file.writeAsString('''$kotlinSentinel
-package ${config.app.androidPackage}.hw_generated
+package ${config.app.androidPackage}.mosaic_generated
 
 import android.content.Context
 
@@ -424,7 +424,7 @@ object HomeWidgetBridgeHelper {
         'main',
         'kotlin',
         packagePath,
-        'hw_generated',
+        'mosaic_generated',
       ),
     );
     if (!kotlinDir.existsSync()) kotlinDir.createSync(recursive: true);
@@ -515,7 +515,7 @@ object HomeWidgetBridgeHelper {
         .join('\n        ');
 
     await file.writeAsString('''$kotlinSentinel
-package ${config.app.androidPackage}.hw_generated
+package ${config.app.androidPackage}.mosaic_generated
 
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider

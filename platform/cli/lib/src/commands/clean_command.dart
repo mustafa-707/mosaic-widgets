@@ -29,7 +29,7 @@ class CleanCommand extends Command {
     print('Cleaning generated Android files...');
     final androidGeneratedDir = Directory('android/app/src/main/kotlin');
     if (androidGeneratedDir.existsSync()) {
-      // We need to find directories named 'hw_generated' and delete them.
+      // We need to find directories named 'mosaic_generated' and delete them.
       _deleteHwGenerated(androidGeneratedDir);
     }
 
@@ -51,7 +51,7 @@ class CleanCommand extends Command {
 
   void _deleteHwGenerated(Directory dir) {
     for (final entity in dir.listSync(recursive: true)) {
-      if (entity is Directory && p.basename(entity.path) == 'hw_generated') {
+      if (entity is Directory && p.basename(entity.path) == 'mosaic_generated') {
         entity.deleteSync(recursive: true);
         print('Deleted ${entity.path}');
       }

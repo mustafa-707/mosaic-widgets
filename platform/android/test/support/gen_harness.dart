@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:hw_core/hw_core.dart';
-import 'package:hw_android/hw_android.dart';
+import 'package:mosaic_core/mosaic_core.dart';
+import 'package:mosaic_android/mosaic_android.dart';
 import 'package:path/path.dart' as p;
 
 class GenResult {
@@ -16,7 +16,7 @@ class GenResult {
 
 Future<GenResult> runAndroid(
   List<IRDefinition> defs, {
-  HWConfig? config,
+  MosaicConfig? config,
 }) async {
   final dir = await Directory.systemTemp.createTemp('hw_android_test_');
 
@@ -26,7 +26,7 @@ Future<GenResult> runAndroid(
   ).create(recursive: true);
 
   final cfg = config ??
-      HWConfig.fromJson({
+      MosaicConfig.fromJson({
         'app': {
           'bundle_id': 'com.acme.app',
           'android_package': 'com.acme.app',

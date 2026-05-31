@@ -1,156 +1,156 @@
-import 'package:hw_flutter/hw_dsl.dart';
+import 'package:mosaic/mosaic.dart';
 
-HWDefinition buildProfileVP() {
-  return HWDefinition(
+MosaicDefinition buildProfileVP() {
+  return MosaicDefinition(
     name: "ProfileVP",
     width: 2,
     height: 2,
-    resizeMode: HWResizeMode.both,
-    root: HWContainer(
-      gradient: const HWLinearGradient(
+    resizeMode: MResizeMode.both,
+    root: MContainer(
+      gradient: const MLinearGradient(
         colors: [
-          HWColor.hex("#0F172A"),
-          HWColor.hex("#1E293B"),
+          MColor.hex("#0F172A"),
+          MColor.hex("#1E293B"),
         ], // Slate-900 to Slate-800
       ),
       radius: 28,
-      border: const HWBorder(color: HWColor.hex("#334155"), width: 1.5),
-      child: HWStack([
+      border: const MBorder(color: MColor.hex("#334155"), width: 1.5),
+      child: MStack([
         // Top right decorative circle
-        const HWPositioned(
+        const MPositioned(
           top: -20,
           right: -20,
-          child: HWContainer(
+          child: MContainer(
             width: 80,
             height: 80,
             radius: 40,
-            background: HWColor.hex("#38BDF8", opacity: 0.1),
-            child: HWSpacer(),
+            background: MColor.hex("#38BDF8", opacity: 0.1),
+            child: MSpacer(),
           ),
         ),
 
         // Compact layout for systemSmall
-        HWPadding(
-          const HWInsets.all(12),
-          HWColumn(
-            mainAxisAlignment: HWMainAxisAlignment.spaceBetween,
-            crossAxisAlignment: HWCrossAxisAlignment.start,
+        MPadding(
+          const MInsets.all(12),
+          MColumn(
+            mainAxisAlignment: MMainAxisAlignment.spaceBetween,
+            crossAxisAlignment: MCrossAxisAlignment.start,
             [
               // 1. Header
-              HWRow(mainAxisAlignment: HWMainAxisAlignment.spaceBetween, [
-                HWColumn(crossAxisAlignment: HWCrossAxisAlignment.start, [
-                  HWText(
+              MRow(mainAxisAlignment: MMainAxisAlignment.spaceBetween, [
+                MColumn(crossAxisAlignment: MCrossAxisAlignment.start, [
+                  MText(
                     "SYSTEM STATUS",
-                    style: HWTextStyle(
+                    style: MTextStyle(
                       bold: true,
                       size: 9, // Smaller font
-                      color: HWColor.hex("#38BDF8"),
+                      color: MColor.hex("#38BDF8"),
                     ),
                   ),
-                  HWText(
-                    HWBind("system_status"),
-                    style: HWTextStyle(
+                  MText(
+                    MBind("system_status"),
+                    style: MTextStyle(
                       bold: true,
                       size: 12,
-                      color: HWColor.hex("#FFFFFF"),
+                      color: MColor.hex("#FFFFFF"),
                     ),
                   ),
                 ]),
-                HWContainer(
+                MContainer(
                   width: 24, // Smaller icon
                   height: 24,
                   radius: 12,
-                  background: HWColor.hex("#38BDF8"),
-                  child: HWCenter(
-                    child: HWText("⚡", style: HWTextStyle(size: 12)),
+                  background: MColor.hex("#38BDF8"),
+                  child: MCenter(
+                    child: MText("⚡", style: MTextStyle(size: 12)),
                   ),
                 ),
               ]),
 
               // 2. Battery
-              HWColumn(crossAxisAlignment: HWCrossAxisAlignment.start, [
-                HWRow(mainAxisAlignment: HWMainAxisAlignment.spaceBetween, [
-                  HWText(
+              MColumn(crossAxisAlignment: MCrossAxisAlignment.start, [
+                MRow(mainAxisAlignment: MMainAxisAlignment.spaceBetween, [
+                  MText(
                     "Battery",
-                    style: HWTextStyle(size: 12, color: HWColor.hex("#94A3B8")),
+                    style: MTextStyle(size: 12, color: MColor.hex("#94A3B8")),
                   ),
-                  HWRow([
-                    HWText(
-                      HWBind("battery_level"),
-                      style: HWTextStyle(
+                  MRow([
+                    MText(
+                      MBind("battery_level"),
+                      style: MTextStyle(
                         size: 14,
                         bold: true,
-                        color: HWColor.hex("#FFFFFF"),
+                        color: MColor.hex("#FFFFFF"),
                       ),
                     ),
-                    HWText(
+                    MText(
                       "%",
-                      style: HWTextStyle(
+                      style: MTextStyle(
                         size: 10,
-                        color: HWColor.hex("#94A3B8"),
+                        color: MColor.hex("#94A3B8"),
                       ),
                     ),
                   ]),
                 ]),
-                HWPadding(
-                  HWInsets.only(top: 4, bottom: 4),
-                  HWProgressBar(
-                    value: HWBind("battery_progress"),
+                MPadding(
+                  MInsets.only(top: 4, bottom: 4),
+                  MProgressBar(
+                    value: MBind("battery_progress"),
                     max: 100.0,
-                    color: HWColor.hex("#38BDF8"),
+                    color: MColor.hex("#38BDF8"),
                   ),
                 ),
               ]),
 
               // 3. Memory
-              HWColumn(crossAxisAlignment: HWCrossAxisAlignment.start, [
-                HWRow(mainAxisAlignment: HWMainAxisAlignment.spaceBetween, [
-                  HWText(
+              MColumn(crossAxisAlignment: MCrossAxisAlignment.start, [
+                MRow(mainAxisAlignment: MMainAxisAlignment.spaceBetween, [
+                  MText(
                     "Memory",
-                    style: HWTextStyle(size: 12, color: HWColor.hex("#94A3B8")),
+                    style: MTextStyle(size: 12, color: MColor.hex("#94A3B8")),
                   ),
-                  HWRow([
-                    HWText(
-                      HWBind("memory_usage"),
-                      style: HWTextStyle(
+                  MRow([
+                    MText(
+                      MBind("memory_usage"),
+                      style: MTextStyle(
                         size: 14,
                         bold: true,
-                        color: HWColor.hex("#FFFFFF"),
+                        color: MColor.hex("#FFFFFF"),
                       ),
                     ),
-                    HWText(
+                    MText(
                       "GB",
-                      style: HWTextStyle(
+                      style: MTextStyle(
                         size: 10,
-                        color: HWColor.hex("#94A3B8"),
+                        color: MColor.hex("#94A3B8"),
                       ),
                     ),
                   ]),
                 ]),
-                HWPadding(
-                  HWInsets.only(top: 4, bottom: 4),
-                  HWProgressBar(
-                    value: HWBind("memory_progress"),
+                MPadding(
+                  MInsets.only(top: 4, bottom: 4),
+                  MProgressBar(
+                    value: MBind("memory_progress"),
                     max: 100.0,
-                    color: HWColor.hex("#22C55E"),
+                    color: MColor.hex("#22C55E"),
                   ),
                 ),
               ]),
 
               // 4. Buttons
-              HWRow(mainAxisAlignment: HWMainAxisAlignment.spaceBetween, [
-                HWButton(
-                  action: HWLaunchUrlAction("hwdemo://profile/details"),
-                  child: HWContainer(
-                    background: HWColor.hex("#1E293B"),
+              MRow(mainAxisAlignment: MMainAxisAlignment.spaceBetween, [
+                MButton(
+                  action: MLaunchUrlAction("hwdemo://profile/details"),
+                  child: MContainer(
+                    background: MColor.hex("#1E293B"),
                     radius: 8,
-                    border: HWBorder(color: HWColor.hex("#334155"), width: 1),
-                    child: HWPadding(
-                      HWInsets.symmetric(horizontal: 8, vertical: 6),
-                      HWText(
+                    border: MBorder(color: MColor.hex("#334155"), width: 1),
+                    child: MPadding(
+                      MInsets.symmetric(horizontal: 8, vertical: 6),
+                      MText(
                         "Details",
-                        style: HWTextStyle(
-                          color: HWColor.hex("#FFFFFF"),
+                        style: MTextStyle(
+                          color: MColor.hex("#FFFFFF"),
                           size: 10,
                           bold: true,
                         ),
@@ -158,17 +158,17 @@ HWDefinition buildProfileVP() {
                     ),
                   ),
                 ),
-                HWButton(
-                  action: HWRefreshAction(),
-                  child: HWContainer(
-                    background: HWColor.hex("#38BDF8"),
+                MButton(
+                  action: MRefreshAction(),
+                  child: MContainer(
+                    background: MColor.hex("#38BDF8"),
                     radius: 8,
-                    child: HWPadding(
-                      HWInsets.symmetric(horizontal: 8, vertical: 6),
-                      HWText(
+                    child: MPadding(
+                      MInsets.symmetric(horizontal: 8, vertical: 6),
+                      MText(
                         "Refresh",
-                        style: HWTextStyle(
-                          color: HWColor.hex("#0F172A"),
+                        style: MTextStyle(
+                          color: MColor.hex("#0F172A"),
                           size: 10,
                           bold: true,
                         ),

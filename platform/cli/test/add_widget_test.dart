@@ -1,4 +1,4 @@
-import 'package:hw_cli/src/commands/add_widget_command.dart';
+import 'package:mosaic_cli/src/commands/add_widget_command.dart';
 import 'package:test/test.dart';
 
 void main() {

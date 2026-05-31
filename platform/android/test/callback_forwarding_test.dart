@@ -9,7 +9,7 @@ void main() {
       'action': {'__type': 'HWActionCallback', 'callbackName': 'sync'},
     }))]);
     final kt = r.file(
-        'android/app/src/main/kotlin/com/acme/app/hw_generated/TestWProvider.kt');
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt');
     expect(kt, contains('"callbackName"'));
   });
 }

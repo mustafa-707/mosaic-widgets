@@ -1,5 +1,5 @@
 import 'package:test/test.dart';
-import 'package:hw_core/hw_core.dart';
+import 'package:mosaic_core/mosaic_core.dart';
 import 'support/fixtures.dart';
 import 'support/gen_harness.dart';
 
@@ -12,7 +12,7 @@ void main() {
       }))
     ]);
     final kt = r.file(
-        'android/app/src/main/kotlin/com/acme/app/hw_generated/TestWProvider.kt');
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt');
     expect(kt, contains('appWidgetId * 100'));
   });
 

@@ -1,4 +1,4 @@
-name: hw_android
+name: mosaic_android
 description: A starting point for Dart libraries or applications.
 publish_to: none
 version: 1.0.0
@@ -9,7 +9,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  hw_core:
+  mosaic_core:
     path: ../core
   path: ^1.8.3
 

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:hw_core/hw_core.dart';
+import 'package:mosaic_core/mosaic_core.dart';
 import 'package:path/path.dart' as p;
 
 /// Sentinel marker that must be the FIRST line of every generated .swift file.
@@ -12,7 +12,7 @@ abstract class IosNodeHandler {
 }
 
 class IosGenerator {
-  final HWConfig config;
+  final MosaicConfig config;
   final List<IRDefinition> definitions;
   final Map<String, IosNodeHandler> _handlers = {};
 

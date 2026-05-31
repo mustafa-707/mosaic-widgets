@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 
 /// A bridge to communicate with native home widgets.
-class HomeWidgetBridge {
-  static const MethodChannel _channel = MethodChannel('hw_flutter_bridge');
+class MosaicBridge {
+  static const MethodChannel _channel = MethodChannel('mosaic_bridge');
   static final _onDeepLinkController = StreamController<String>.broadcast();
   static String? _appGroupId;
 

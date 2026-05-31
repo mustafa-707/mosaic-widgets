@@ -1,4 +1,4 @@
-import 'package:hw_core/hw_core.dart';
+import 'package:mosaic_core/mosaic_core.dart';
 import 'package:test/test.dart';
 
 void main() {

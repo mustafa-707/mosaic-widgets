@@ -9,7 +9,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "hw_flutter_bridge"
+    private val CHANNEL = "mosaic_bridge"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -37,13 +37,13 @@ class MainActivity : FlutterActivity() {
                     }
                 }
                 "refreshAll" -> {
-                    com.example.demo_app.hw_generated.HomeWidgetBridgeHelper.refreshAll(this)
+                    com.example.demo_app.mosaic_generated.HomeWidgetBridgeHelper.refreshAll(this)
                     result.success(null)
                 }
                 "refresh" -> {
                     val widgetName = call.argument<String>("widgetName")
                     if (widgetName != null) {
-                        com.example.demo_app.hw_generated.HomeWidgetBridgeHelper.refresh(this, widgetName)
+                        com.example.demo_app.mosaic_generated.HomeWidgetBridgeHelper.refresh(this, widgetName)
                         result.success(null)
                     } else {
                         result.error("INVALID_ARGUMENTS", "Widget name is null", null)

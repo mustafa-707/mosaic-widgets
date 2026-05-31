@@ -1,4 +1,4 @@
-library hw_core;
+library mosaic_core;
 
 export 'src/escape.dart';
 export 'src/models/ir.dart';

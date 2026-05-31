@@ -11,7 +11,7 @@ import WidgetKit
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
     let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
-    let channel = FlutterMethodChannel(name: "hw_flutter_bridge",
+    let channel = FlutterMethodChannel(name: "mosaic_bridge",
                                               binaryMessenger: controller.binaryMessenger)
     mosaicChannel = channel
 
@@ -72,7 +72,7 @@ import WidgetKit
         // Fallback or Error? If no group ID set in Flutter, we can't save to shared.
         // But maybe user didn't call setAppGroupId yet.
         // We return error to encourage correct usage.
-        result(FlutterError(code: "NO_APP_GROUP_ID", message: "Call HomeWidgetBridge.setAppGroupId() in Flutter first.", details: nil))
+        result(FlutterError(code: "NO_APP_GROUP_ID", message: "Call MosaicBridge.setAppGroupId() in Flutter first.", details: nil))
         return
     }
 

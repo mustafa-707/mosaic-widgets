@@ -1,9 +1,23 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
-import 'package:hw_core/hw_core.dart';
-import 'package:hw_android/hw_android.dart';
-import 'package:hw_ios/hw_ios.dart';
+import 'package:mosaic_core/mosaic_core.dart';
+import 'package:mosaic_android/mosaic_android.dart';
+import 'package:mosaic_ios/mosaic_ios.dart';
 import 'package:path/path.dart' as p;
+
+/// Resolves the Mosaic config file. Prefers `mosaic.yaml`; falls back to the
+/// deprecated `home_widget.yaml` (with a warning) when only that exists.
+/// Returns null when neither is present.
+File? resolveConfigFile() {
+  final mosaic = File('mosaic.yaml');
+  if (mosaic.existsSync()) return mosaic;
+  final legacy = File('home_widget.yaml');
+  if (legacy.existsSync()) {
+    print('home_widget.yaml is deprecated; rename to mosaic.yaml');
+    return legacy;
+  }
+  return null;
+}
 
 class BuildCommand extends Command {
   @override
@@ -13,13 +27,13 @@ class BuildCommand extends Command {
 
   @override
   Future<void> run() async {
-    final configFile = File('home_widget.yaml');
-    if (!configFile.existsSync()) {
-      throw Exception('home_widget.yaml not found. Run "hw_cli init" first.');
+    final configFile = resolveConfigFile();
+    if (configFile == null) {
+      throw Exception('mosaic.yaml not found. Run "mosaic_cli init" first.');
     }
 
     print('Loading configuration...');
-    final config = HWConfig.fromYaml(await configFile.readAsString());
+    final config = MosaicConfig.fromYaml(await configFile.readAsString());
 
     print('Executing widget definitions...');
     final runner = WidgetRunner(
@@ -61,7 +75,7 @@ class BuildCommand extends Command {
     print('3. See DOCS/IOS_SETUP.md for detailed instructions.');
   }
 
-  Future<void> _syncAssets(String projectRoot, HWConfig config) async {
+  Future<void> _syncAssets(String projectRoot, MosaicConfig config) async {
     final assetsDir = Directory(p.join(projectRoot, 'assets', 'widgets'));
     if (!assetsDir.existsSync()) return;
 
@@ -99,7 +113,7 @@ class BuildCommand extends Command {
 
   Future<void> _automateAndroidManifest(
     String projectRoot,
-    HWConfig config,
+    MosaicConfig config,
     List<IRDefinition> definitions,
   ) async {
     final manifestFile = File(
@@ -123,7 +137,7 @@ class BuildCommand extends Command {
     final androidPackage = config.app.androidPackage;
 
     for (final def in definitions) {
-      final receiverName = '$androidPackage.hw_generated.${def.name}Provider';
+      final receiverName = '$androidPackage.mosaic_generated.${def.name}Provider';
       final receiverTag =
           '''
         <receiver android:name="$receiverName" android:exported="true">

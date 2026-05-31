@@ -6,26 +6,25 @@ part of 'config.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-HWConfig _$HWConfigFromJson(Map<String, dynamic> json) => HWConfig(
-  app: HWAppConfig.fromJson(json['app'] as Map<String, dynamic>),
+MosaicConfig _$MosaicConfigFromJson(Map<String, dynamic> json) => MosaicConfig(
+  app: MosaicAppConfig.fromJson(json['app'] as Map<String, dynamic>),
   widgets: (json['widgets'] as List<dynamic>)
-      .map((e) => HWWidgetConfig.fromJson(e as Map<String, dynamic>))
+      .map((e) => MosaicWidgetConfig.fromJson(e as Map<String, dynamic>))
       .toList(),
 );
 
-Map<String, dynamic> _$HWConfigToJson(HWConfig instance) => <String, dynamic>{
-  'app': instance.app,
-  'widgets': instance.widgets,
-};
+Map<String, dynamic> _$MosaicConfigToJson(MosaicConfig instance) =>
+    <String, dynamic>{'app': instance.app, 'widgets': instance.widgets};
 
-HWAppConfig _$HWAppConfigFromJson(Map<String, dynamic> json) => HWAppConfig(
-  bundleId: json['bundle_id'] as String,
-  androidPackage: json['android_package'] as String,
-  iosAppGroup: json['ios_app_group'] as String,
-  deepLinkScheme: json['deep_link_scheme'] as String? ?? 'mosaic',
-);
+MosaicAppConfig _$MosaicAppConfigFromJson(Map<String, dynamic> json) =>
+    MosaicAppConfig(
+      bundleId: json['bundle_id'] as String,
+      androidPackage: json['android_package'] as String,
+      iosAppGroup: json['ios_app_group'] as String,
+      deepLinkScheme: json['deep_link_scheme'] as String? ?? 'mosaic',
+    );
 
-Map<String, dynamic> _$HWAppConfigToJson(HWAppConfig instance) =>
+Map<String, dynamic> _$MosaicAppConfigToJson(MosaicAppConfig instance) =>
     <String, dynamic>{
       'bundle_id': instance.bundleId,
       'android_package': instance.androidPackage,
@@ -33,17 +32,17 @@ Map<String, dynamic> _$HWAppConfigToJson(HWAppConfig instance) =>
       'deep_link_scheme': instance.deepLinkScheme,
     };
 
-HWWidgetConfig _$HWWidgetConfigFromJson(Map<String, dynamic> json) =>
-    HWWidgetConfig(
+MosaicWidgetConfig _$MosaicWidgetConfigFromJson(Map<String, dynamic> json) =>
+    MosaicWidgetConfig(
       name: json['name'] as String,
       entry: json['entry'] as String,
-      android: HWAndroidWidgetConfig.fromJson(
+      android: MosaicAndroidWidgetConfig.fromJson(
         json['android'] as Map<String, dynamic>,
       ),
-      ios: HWIosWidgetConfig.fromJson(json['ios'] as Map<String, dynamic>),
+      ios: MosaicIosWidgetConfig.fromJson(json['ios'] as Map<String, dynamic>),
     );
 
-Map<String, dynamic> _$HWWidgetConfigToJson(HWWidgetConfig instance) =>
+Map<String, dynamic> _$MosaicWidgetConfigToJson(MosaicWidgetConfig instance) =>
     <String, dynamic>{
       'name': instance.name,
       'entry': instance.entry,
@@ -51,23 +50,25 @@ Map<String, dynamic> _$HWWidgetConfigToJson(HWWidgetConfig instance) =>
       'ios': instance.ios,
     };
 
-HWAndroidWidgetConfig _$HWAndroidWidgetConfigFromJson(
+MosaicAndroidWidgetConfig _$MosaicAndroidWidgetConfigFromJson(
   Map<String, dynamic> json,
-) => HWAndroidWidgetConfig(
+) => MosaicAndroidWidgetConfig(
   minSdk: (json['min_sdk'] as num).toInt(),
   sizes: (json['sizes'] as List<dynamic>).map((e) => e as String).toList(),
 );
 
-Map<String, dynamic> _$HWAndroidWidgetConfigToJson(
-  HWAndroidWidgetConfig instance,
+Map<String, dynamic> _$MosaicAndroidWidgetConfigToJson(
+  MosaicAndroidWidgetConfig instance,
 ) => <String, dynamic>{'min_sdk': instance.minSdk, 'sizes': instance.sizes};
 
-HWIosWidgetConfig _$HWIosWidgetConfigFromJson(Map<String, dynamic> json) =>
-    HWIosWidgetConfig(
-      families: (json['families'] as List<dynamic>)
-          .map((e) => e as String)
-          .toList(),
-    );
+MosaicIosWidgetConfig _$MosaicIosWidgetConfigFromJson(
+  Map<String, dynamic> json,
+) => MosaicIosWidgetConfig(
+  families: (json['families'] as List<dynamic>)
+      .map((e) => e as String)
+      .toList(),
+);
 
-Map<String, dynamic> _$HWIosWidgetConfigToJson(HWIosWidgetConfig instance) =>
-    <String, dynamic>{'families': instance.families};
+Map<String, dynamic> _$MosaicIosWidgetConfigToJson(
+  MosaicIosWidgetConfig instance,
+) => <String, dynamic>{'families': instance.families};

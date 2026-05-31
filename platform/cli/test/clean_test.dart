@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:hw_cli/src/commands/clean_command.dart';
+import 'package:mosaic_cli/src/commands/clean_command.dart';
 import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 

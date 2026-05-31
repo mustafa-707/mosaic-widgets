@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:hw_flutter/hw_flutter.dart';
+import 'package:mosaic/mosaic.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -9,7 +9,7 @@ Future<void> backgroundCallback(String name) async {
       name == "refresh_crypto" ||
       name == "refresh_all") {
     await fetchAndSaveData();
-    await HomeWidgetBridge.refreshAll();
+    await MosaicBridge.refreshAll();
   }
 }
 
@@ -25,24 +25,24 @@ Future<void> fetchAndSaveData() async {
     "Sustainable Energy Production Hits Record High",
   ];
   final randomNews = headlines[DateTime.now().second % headlines.length];
-  await HomeWidgetBridge.saveString("news_title", randomNews);
+  await MosaicBridge.saveString("news_title", randomNews);
 
   // 2. Mock System Stats (Dynamic based on time for demo)
   final battery = 75 - (DateTime.now().minute % 20);
   final memory = 4.2 + (DateTime.now().second % 10) / 10.0;
   final memoryProgress = (memory / 8.0) * 100.0;
 
-  await HomeWidgetBridge.saveString('battery_level', battery.toString());
-  await HomeWidgetBridge.saveString(
+  await MosaicBridge.saveString('battery_level', battery.toString());
+  await MosaicBridge.saveString(
     'battery_progress',
     battery.toDouble().toString(),
   );
-  await HomeWidgetBridge.saveString('memory_usage', memory.toStringAsFixed(1));
-  await HomeWidgetBridge.saveString(
+  await MosaicBridge.saveString('memory_usage', memory.toStringAsFixed(1));
+  await MosaicBridge.saveString(
     'memory_progress',
     memoryProgress.toStringAsFixed(1),
   );
-  await HomeWidgetBridge.saveString('system_status', 'OPTIMIZED');
+  await MosaicBridge.saveString('system_status', 'OPTIMIZED');
 
   // 3. Fetch Crypto Prices from CoinGecko (Real API)
   final response = await http.get(
@@ -56,11 +56,11 @@ Future<void> fetchAndSaveData() async {
     final price = btc['usd'];
     final change = btc['usd_24h_change'];
 
-    await HomeWidgetBridge.saveString(
+    await MosaicBridge.saveString(
       'btc_price',
       '\$${price.toStringAsFixed(2)}',
     );
-    await HomeWidgetBridge.saveString(
+    await MosaicBridge.saveString(
       'btc_change',
       '${change > 0 ? "+" : ""}${change.toStringAsFixed(2)}%',
     );
@@ -72,8 +72,8 @@ Future<void> fetchAndSaveData() async {
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  HomeWidgetBridge.setAppGroupId('group.com.example.demo_app.widgets');
-  HomeWidgetBridge.registerBackgroundCallback(backgroundCallback);
+  MosaicBridge.setAppGroupId('group.com.example.demo_app.widgets');
+  MosaicBridge.registerBackgroundCallback(backgroundCallback);
   runApp(const MyApp());
 }
 
@@ -113,7 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     _initializeData();
-    HomeWidgetBridge.onDeepLink.listen((url) {
+    MosaicBridge.onDeepLink.listen((url) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Action: $url'), behavior: .floating),
@@ -124,10 +124,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _initializeData() async {
     setState(() => _isLoading = true);
-    await HomeWidgetBridge.saveString('battery_level', '85');
-    await HomeWidgetBridge.saveString('battery_progress', '85.0');
+    await MosaicBridge.saveString('battery_level', '85');
+    await MosaicBridge.saveString('battery_progress', '85.0');
     await fetchAndSaveData();
-    await HomeWidgetBridge.refreshAll();
+    await MosaicBridge.refreshAll();
     if (mounted) setState(() => _isLoading = false);
   }
 
@@ -135,7 +135,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() => _isLoading = true);
     try {
       await fetchAndSaveData();
-      await HomeWidgetBridge.refreshAll();
+      await MosaicBridge.refreshAll();
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(

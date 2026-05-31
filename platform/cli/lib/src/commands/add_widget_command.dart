@@ -5,17 +5,17 @@ import 'package:path/path.dart' as p;
 String widgetTemplate(String name) => '''
 import 'package:mosaic/mosaic.dart';
 
-HWDefinition build$name() {
-  return HWDefinition(
+MosaicDefinition build$name() {
+  return MosaicDefinition(
     name: "$name",
-    root: HWContainer(
-      background: HWColor.hex("#111111"),
+    root: MContainer(
+      background: MColor.hex("#111111"),
       radius: 16,
-      child: HWPadding(
-        HWInsets.all(12),
-        HWColumn([
-          HWText("$name Widget", style: HWTextStyle(bold: true, size: 16)),
-          HWText(HWBind("subtitle"), style: HWTextStyle(size: 12, opacity: 0.7)),
+      child: MPadding(
+        MInsets.all(12),
+        MColumn([
+          MText("$name Widget", style: MTextStyle(bold: true, size: 16)),
+          MText(MBind("subtitle"), style: MTextStyle(size: 12, opacity: 0.7)),
         ]),
       ),
     ),
@@ -58,7 +58,7 @@ class AddWidgetSubCommand extends Command {
     await file.writeAsString(widgetTemplate(widgetName));
 
     print('Created $filePath');
-    print('Please add the following to your home_widget.yaml:');
+    print('Please add the following to your mosaic.yaml:');
     print('''
   - name: $widgetName
     entry: $filePath

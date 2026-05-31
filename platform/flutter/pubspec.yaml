@@ -1,4 +1,4 @@
-name: hw_flutter
+name: mosaic
 description: "A new Flutter package project."
 publish_to: none
 version: 0.0.1
@@ -11,7 +11,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  hw_core:
+  mosaic_core:
     path: ../core
 
 dev_dependencies:

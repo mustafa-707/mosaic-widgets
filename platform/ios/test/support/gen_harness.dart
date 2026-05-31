@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:hw_core/hw_core.dart';
-import 'package:hw_ios/hw_ios.dart';
+import 'package:mosaic_core/mosaic_core.dart';
+import 'package:mosaic_ios/mosaic_ios.dart';
 import 'package:path/path.dart' as p;
 
 class GenResult {
@@ -28,7 +28,7 @@ String readFirstLine(String path) =>
 
 Future<GenResult> runIos(
   List<IRDefinition> defs, {
-  HWConfig? config,
+  MosaicConfig? config,
   bool skipConfigWidget = false,
 }) async {
   final dir = await Directory.systemTemp.createTemp('hw_ios_test_');
@@ -44,7 +44,7 @@ Future<GenResult> runIos(
   final widgetName = skipConfigWidget ? '__none__' : defs.first.name;
 
   final cfg = config ??
-      HWConfig.fromJson({
+      MosaicConfig.fromJson({
         'app': {
           'bundle_id': 'com.acme.app',
           'android_package': 'com.acme.app',

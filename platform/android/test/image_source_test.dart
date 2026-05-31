@@ -24,7 +24,7 @@ void main() {
       })
     ]);
     final kt = r.file(
-      'android/app/src/main/kotlin/com/acme/app/hw_generated/TestWProvider.kt',
+      'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt',
     );
     expect(kt, contains('setImageViewUri'));
     expect(kt, contains('/data/pic.png'));
@@ -42,7 +42,7 @@ void main() {
       })
     ]);
     final kt = r.file(
-      'android/app/src/main/kotlin/com/acme/app/hw_generated/TestWProvider.kt',
+      'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt',
     );
     expect(kt, contains('MosaicData.resolveString(context, "pic"'));
     expect(kt, contains('setImageViewUri'));

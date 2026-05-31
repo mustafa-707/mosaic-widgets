@@ -16,7 +16,7 @@ void main() {
         }),
       ]);
       final kt = r.file(
-        'android/app/src/main/kotlin/com/acme/app/hw_generated/TestWProvider.kt',
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt',
       );
       expect(kt, contains('setImageView'));
       expect(kt, isNot(contains('setTextViewText(R.id.hw_text_pic')));
@@ -32,7 +32,7 @@ void main() {
         }),
       ]);
       final kt = r.file(
-        'android/app/src/main/kotlin/com/acme/app/hw_generated/TestWProvider.kt',
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt',
       );
       expect(kt, contains('setProgressBar'));
     });
@@ -56,7 +56,7 @@ void main() {
       final r = await runAndroid([irDef(text(bind('t')))]);
       expect(
         r.exists(
-          'android/app/src/main/kotlin/com/acme/app/hw_generated/MosaicData.kt',
+          'android/app/src/main/kotlin/com/acme/app/mosaic_generated/MosaicData.kt',
         ),
         isTrue,
       );
@@ -66,7 +66,7 @@ void main() {
         () async {
       final r = await runAndroid([irDef(text(bind('t')))]);
       final md = r.file(
-        'android/app/src/main/kotlin/com/acme/app/hw_generated/MosaicData.kt',
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/MosaicData.kt',
       );
       expect(md, contains('object MosaicData'));
       expect(md, contains('fun resolveString'));
@@ -80,7 +80,7 @@ void main() {
     test('text bind resolves via MosaicData.resolveString', () async {
       final r = await runAndroid([irDef(text(bind('t')))]);
       final kt = r.file(
-        'android/app/src/main/kotlin/com/acme/app/hw_generated/TestWProvider.kt',
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt',
       );
       expect(
         kt,
@@ -97,7 +97,7 @@ void main() {
         }),
       ]);
       final kt = r.file(
-        'android/app/src/main/kotlin/com/acme/app/hw_generated/TestWProvider.kt',
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt',
       );
       expect(kt, contains('MosaicData.resolveBool(context, "vis")'));
       expect(kt, contains('setViewVisibility(R.id.hw_visibility_vis'));

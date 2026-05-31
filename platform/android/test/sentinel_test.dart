@@ -21,7 +21,7 @@ void main() {
     test('kotlin provider first line contains MOSAIC-GENERATED', () async {
       final r = await runAndroid([irDef(text('hi'))]);
       final kt = r.file(
-        'android/app/src/main/kotlin/com/acme/app/hw_generated/TestWProvider.kt',
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt',
       );
       final firstLine = kt.split('\n').first;
       expect(firstLine, contains('MOSAIC-GENERATED'));

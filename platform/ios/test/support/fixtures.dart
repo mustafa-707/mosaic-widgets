@@ -1,4 +1,4 @@
-import 'package:hw_core/hw_core.dart';
+import 'package:mosaic_core/mosaic_core.dart';
 
 IRDefinition irDef(Map<String, dynamic> rootJson, {String name = 'TestW'}) =>
     IRDefinition(name: name, root: IRNode.fromJson(rootJson));

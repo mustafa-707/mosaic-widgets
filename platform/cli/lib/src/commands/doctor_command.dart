@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:args/command_runner.dart';
-import 'package:hw_core/hw_core.dart';
+import 'package:mosaic_core/mosaic_core.dart';
+import 'build_command.dart' show resolveConfigFile;
 
 class DoctorCommand extends Command {
   @override
@@ -10,16 +11,16 @@ class DoctorCommand extends Command {
 
   @override
   Future<void> run() async {
-    print('Checking home_widget.yaml...');
-    final configFile = File('home_widget.yaml');
-    if (!configFile.existsSync()) {
-      print('✗ home_widget.yaml not found.');
+    print('Checking mosaic.yaml...');
+    final configFile = resolveConfigFile();
+    if (configFile == null) {
+      print('✗ mosaic.yaml not found.');
       return;
     }
-    print('✓ home_widget.yaml found.');
+    print('✓ ${configFile.path} found.');
 
     try {
-      final config = HWConfig.fromYaml(await configFile.readAsString());
+      final config = MosaicConfig.fromYaml(await configFile.readAsString());
       print('✓ Configuration is valid.');
 
       print('Checking widget entries...');

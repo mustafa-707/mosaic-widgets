@@ -12,7 +12,7 @@ void main() {
       }))
     ]);
     final kt = r.file(
-        'android/app/src/main/kotlin/com/acme/app/hw_generated/TestWProvider.kt');
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt');
     expect(kt, contains('com.acme.app.MOSAIC_CALLBACK'));
     expect(kt, isNot(contains('com.example.hw_flutter')));
   });

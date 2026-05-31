@@ -1,97 +1,97 @@
-import 'package:hw_flutter/hw_dsl.dart';
+import 'package:mosaic/mosaic.dart';
 
-HWDefinition buildCryptoWidget() {
-  return HWDefinition(
+MosaicDefinition buildCryptoWidget() {
+  return MosaicDefinition(
     name: "CryptoWidget",
     width: 2,
     height: 2,
-    resizeMode: HWResizeMode.both,
-    root: HWContainer(
-      gradient: const HWLinearGradient(
+    resizeMode: MResizeMode.both,
+    root: MContainer(
+      gradient: const MLinearGradient(
         colors: [
-          HWColor.hex("#2563EB"),
-          HWColor.hex("#1E3A8A"),
+          MColor.hex("#2563EB"),
+          MColor.hex("#1E3A8A"),
         ], // Blue-600 to Blue-900
       ),
       radius: 24,
-      child: HWStack([
+      child: MStack([
         // Top right glow
-        const HWPositioned(
+        const MPositioned(
           top: -30,
           right: -30,
-          child: HWContainer(
+          child: MContainer(
             width: 100,
             height: 100,
             radius: 50,
-            background: HWColor.hex("#FFFFFF", opacity: 0.1),
-            child: HWSpacer(),
+            background: MColor.hex("#FFFFFF", opacity: 0.1),
+            child: MSpacer(),
           ),
         ),
 
         // Compact layout
-        HWPadding(
-          const HWInsets.all(12),
-          HWColumn(
-            mainAxisAlignment: HWMainAxisAlignment.spaceBetween,
-            crossAxisAlignment: HWCrossAxisAlignment.start,
+        MPadding(
+          const MInsets.all(12),
+          MColumn(
+            mainAxisAlignment: MMainAxisAlignment.spaceBetween,
+            crossAxisAlignment: MCrossAxisAlignment.start,
             [
               // Header
-              HWRow(mainAxisAlignment: HWMainAxisAlignment.spaceBetween, [
-                HWColumn(crossAxisAlignment: HWCrossAxisAlignment.start, [
-                  const HWText(
+              MRow(mainAxisAlignment: MMainAxisAlignment.spaceBetween, [
+                MColumn(crossAxisAlignment: MCrossAxisAlignment.start, [
+                  const MText(
                     "BITCOIN",
-                    style: HWTextStyle(
-                      color: HWColor.hex("#93C5FD"),
+                    style: MTextStyle(
+                      color: MColor.hex("#93C5FD"),
                       size: 10,
                       bold: true,
                     ),
                   ),
-                  const HWText(
+                  const MText(
                     "BTC/USD",
-                    style: HWTextStyle(
-                      color: HWColor.hex("#FFFFFF"),
+                    style: MTextStyle(
+                      color: MColor.hex("#FFFFFF"),
                       size: 14,
                       bold: true,
                     ),
                   ),
                 ]),
-                const HWContainer(
+                const MContainer(
                   width: 32,
                   height: 32,
                   radius: 8,
-                  background: HWColor.hex("#FFFFFF", opacity: 0.2),
-                  child: HWCenter(
-                    child: HWText("₿", style: HWTextStyle(size: 18)),
+                  background: MColor.hex("#FFFFFF", opacity: 0.2),
+                  child: MCenter(
+                    child: MText("₿", style: MTextStyle(size: 18)),
                   ),
                 ),
               ]),
 
               // Price Block
-              HWColumn(crossAxisAlignment: HWCrossAxisAlignment.start, [
-                HWText(
-                  HWBind("btc_price"),
+              MColumn(crossAxisAlignment: MCrossAxisAlignment.start, [
+                MText(
+                  MBind("btc_price"),
                   // Use 20 to fit better
-                  style: const HWTextStyle(
-                    color: HWColor.hex("#FFFFFF"),
+                  style: const MTextStyle(
+                    color: MColor.hex("#FFFFFF"),
                     size: 20,
                     bold: true,
                   ),
                 ),
-                HWRow([
-                  HWText(
-                    HWBind("btc_change"),
-                    style: const HWTextStyle(
-                      color: HWColor.hex("#4ADE80"),
+                MRow([
+                  MText(
+                    MBind("btc_change"),
+                    style: const MTextStyle(
+                      color: MColor.hex("#4ADE80"),
                       size: 12,
                       bold: true,
                     ),
                   ),
-                  const HWPadding(
-                    HWInsets.only(left: 4),
-                    HWText(
+                  const MPadding(
+                    MInsets.only(left: 4),
+                    MText(
                       "24h",
-                      style: HWTextStyle(
-                        color: HWColor.hex("#93C5FD"),
+                      style: MTextStyle(
+                        color: MColor.hex("#93C5FD"),
                         size: 12,
                       ),
                     ),
@@ -100,18 +100,18 @@ HWDefinition buildCryptoWidget() {
               ]),
 
               // Footer
-              HWRow(mainAxisAlignment: HWMainAxisAlignment.spaceBetween, [
-                const HWButton(
-                  action: HWRefreshAction(),
-                  child: HWContainer(
-                    background: HWColor.hex("#FFFFFF", opacity: 0.1),
+              MRow(mainAxisAlignment: MMainAxisAlignment.spaceBetween, [
+                const MButton(
+                  action: MRefreshAction(),
+                  child: MContainer(
+                    background: MColor.hex("#FFFFFF", opacity: 0.1),
                     radius: 10,
-                    child: HWPadding(
-                      HWInsets.symmetric(horizontal: 12, vertical: 6),
-                      HWText(
+                    child: MPadding(
+                      MInsets.symmetric(horizontal: 12, vertical: 6),
+                      MText(
                         "Refresh",
-                        style: HWTextStyle(
-                          color: HWColor.hex("#FFFFFF"),
+                        style: MTextStyle(
+                          color: MColor.hex("#FFFFFF"),
                           size: 10,
                           bold: true,
                         ),
@@ -120,20 +120,20 @@ HWDefinition buildCryptoWidget() {
                   ),
                 ),
                 // Compact Session Timer
-                HWRow([
-                  const HWText(
+                MRow([
+                  const MText(
                     "LIVE: ",
-                    style: HWTextStyle(
-                      color: HWColor.hex("#93C5FD"),
+                    style: MTextStyle(
+                      color: MColor.hex("#93C5FD"),
                       size: 8,
                       bold: true,
                     ),
                   ),
-                  HWTimer(
+                  MTimer(
                     target: DateTime.now(),
                     countUp: true,
-                    style: const HWTextStyle(
-                      color: HWColor.hex("#FFFFFF"),
+                    style: const MTextStyle(
+                      color: MColor.hex("#FFFFFF"),
                       size: 8,
                     ),
                   ),

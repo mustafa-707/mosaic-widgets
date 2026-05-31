@@ -4,20 +4,20 @@ import 'package:yaml/yaml.dart';
 part 'config.g.dart';
 
 @JsonSerializable()
-class HWConfig {
-  final HWAppConfig app;
-  final List<HWWidgetConfig> widgets;
+class MosaicConfig {
+  final MosaicAppConfig app;
+  final List<MosaicWidgetConfig> widgets;
 
-  HWConfig({required this.app, required this.widgets});
+  MosaicConfig({required this.app, required this.widgets});
 
-  factory HWConfig.fromYaml(String yamlString) {
+  factory MosaicConfig.fromYaml(String yamlString) {
     final yaml = loadYaml(yamlString) as YamlMap;
-    return HWConfig.fromJson(_yamlToMap(yaml));
+    return MosaicConfig.fromJson(_yamlToMap(yaml));
   }
 
-  factory HWConfig.fromJson(Map<String, dynamic> json) =>
-      _$HWConfigFromJson(json);
-  Map<String, dynamic> toJson() => _$HWConfigToJson(this);
+  factory MosaicConfig.fromJson(Map<String, dynamic> json) =>
+      _$MosaicConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$MosaicConfigToJson(this);
 
   static Map<String, dynamic> _yamlToMap(YamlMap yaml) {
     final map = <String, dynamic>{};
@@ -37,7 +37,7 @@ class HWConfig {
 }
 
 @JsonSerializable()
-class HWAppConfig {
+class MosaicAppConfig {
   @JsonKey(name: 'bundle_id')
   final String bundleId;
   @JsonKey(name: 'android_package')
@@ -47,57 +47,57 @@ class HWAppConfig {
   @JsonKey(name: 'deep_link_scheme', defaultValue: 'mosaic')
   final String deepLinkScheme;
 
-  HWAppConfig({
+  MosaicAppConfig({
     required this.bundleId,
     required this.androidPackage,
     required this.iosAppGroup,
     this.deepLinkScheme = 'mosaic',
   });
 
-  factory HWAppConfig.fromJson(Map<String, dynamic> json) =>
-      _$HWAppConfigFromJson(json);
-  Map<String, dynamic> toJson() => _$HWAppConfigToJson(this);
+  factory MosaicAppConfig.fromJson(Map<String, dynamic> json) =>
+      _$MosaicAppConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$MosaicAppConfigToJson(this);
 }
 
 @JsonSerializable()
-class HWWidgetConfig {
+class MosaicWidgetConfig {
   final String name;
   final String entry;
-  final HWAndroidWidgetConfig android;
-  final HWIosWidgetConfig ios;
+  final MosaicAndroidWidgetConfig android;
+  final MosaicIosWidgetConfig ios;
 
-  HWWidgetConfig({
+  MosaicWidgetConfig({
     required this.name,
     required this.entry,
     required this.android,
     required this.ios,
   });
 
-  factory HWWidgetConfig.fromJson(Map<String, dynamic> json) =>
-      _$HWWidgetConfigFromJson(json);
-  Map<String, dynamic> toJson() => _$HWWidgetConfigToJson(this);
+  factory MosaicWidgetConfig.fromJson(Map<String, dynamic> json) =>
+      _$MosaicWidgetConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$MosaicWidgetConfigToJson(this);
 }
 
 @JsonSerializable()
-class HWAndroidWidgetConfig {
+class MosaicAndroidWidgetConfig {
   @JsonKey(name: 'min_sdk')
   final int minSdk;
   final List<String> sizes;
 
-  HWAndroidWidgetConfig({required this.minSdk, required this.sizes});
+  MosaicAndroidWidgetConfig({required this.minSdk, required this.sizes});
 
-  factory HWAndroidWidgetConfig.fromJson(Map<String, dynamic> json) =>
-      _$HWAndroidWidgetConfigFromJson(json);
-  Map<String, dynamic> toJson() => _$HWAndroidWidgetConfigToJson(this);
+  factory MosaicAndroidWidgetConfig.fromJson(Map<String, dynamic> json) =>
+      _$MosaicAndroidWidgetConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$MosaicAndroidWidgetConfigToJson(this);
 }
 
 @JsonSerializable()
-class HWIosWidgetConfig {
+class MosaicIosWidgetConfig {
   final List<String> families;
 
-  HWIosWidgetConfig({required this.families});
+  MosaicIosWidgetConfig({required this.families});
 
-  factory HWIosWidgetConfig.fromJson(Map<String, dynamic> json) =>
-      _$HWIosWidgetConfigFromJson(json);
-  Map<String, dynamic> toJson() => _$HWIosWidgetConfigToJson(this);
+  factory MosaicIosWidgetConfig.fromJson(Map<String, dynamic> json) =>
+      _$MosaicIosWidgetConfigFromJson(json);
+  Map<String, dynamic> toJson() => _$MosaicIosWidgetConfigToJson(this);
 }

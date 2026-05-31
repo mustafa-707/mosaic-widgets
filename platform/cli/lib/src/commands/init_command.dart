@@ -10,9 +10,9 @@ class InitCommand extends Command {
 
   @override
   Future<void> run() async {
-    final configFile = File('home_widget.yaml');
+    final configFile = File('mosaic.yaml');
     if (configFile.existsSync()) {
-      print('home_widget.yaml already exists.');
+      print('mosaic.yaml already exists.');
     } else {
       await configFile.writeAsString('''
 app:
@@ -29,7 +29,7 @@ widgets:
   #   ios:
   #     families: [systemSmall, systemMedium]
 ''');
-      print('Created home_widget.yaml');
+      print('Created mosaic.yaml');
     }
 
     final widgetsDir = Directory('lib/home_widgets');
