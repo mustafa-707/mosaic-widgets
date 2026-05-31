@@ -1,0 +1,23 @@
+name: hw_cli
+description: A simple command-line application.
+publish_to: none
+version: 1.0.0
+# repository: https://github.com/my_org/my_repo
+
+environment:
+  sdk: ^3.10.7
+
+# Add regular dependencies here.
+dependencies:
+  args: ^2.4.2
+  yaml: ^3.1.2
+  hw_core:
+    path: ../core
+  hw_android:
+    path: ../android
+  hw_ios:
+    path: ../ios
+  path: ^1.8.3
+
+dev_dependencies:
+  lints: ^3.0.0

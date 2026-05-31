@@ -1,0 +1,108 @@
+import SwiftUI
+import WidgetKit
+
+struct CryptoWidgetEntry: TimelineEntry {
+    let date: Date
+    let data: [String: Any]
+}
+
+struct CryptoWidgetProvider: TimelineProvider {
+    func placeholder(in context: Context) -> CryptoWidgetEntry {
+        CryptoWidgetEntry(date: Date(), data: [:])
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (CryptoWidgetEntry) -> ()) {
+        let entry = CryptoWidgetEntry(date: Date(), data: loadData())
+        completion(entry)
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
+        let entry = CryptoWidgetEntry(date: Date(), data: loadData())
+        
+                let timeline = Timeline(entries: [entry], policy: .atEnd)
+        
+        
+        completion(timeline)
+    }
+
+    private func loadData() -> [String: Any] {
+        if let defaults = UserDefaults(suiteName: "group.com.example.demo_app.widgets") {
+            return defaults.dictionaryRepresentation()
+        }
+        return ["btc_price": "GRP ERR", "battery_level": "ERR", "news_title": "App Group Config Error"]
+    }
+}
+
+struct CryptoWidgetView: View {
+    var entry: CryptoWidgetEntry
+    
+    var body: some View {
+        GeometryReader { geometry in
+            ZStack(alignment: .topLeading) {
+    Spacer()
+    .frame(width: 100.0, height: 100.0)
+    .background(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.1))
+    .clipShape(RoundedRectangle(cornerRadius: 50.0))
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+VStack(alignment: .leading, spacing: 0) {
+    HStack(alignment: .center, spacing: 0) {
+    VStack(alignment: .leading, spacing: 0) {
+    Text("BITCOIN").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
+Text("BTC/USD").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 14.0)).dynamicTypeSize(.large)
+}
+Spacer()
+Text("₿").font(.system(size: 18.0)).dynamicTypeSize(.large)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .frame(width: 32.0, height: 32.0)
+    .background(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.2))
+    .clipShape(RoundedRectangle(cornerRadius: 8.0))
+}
+Spacer()
+VStack(alignment: .leading, spacing: 0) {
+    Text("\(entry.data["btc_price"] ?? "--")").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 20.0)).dynamicTypeSize(.large)
+HStack(alignment: .center, spacing: 0) {
+    Text("\(entry.data["btc_change"] ?? "--")").bold().foregroundColor(Color(red: 0.2901960784313726, green: 0.8705882352941177, blue: 0.5019607843137255, opacity: 1.0)).font(.system(size: 12.0)).dynamicTypeSize(.large)
+Text("24h").foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 12.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 0.0, leading: 4.0, bottom: 0.0, trailing: 0.0))
+}
+}
+Spacer()
+HStack(alignment: .center, spacing: 0) {
+    Link(destination: URL(string: "hwrefresh://")!) {
+    Text("Refresh").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 6.0, leading: 12.0, bottom: 6.0, trailing: 12.0))
+    .background(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.1))
+    .clipShape(RoundedRectangle(cornerRadius: 10.0))
+}
+Spacer()
+HStack(alignment: .center, spacing: 0) {
+    Text("LIVE: ").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 8.0)).dynamicTypeSize(.large)
+Text(Date(timeIntervalSince1970: 1770120005.123), style: .timer).foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
+}
+}
+}.padding(EdgeInsets(top: 12.0, leading: 12.0, bottom: 12.0, trailing: 12.0))
+}
+    .background(LinearGradient(gradient: Gradient(colors: [Color(hex: "#2563EB"), Color(hex: "#1E3A8A")]), startPoint: .top, endPoint: .bottom))
+    .clipShape(RoundedRectangle(cornerRadius: 24.0))
+            .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+        .widgetURL(URL(string: loadGlobalUrl()))
+    }
+
+    private func loadGlobalUrl() -> String {
+        return entry.data["global_url"] as? String ?? ""
+    }
+}
+
+struct CryptoWidgetWidget: Widget {
+    let kind: String = "CryptoWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: CryptoWidgetProvider()) { entry in
+            CryptoWidgetView(entry: entry)
+                .containerBackground(.clear, for: .widget)
+        }
+        .configurationDisplayName("CryptoWidget")
+        .description("This is an auto-generated home widget.")
+        .supportedFamilies([.systemMedium])
+        .contentMarginsDisabled()
+    }
+}

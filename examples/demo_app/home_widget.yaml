@@ -1,0 +1,28 @@
+app:
+  bundle_id: com.example.demo_app
+  android_package: com.example.demo_app
+  ios_app_group: group.com.example.demo_app.widgets
+
+widgets:
+  - name: ProfileVP
+    entry: lib/platform/widgets/profilevp.widget.dart
+    android:
+      min_sdk: 21
+      sizes: [small, medium]
+    ios:
+      families: [systemSmall, systemMedium]
+
+  - name: NewsWidget
+    entry: lib/platform/widgets/news.widget.dart
+    android:
+      min_sdk: 21
+      sizes: [medium]
+    ios:
+      families: [systemMedium]
+  - name: CryptoWidget
+    entry: lib/platform/widgets/crypto.widget.dart
+    android:
+      min_sdk: 21
+      sizes: [medium]
+    ios:
+      families: [systemMedium]
