@@ -16,6 +16,13 @@ abstract class AndroidNodeHandler {
   });
 }
 
+/// Sentinel placed as the first line of generated XML files so the CLI
+/// `clean` command can identify generated artifacts.
+const String xmlSentinel = '<!-- MOSAIC-GENERATED -->';
+
+/// Sentinel placed as the first line of generated Kotlin files.
+const String kotlinSentinel = '// MOSAIC-GENERATED — do not edit';
+
 class AndroidGenerator {
   final HWConfig config;
   final List<IRDefinition> definitions;
@@ -154,7 +161,7 @@ class AndroidGenerator {
         )
         .join('\n');
 
-    await file.writeAsString('''
+    await file.writeAsString('''$kotlinSentinel
 package ${config.app.androidPackage}.hw_generated
 
 import android.content.Context
@@ -181,6 +188,7 @@ object HomeWidgetBridgeHelper {
     List<Map<String, dynamic>> buttons,
   ) {
     final buffer = StringBuffer();
+    buffer.writeln(xmlSentinel);
     buffer.writeln('<?xml version="1.0" encoding="utf-8"?>');
     // Root element should always be match_parent to fill the widget cell
     buffer.write(
@@ -251,7 +259,8 @@ object HomeWidgetBridgeHelper {
     final period = def.updateInterval == null
         ? 0
         : (def.updateInterval! < 1800000 ? 1800000 : def.updateInterval!);
-    return '''<?xml version="1.0" encoding="utf-8"?>
+    return '''$xmlSentinel
+<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="${minWidth}dp"
     android:minHeight="${minHeight}dp"
@@ -360,7 +369,7 @@ object HomeWidgetBridgeHelper {
         })
         .join('\n        ');
 
-    await file.writeAsString('''
+    await file.writeAsString('''$kotlinSentinel
 package ${config.app.androidPackage}.hw_generated
 
 import android.appwidget.AppWidgetManager
