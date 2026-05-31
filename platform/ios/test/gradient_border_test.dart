@@ -22,9 +22,10 @@ void main() {
     // diagonal start/end points per spec
     expect(s, contains('startPoint: .topLeading'));
     expect(s, contains('endPoint: .bottomTrailing'));
-    // both colors present
-    expect(s, contains('Color(hex: "#FF0000")'));
-    expect(s, contains('Color(hex: "#0000FF")'));
+    // both colors present (red and blue, opacity honored)
+    expect(s, contains('red: 1.0, green: 0.0, blue: 0.0'));
+    expect(s, contains('red: 0.0, green: 0.0, blue: 1.0'));
+    expect(s, contains('opacity: 1.0'));
   });
 
   test('border container emits a stroke overlay', () async {
@@ -40,7 +41,7 @@ void main() {
     final s = r.swiftForTestW();
     expect(s, contains('stroke'));
     expect(s, contains('.overlay(RoundedRectangle(cornerRadius: 8'));
-    expect(s, contains('Color(hex: "#00FF00")'));
+    expect(s, contains('red: 0.0, green: 1.0, blue: 0.0'));
     expect(s, contains('lineWidth: 2'));
   });
 }

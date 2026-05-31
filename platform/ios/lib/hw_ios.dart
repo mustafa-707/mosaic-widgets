@@ -436,10 +436,11 @@ class ContainerHandler extends IosNodeHandler {
     // 3. Background
     if (gradient != null && gradient['__type'] == 'HWLinearGradient') {
       final colors = (gradient['colors'] as List)
-          .map((c) => 'Color(hex: "${c['hex']}")')
+          .map((c) => context._colorToSwift(
+              (c as Map).cast<String, dynamic>()))
           .join(', ');
       modifiers.add(
-        '.background(LinearGradient(gradient: Gradient(colors: [$colors]), startPoint: .top, endPoint: .bottom))',
+        '.background(LinearGradient(gradient: Gradient(colors: [$colors]), startPoint: .topLeading, endPoint: .bottomTrailing))',
       );
     } else if (background != null) {
       modifiers.add(
@@ -457,8 +458,10 @@ class ContainerHandler extends IosNodeHandler {
 
     // 5. Border using overlay (preserves rounded corners)
     if (border != null) {
+      final borderColor = (border['color'] as Map).cast<String, dynamic>();
+      final lineWidth = (border['width'] ?? 1.0);
       modifiers.add(
-        '.overlay(RoundedRectangle(cornerRadius: $radius).stroke(Color(hex: "${border['color']['hex']}"), lineWidth: ${border['width']}))',
+        '.overlay(RoundedRectangle(cornerRadius: $radius).stroke(${context._colorToSwift(borderColor)}, lineWidth: $lineWidth))',
       );
     }
 
