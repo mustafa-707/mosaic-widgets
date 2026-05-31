@@ -37,7 +37,7 @@ void main() {
   final definitions = <HWDefinition>[];
   ${calls.join('\n')}
   
-  print(jsonEncode(definitions.map((e) => e.toJson()).toList()));
+  print('<<<MOSAIC_IR>>>' + jsonEncode(definitions.map((e) => e.toJson()).toList()) + '<<<END_MOSAIC_IR>>>');
 }
 ''';
   }
@@ -65,12 +65,19 @@ void main() {
     }
 
     final output = result.stdout as String;
-    // The output might contain logs from other things, so we should look for the JSON.
-    // For now, assume the last line is the JSON if it starts with [.
-    final lines = output.split('\n').where((l) => l.trim().isNotEmpty).toList();
-    if (lines.isEmpty) throw Exception('No output from widget runner');
+    return parseIrOutput(output);
+  }
 
-    final jsonStr = lines.last;
+  static List<Map<String, dynamic>> parseIrOutput(String stdout) {
+    const start = '<<<MOSAIC_IR>>>';
+    const end = '<<<END_MOSAIC_IR>>>';
+    final s = stdout.indexOf(start);
+    final e = stdout.indexOf(end);
+    if (s < 0 || e < 0 || e < s) {
+      throw Exception(
+          'Could not find Mosaic IR markers in widget runner output.\nOutput was:\n$stdout');
+    }
+    final jsonStr = stdout.substring(s + start.length, e);
     return List<Map<String, dynamic>>.from(jsonDecode(jsonStr));
   }
 }
