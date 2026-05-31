@@ -206,6 +206,32 @@ struct ${def.name}Widget: Widget {
     }
     throw UnsupportedError('No iOS handler for node type "${node.type}".');
   }
+
+  /// Walks the IR tree rooted at [node] and collects every `HWBind` key that the
+  /// widget actually uses. Used to populate `loadData()` with only the keys the
+  /// widget reads, instead of leaking all keys via `dictionaryRepresentation()`.
+  Set<String> collectBindKeys(IRNode node) {
+    final keys = <String>{};
+    _collectFromValue(node.toJson(), keys);
+    // global_url is always read by the generated view's loadGlobalUrl().
+    keys.add('global_url');
+    return keys;
+  }
+
+  void _collectFromValue(Object? value, Set<String> keys) {
+    if (value is Map) {
+      if (value['__type'] == 'HWBind' && value['key'] is String) {
+        keys.add(value['key'] as String);
+      }
+      for (final v in value.values) {
+        _collectFromValue(v, keys);
+      }
+    } else if (value is List) {
+      for (final v in value) {
+        _collectFromValue(v, keys);
+      }
+    }
+  }
 }
 
 class ColumnHandler extends IosNodeHandler {

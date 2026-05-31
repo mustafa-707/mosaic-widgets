@@ -108,6 +108,101 @@ class AndroidGenerator {
     }
 
     await _generateBridgeHelper(projectRoot);
+    await _generateMosaicData(projectRoot);
+  }
+
+  Future<void> _generateMosaicData(String projectRoot) async {
+    final packagePath = config.app.androidPackage.replaceAll('.', '/');
+    final kotlinDir = Directory(
+      p.join(
+        projectRoot,
+        'android',
+        'app',
+        'src',
+        'main',
+        'kotlin',
+        packagePath,
+        'hw_generated',
+      ),
+    );
+    if (!kotlinDir.existsSync()) kotlinDir.createSync(recursive: true);
+
+    final file = File(p.join(kotlinDir.path, 'MosaicData.kt'));
+    await file.writeAsString('''$kotlinSentinel
+package ${config.app.androidPackage}.hw_generated
+
+import android.content.Context
+import org.json.JSONArray
+
+/// Runtime accessor for bound widget data persisted in SharedPreferences.
+/// Values are written by the Flutter side into the "widget_data" store and
+/// resolved here on every widget update.
+object MosaicData {
+    private fun prefs(ctx: Context) =
+        ctx.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
+
+    fun resolveString(ctx: Context, key: String, fallback: String = "--"): String {
+        return try {
+            prefs(ctx).getString(key, null) ?: fallback
+        } catch (e: Exception) {
+            fallback
+        }
+    }
+
+    fun resolveDouble(ctx: Context, key: String, fallback: Double = 0.0): Double {
+        return try {
+            val raw = prefs(ctx).all[key] ?: return fallback
+            when (raw) {
+                is Number -> raw.toDouble()
+                is String -> raw.toDoubleOrNull() ?: fallback
+                is Boolean -> if (raw) 1.0 else 0.0
+                else -> fallback
+            }
+        } catch (e: Exception) {
+            fallback
+        }
+    }
+
+    fun resolveBool(ctx: Context, key: String, fallback: Boolean = false): Boolean {
+        return try {
+            val raw = prefs(ctx).all[key] ?: return fallback
+            when (raw) {
+                is Boolean -> raw
+                is Number -> raw.toDouble() != 0.0
+                is String -> when (raw.trim().lowercase()) {
+                    "true", "1", "yes" -> true
+                    "false", "0", "no", "" -> false
+                    else -> fallback
+                }
+                else -> fallback
+            }
+        } catch (e: Exception) {
+            fallback
+        }
+    }
+
+    fun resolveList(ctx: Context, key: String): List<Map<String, String>> {
+        return try {
+            val raw = prefs(ctx).getString(key, null) ?: return emptyList()
+            val arr = JSONArray(raw)
+            val out = ArrayList<Map<String, String>>(arr.length())
+            for (i in 0 until arr.length()) {
+                val obj = arr.optJSONObject(i) ?: continue
+                val map = HashMap<String, String>()
+                val keys = obj.keys()
+                while (keys.hasNext()) {
+                    val k = keys.next()
+                    map[k] = obj.opt(k)?.toString() ?: ""
+                }
+                out.add(map)
+            }
+            out
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+}
+''');
   }
 
   Future<void> _generateBridgeHelper(String projectRoot) async {
@@ -302,10 +397,14 @@ object HomeWidgetBridgeHelper {
         .map((entry) {
           final key = entry.key;
           final type = entry.value;
-          if (type == 'progress') {
-            return 'views.setProgressBar(R.id.hw_progress_$key, 100, (prefs.getString("$key", "0")?.toDoubleOrNull() ?: 0.0).toInt(), false)';
-          } else {
-            return 'views.setTextViewText(R.id.hw_text_$key, prefs.getString("$key", null) ?: "")';
+          switch (type) {
+            case 'progress':
+              return 'views.setProgressBar(R.id.hw_progress_$key, 100, MosaicData.resolveDouble(context, "$key").toInt(), false)';
+            case 'image':
+              return 'views.setImageViewUri(R.id.hw_image_$key, android.net.Uri.parse(MosaicData.resolveString(context, "$key", "")))';
+            case 'text':
+            default:
+              return 'views.setTextViewText(R.id.hw_text_$key, MosaicData.resolveString(context, "$key"))';
           }
         })
         .join('\n        ');
@@ -325,7 +424,7 @@ object HomeWidgetBridgeHelper {
     final visibilityLogic = visibilityKeys
         .map(
           (key) =>
-              'views.setViewVisibility(R.id.hw_visibility_$key, if (prefs.getBoolean("$key", true)) android.view.View.VISIBLE else android.view.View.GONE)',
+              'views.setViewVisibility(R.id.hw_visibility_$key, if (MosaicData.resolveBool(context, "$key")) android.view.View.VISIBLE else android.view.View.GONE)',
         )
         .join('\n        ');
 
@@ -862,13 +961,18 @@ class ProgressBarHandler extends AndroidNodeHandler {
     final value = node.data['value'];
     final isBind = value is Map && value['__type'] == 'HWBind';
     String idAttr = '';
+    String progressAttr = '';
     if (isBind) {
       final key = value['key'] as String;
       usedBinds[key] = 'progress';
       idAttr = 'android:id="@+id/hw_progress_$key"';
+    } else if (value != null) {
+      // Static value: emit it directly into the layout (set at runtime for binds).
+      final progress = (value as num).toInt();
+      progressAttr = ' android:progress="$progress"';
     }
     final max = (node.data['max'] ?? 100).toInt();
-    return '<ProgressBar $idAttr style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="$max" />';
+    return '<ProgressBar $idAttr style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="$max"$progressAttr />';
   }
 }
 
