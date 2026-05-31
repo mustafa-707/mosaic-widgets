@@ -26,13 +26,3 @@ Map<String, dynamic> _$IRDefinitionToJson(IRDefinition instance) =>
       'previewImage': instance.previewImage,
       'resizeMode': instance.resizeMode,
     };
-
-IRNode _$IRNodeFromJson(Map<String, dynamic> json) => IRNode(
-  type: json['__type'] as String,
-  data: json['data'] as Map<String, dynamic>,
-);
-
-Map<String, dynamic> _$IRNodeToJson(IRNode instance) => <String, dynamic>{
-  '__type': instance.type,
-  'data': instance.data,
-};

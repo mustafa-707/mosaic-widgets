@@ -27,7 +27,7 @@ class IRDefinition {
   Map<String, dynamic> toJson() => _$IRDefinitionToJson(this);
 }
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(createFactory: false, createToJson: false)
 class IRNode {
   @JsonKey(name: '__type')
   final String type;
