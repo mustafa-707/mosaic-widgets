@@ -1,4 +1,6 @@
-# Antigravity Home Widgets (hw_flutter)
+# Mosaic
+
+**One DSL. Live native tiles. iOS + Android.**
 
 A powerful, DSL-based framework for building native iOS and Android home widgets using Flutter-like syntax.
 
@@ -7,17 +9,17 @@ A powerful, DSL-based framework for building native iOS and Android home widgets
 - **Single DSL for Both Platforms**: Write once in Dart, generate native Swift (iOS) and XML/Kotlin (Android).
 - **Native Performance**: Widgets are rendered using standard platform components (`RemoteViews` on Android, `SwiftUI` on iOS).
 - **Interactive**: Support for buttons, deep linking, and background refreshes.
-- **Dynamic Data**: Simple shared preferences-based data binding system.
-- **Rich UI**: Support for Gradients, Stacks, Columns, Rows, Images, and more.
+- **Live Runtime Data Binding**: Bind text, image file paths, progress values, visibility, and timer targets at runtime with `MBind`. Push values from your app via `MosaicBridge` and `refresh`/`refreshAll`.
+- **Rich UI**: Real linear gradients and borders, Stacks, Columns, Rows, Images (asset + file sources), and more.
 - **Asset Sync**: Automatically syncs images from your Flutter project to native drawable/xcassets folders.
 
 ## 🏗️ Architecture
 
-- `hw_core`: The Intermediate Representation (IR) and basic widget runner.
-- `hw_flutter`: The Flutter DSL and the Bridge used to communicate with native code.
-- `hw_android`: Generator for Android AppWidget code.
-- `hw_ios`: Generator for iOS WidgetKit code.
-- `hw_cli`: CLI tool to orchestrate code generation and automated configuration.
+- `mosaic_core`: The Intermediate Representation (IR), config parsing, and basic widget runner.
+- `mosaic`: The Flutter DSL and `MosaicBridge` used to communicate with native code.
+- `mosaic_android`: Generator for Android AppWidget code.
+- `mosaic_ios`: Generator for iOS WidgetKit code.
+- `mosaic_cli`: CLI tool to orchestrate code generation and automated configuration.
 
 ## 🛠️ Getting Started
 
@@ -26,20 +28,25 @@ Add the following to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  hw_flutter: ^1.0.0 # or path: ...
-  
+  mosaic:
+    path: path/to/mosaic/platform/flutter
+  mosaic_core:
+    path: path/to/mosaic/platform/core
+
 dev_dependencies:
-  hw_cli: ^1.0.0 # or path: ...
+  mosaic_cli:
+    path: path/to/mosaic/platform/cli
 ```
 
 ### 2. Initialize
-Create a `home_widget.yaml` in your project root:
+Create a `mosaic.yaml` in your project root (or run `dart run mosaic_cli init`):
 
 ```yaml
 app:
   bundle_id: com.example.myapp
   android_package: com.example.myapp
   ios_app_group: group.com.example.myapp.widgets
+  deep_link_scheme: mosaic # optional, defaults to "mosaic"
 
 widgets:
   - name: MyNewsWidget
@@ -52,18 +59,23 @@ widgets:
 ```
 
 ### 3. Create a Widget
-In `lib/widgets/news.widget.dart`:
+In `lib/widgets/news.widget.dart`. Widget definition files import the **pure-Dart DSL** (`package:mosaic/dsl.dart`) so the build runner can execute them under `dart run`:
 
 ```dart
-import 'package:hw_flutter/hw_dsl.dart';
+import 'package:mosaic/dsl.dart';
 
-HWDefinition buildNewsWidget() {
-  return HWDefinition(
+MosaicDefinition buildNewsWidget() {
+  return MosaicDefinition(
     name: "NewsWidget",
-    width: 4, height: 1,
-    root: HWContainer(
-      background: HWColor.hex("#FFFFFF"),
-      child: HWText(HWBind("news_title")),
+    width: 4,
+    height: 1,
+    root: MContainer(
+      background: MColor.hex("#FFFFFF"),
+      radius: 16,
+      child: MText(
+        MBind("news_title"),
+        style: const MTextStyle(color: MColor.hex("#0F172A"), bold: true),
+      ),
     ),
   );
 }
@@ -72,7 +84,27 @@ HWDefinition buildNewsWidget() {
 ### 4. Build
 Run the build command to generate native code:
 ```bash
-dart run hw_cli build
+dart run mosaic_cli build
+```
+
+Other CLI commands:
+```bash
+dart run mosaic_cli init            # create mosaic.yaml
+dart run mosaic_cli add widget <Name>  # scaffold a new widget
+dart run mosaic_cli build           # generate native code
+dart run mosaic_cli doctor          # diagnose configuration
+dart run mosaic_cli clean           # remove generated artifacts
+```
+
+### 5. Connect Your App
+App code that uses the bridge imports the **full barrel** (`package:mosaic/mosaic.dart` = DSL + `MosaicBridge`):
+
+```dart
+import 'package:mosaic/mosaic.dart';
+
+await MosaicBridge.setAppGroupId('group.com.example.myapp.widgets');
+await MosaicBridge.saveString('news_title', 'Hello widgets!');
+await MosaicBridge.refreshAll();
 ```
 
 ---
