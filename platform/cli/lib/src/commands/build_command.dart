@@ -5,6 +5,44 @@ import 'package:mosaic_android/mosaic_android.dart';
 import 'package:mosaic_ios/mosaic_ios.dart';
 import 'package:path/path.dart' as p;
 
+/// Builds the `<receiver>` AndroidManifest entry for a widget.
+///
+/// The class name and the `@xml/...` resource reference are derived with
+/// [sanitizeIdentifier] so they match exactly what the Android generator
+/// emits: the provider class `${sanitizeIdentifier(name)}Provider` and the
+/// info file `hw_${sanitizeIdentifier(name).toLowerCase()}_info.xml`. Using
+/// the raw name here would, for a name like "My Widget", produce a dangling
+/// `@xml/hw_my widget_info` reference (with a space) and a non-existent
+/// `My WidgetProvider` class, silently breaking the widget.
+String receiverTag(String androidPackage, String widgetName) {
+  final safe = sanitizeIdentifier(widgetName);
+  final receiverName = '$androidPackage.mosaic_generated.${safe}Provider';
+  final infoRes = 'hw_${safe.toLowerCase()}_info';
+  return '''
+        <receiver android:name="$receiverName" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/$infoRes" />
+        </receiver>''';
+}
+
+/// Builds the deep-link `<intent-filter>` for MainActivity. The [scheme] is
+/// [xmlEscape]d so a value containing XML metacharacters (e.g. `&`) cannot
+/// corrupt the manifest.
+String deepLinkFilter(String scheme) {
+  final safeScheme = xmlEscape(scheme);
+  return '''
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="$safeScheme" />
+            </intent-filter>''';
+}
+
 /// Resolves the Mosaic config file. Prefers `mosaic.yaml`; falls back to the
 /// deprecated `home_widget.yaml` (with a warning) when only that exists.
 /// Returns null when neither is present.
@@ -137,23 +175,15 @@ class BuildCommand extends Command {
     final androidPackage = config.app.androidPackage;
 
     for (final def in definitions) {
-      final receiverName = '$androidPackage.mosaic_generated.${def.name}Provider';
-      final receiverTag =
-          '''
-        <receiver android:name="$receiverName" android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/hw_${def.name.toLowerCase()}_info" />
-        </receiver>''';
+      final safe = sanitizeIdentifier(def.name);
+      final receiverName = '$androidPackage.mosaic_generated.${safe}Provider';
+      final tag = receiverTag(androidPackage, def.name);
 
       if (!content.contains(receiverName)) {
         if (content.contains('</application>')) {
           content = content.replaceFirst(
             '</application>',
-            '$receiverTag\n    </application>',
+            '$tag\n    </application>',
           );
           print('Added receiver for ${def.name} to AndroidManifest.xml');
         }
@@ -162,15 +192,10 @@ class BuildCommand extends Command {
 
     // Add Deep Link intent filter to MainActivity
     final scheme = config.app.deepLinkScheme;
-    final intentFilter = '''
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="$scheme" />
-            </intent-filter>''';
+    final safeScheme = xmlEscape(scheme);
+    final intentFilter = deepLinkFilter(scheme);
 
-    if (!content.contains('android:scheme="$scheme"')) {
+    if (!content.contains('android:scheme="$safeScheme"')) {
       // Find MainActivity
       final activityPattern = RegExp(
         r'<activity[^>]*android:name="\.MainActivity"[^>]*>',
