@@ -200,7 +200,7 @@ struct ${def.name}Widget: Widget {
     if (handler != null) {
       return handler.handle(node, this);
     }
-    return '// Unsupported Node: ${node.type}';
+    throw UnsupportedError('No iOS handler for node type "${node.type}".');
   }
 }
 

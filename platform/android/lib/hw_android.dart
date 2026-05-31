@@ -234,7 +234,7 @@ object HomeWidgetBridgeHelper {
       }
       return xml;
     }
-    return '<!-- Unsupported Node: ${node.type} -->';
+    throw UnsupportedError('No Android handler for node type "${node.type}".');
   }
 
   String _generateInfoXml(IRDefinition def) {
