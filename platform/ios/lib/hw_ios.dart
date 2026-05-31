@@ -16,6 +16,13 @@ class IosGenerator {
   final List<IRDefinition> definitions;
   final Map<String, IosNodeHandler> _handlers = {};
 
+  /// The Swift expression that `HWBind` keys are resolved against. Defaults to
+  /// the timeline entry's data dictionary. While rendering an `HWListView`
+  /// item template this is temporarily swapped to the per-element `item`
+  /// dictionary so binds resolve against the current element instead of the
+  /// global store.
+  String bindSource = 'entry.data';
+
   IosGenerator({required this.config, required this.definitions}) {
     _registerHandlers();
   }
@@ -384,8 +391,9 @@ class TextHandler extends IosNodeHandler {
   String handle(IRNode node, IosGenerator context) {
     final text = node.data['text'];
     final isBind = text is Map && text['__type'] == 'HWBind';
+    final src = context.bindSource;
     final textValue = isBind
-        ? '"\\(entry.data[\"${swiftEscape(text['key'] as String)}\"] as? String ?? String(describing: entry.data[\"${swiftEscape(text['key'] as String)}\"] ?? \"--\"))"'
+        ? '"\\($src[\"${swiftEscape(text['key'] as String)}\"] as? String ?? String(describing: $src[\"${swiftEscape(text['key'] as String)}\"] ?? \"--\"))"'
         : '"${swiftEscape(text as String)}"';
     final style = node.data['style'] ?? {};
     final bold = style['bold'] == true ? '.bold()' : '';
@@ -596,7 +604,8 @@ class VisibilityHandler extends IosNodeHandler {
     final bindMap = node.data['bind'] as Map<String, dynamic>?;
     if (bindMap == null) return '// missing bind';
     final key = swiftEscape(bindMap['key'] as String);
-    final condition = '(entry.data["$key"] as? NSNumber)?.boolValue ?? false';
+    final condition =
+        '(${context.bindSource}["$key"] as? NSNumber)?.boolValue ?? false';
     return '''
 if $condition {
     ${context.nodeToSwiftUI(child)}
@@ -628,7 +637,7 @@ class ImageHandler extends IosNodeHandler {
       final path = source['path'];
       final isBind = path is Map && path['__type'] == 'HWBind';
       final pathValue = isBind
-          ? '(entry.data["${swiftEscape(path['key'] as String)}"] as? String)'
+          ? '(${context.bindSource}["${swiftEscape(path['key'] as String)}"] as? String)'
           : '"${swiftEscape(path.toString())}"';
       // Resolve the file via the shared helper (absolute paths used as-is,
       // relative paths resolved against the App Group container). Nil-safe.
@@ -659,8 +668,9 @@ class ProgressBarHandler extends IosNodeHandler {
     final isBind = value is Map && value['__type'] == 'HWBind';
     // For binds, resolve the value from entry data at runtime. NSNumber covers
     // Int/Double/Bool stored in UserDefaults; fall back to parsing a String.
+    final src = context.bindSource;
     final valStr = isBind
-        ? '((entry.data["${swiftEscape(value['key'] as String)}"] as? NSNumber)?.doubleValue ?? Double("\\(entry.data["${swiftEscape(value['key'] as String)}"] ?? "0")") ?? 0)'
+        ? '(($src["${swiftEscape(value['key'] as String)}"] as? NSNumber)?.doubleValue ?? Double("\\($src["${swiftEscape(value['key'] as String)}"] ?? "0")") ?? 0)'
         : '$value';
     final max = node.data['max'] ?? 100.0;
     final color = node.data['color'];
@@ -681,12 +691,28 @@ class ListViewHandler extends IosNodeHandler {
   String handle(IRNode node, IosGenerator context) {
     final bindMap = node.data['bind'] as Map<String, dynamic>?;
     if (bindMap == null) return '// missing bind';
-    final key = bindMap['key'] as String;
-    // VERY experimental ListView for WidgetKit (usually uses ForEach)
+    final key = swiftEscape(bindMap['key'] as String);
+    final itemJson = node.data['itemTemplate'];
+    if (itemJson == null) return '// missing itemTemplate';
+    final itemTemplate = IRNode.fromJson(itemJson as Map<String, dynamic>);
+
+    // Render the item template with binds resolved against the per-element
+    // `item` dictionary instead of the global `entry.data`. Save and restore
+    // the bind source so nested generation outside the loop is unaffected.
+    final previousSource = context.bindSource;
+    context.bindSource = 'item';
+    final String itemSwift;
+    try {
+      itemSwift = context.nodeToSwiftUI(itemTemplate);
+    } finally {
+      context.bindSource = previousSource;
+    }
+
+    // Decode the bound JSON array from entry data and iterate. A stable id is
+    // derived from the enumeration offset so SwiftUI can diff elements.
     return '''
-ForEach(entry.data["$key"] as? [[String: Any]] ?? [], id: \\.self.description) { item in
-    // Item template generation would need a way to bind to "item"
-    Text("List Item")
+ForEach(Array((entry.data["$key"] as? [[String: Any]] ?? []).enumerated()), id: \\.offset) { _, item in
+    $itemSwift
 }''';
   }
 }
@@ -704,7 +730,7 @@ class TimerHandler extends IosNodeHandler {
       // Read the target epoch (milliseconds) from entry data at runtime.
       final key = swiftEscape(targetEpoch['key'] as String);
       dateExpr =
-          'Date(timeIntervalSince1970: ((entry.data["$key"] as? NSNumber)?.doubleValue ?? 0) / 1000.0)';
+          'Date(timeIntervalSince1970: ((${context.bindSource}["$key"] as? NSNumber)?.doubleValue ?? 0) / 1000.0)';
     } else {
       final DateTime target;
       if (targetEpoch is int) {
