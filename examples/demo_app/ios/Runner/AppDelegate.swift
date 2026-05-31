@@ -4,6 +4,8 @@ import WidgetKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
+  private var mosaicChannel: FlutterMethodChannel?
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -11,7 +13,8 @@ import WidgetKit
     let controller : FlutterViewController = window?.rootViewController as! FlutterViewController
     let channel = FlutterMethodChannel(name: "hw_flutter_bridge",
                                               binaryMessenger: controller.binaryMessenger)
-    
+    mosaicChannel = channel
+
     channel.setMethodCallHandler({
       (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
       
@@ -39,6 +42,17 @@ import WidgetKit
         }
         let groupId = getGroupId(args)
         self.saveToUserDefaults(key: key, value: value, groupId: groupId, result: result)
+
+      } else if call.method == "refresh" {
+        guard let args = call.arguments as? [String: Any],
+              let widgetName = args["widgetName"] as? String else {
+          result(FlutterError(code: "INVALID_ARGUMENTS", message: "widgetName is required", details: nil))
+          return
+        }
+        if #available(iOS 14.0, *) {
+          WidgetCenter.shared.reloadTimelines(ofKind: widgetName)
+        }
+        result(nil)
 
       } else if call.method == "refreshAll" {
         self.refreshAllWidgets()
@@ -76,5 +90,11 @@ import WidgetKit
     if #available(iOS 14.0, *) {
         WidgetCenter.shared.reloadAllTimelines()
     }
+  }
+
+  override func application(_ app: UIApplication, open url: URL,
+      options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
+    mosaicChannel?.invokeMethod("onDeepLink", arguments: ["url": url.absoluteString])
+    return super.application(app, open: url, options: options)
   }
 }

@@ -486,19 +486,35 @@ class ButtonHandler extends IosNodeHandler {
     if (childJson == null) return '// missing child';
     final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final action = node.data['action'];
-    String url;
+    final childSwift = context.nodeToSwiftUI(child);
+
     if (action['__type'] == 'HWLaunchUrlAction') {
-      url = action['url'] as String;
-    } else if (action['__type'] == 'HWActionCallback') {
-      final callbackName = action['callbackName'] as String;
-      url = 'hwcallback://$callbackName';
-    } else {
-      url = 'hwrefresh://';
+      final url = swiftEscape(action['url'] as String);
+      return '''
+if let _u = URL(string: "$url") {
+    Link(destination: _u) {
+        $childSwift
     }
-    return '''
-Link(destination: URL(string: "${swiftEscape(url)}")!) {
-    ${context.nodeToSwiftUI(child)}
 }''';
+    } else if (action['__type'] == 'HWActionCallback') {
+      final callbackName = swiftEscape(action['callbackName'] as String);
+      // Build the mosaic-callback URL safely at runtime using percent-encoding.
+      return '''
+if let _encoded = "$callbackName".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+   let _u = URL(string: "mosaic-callback://\\(_encoded)") {
+    Link(destination: _u) {
+        $childSwift
+    }
+}''';
+    } else {
+      // hwrefresh — static well-formed URL, still no force-unwrap
+      return '''
+if let _u = URL(string: "hwrefresh://") {
+    Link(destination: _u) {
+        $childSwift
+    }
+}''';
+    }
   }
 }
 
