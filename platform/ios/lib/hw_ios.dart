@@ -324,7 +324,7 @@ class TextHandler extends IosNodeHandler {
     final text = node.data['text'];
     final isBind = text is Map && text['__type'] == 'HWBind';
     final textValue = isBind
-        ? '"\\(entry.data[\"${text['key']}\"] ?? "--")"'
+        ? '"\\(entry.data[\"${swiftEscape(text['key'] as String)}\"] as? String ?? String(describing: entry.data[\"${swiftEscape(text['key'] as String)}\"] ?? \"--\"))"'
         : '"${swiftEscape(text as String)}"';
     final style = node.data['style'] ?? {};
     final bold = style['bold'] == true ? '.bold()' : '';
@@ -531,8 +531,8 @@ class VisibilityHandler extends IosNodeHandler {
         : null;
     final bindMap = node.data['bind'] as Map<String, dynamic>?;
     if (bindMap == null) return '// missing bind';
-    final key = bindMap['key'] as String;
-    final condition = 'entry.data["$key"] as? Bool ?? false';
+    final key = swiftEscape(bindMap['key'] as String);
+    final condition = '(entry.data["$key"] as? NSNumber)?.boolValue ?? false';
     return '''
 if $condition {
     ${context.nodeToSwiftUI(child)}
