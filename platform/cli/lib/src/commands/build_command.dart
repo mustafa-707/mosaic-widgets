@@ -147,15 +147,16 @@ class BuildCommand extends Command {
     }
 
     // Add Deep Link intent filter to MainActivity
+    final scheme = config.app.deepLinkScheme;
     final intentFilter = '''
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="hwdemo" />
+                <data android:scheme="$scheme" />
             </intent-filter>''';
 
-    if (!content.contains('android:scheme="hwdemo"')) {
+    if (!content.contains('android:scheme="$scheme"')) {
       // Find MainActivity
       final activityPattern = RegExp(
         r'<activity[^>]*android:name="\.MainActivity"[^>]*>',

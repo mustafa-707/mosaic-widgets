@@ -44,11 +44,14 @@ class HWAppConfig {
   final String androidPackage;
   @JsonKey(name: 'ios_app_group')
   final String iosAppGroup;
+  @JsonKey(name: 'deep_link_scheme', defaultValue: 'mosaic')
+  final String deepLinkScheme;
 
   HWAppConfig({
     required this.bundleId,
     required this.androidPackage,
     required this.iosAppGroup,
+    this.deepLinkScheme = 'mosaic',
   });
 
   factory HWAppConfig.fromJson(Map<String, dynamic> json) =>

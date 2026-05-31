@@ -22,6 +22,7 @@ HWAppConfig _$HWAppConfigFromJson(Map<String, dynamic> json) => HWAppConfig(
   bundleId: json['bundle_id'] as String,
   androidPackage: json['android_package'] as String,
   iosAppGroup: json['ios_app_group'] as String,
+  deepLinkScheme: json['deep_link_scheme'] as String? ?? 'mosaic',
 );
 
 Map<String, dynamic> _$HWAppConfigToJson(HWAppConfig instance) =>
@@ -29,6 +30,7 @@ Map<String, dynamic> _$HWAppConfigToJson(HWAppConfig instance) =>
       'bundle_id': instance.bundleId,
       'android_package': instance.androidPackage,
       'ios_app_group': instance.iosAppGroup,
+      'deep_link_scheme': instance.deepLinkScheme,
     };
 
 HWWidgetConfig _$HWWidgetConfigFromJson(Map<String, dynamic> json) =>
