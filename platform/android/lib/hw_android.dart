@@ -43,6 +43,17 @@ class AndroidGenerator {
     return '@drawable/$name';
   }
 
+  /// Static file-image URIs to wire up at update time, keyed by the view id
+  /// suffix (used to build `R.id.hw_image_<suffix>`). Populated by
+  /// [ImageHandler] for non-bound `HWFileImage` paths.
+  final Map<String, String> _staticImageUris = {};
+
+  /// Registers a static file image URI for [viewSuffix] and returns the
+  /// matching view id suffix so the handler can emit the layout id.
+  void registerStaticImageUri(String viewSuffix, String uri) {
+    _staticImageUris[viewSuffix] = uri;
+  }
+
   /// Returns a sanitized identifier safe for use as a Kotlin class name or
   /// Android resource name component.
   String _safeName(String n) => sanitizeIdentifier(n);
@@ -98,6 +109,7 @@ class AndroidGenerator {
       final visibilityKeys = <String>[];
       final timers = <String, String>{};
       final buttons = <Map<String, dynamic>>[];
+      _staticImageUris.clear();
 
       final layoutXml = _generateLayoutXml(
         def.root,
@@ -455,6 +467,13 @@ object HomeWidgetBridgeHelper {
         )
         .join('\n        ');
 
+    final staticImageLogic = _staticImageUris.entries
+        .map(
+          (e) =>
+              'views.setImageViewUri(R.id.hw_image_${e.key}, android.net.Uri.parse("${kotlinEscape(e.value)}"))',
+        )
+        .join('\n        ');
+
     final buttonLogic = buttons
         .asMap()
         .entries
@@ -543,6 +562,7 @@ class $className : AppWidgetProvider() {
         $bindLogic
         $timerLogic
         $visibilityLogic
+        $staticImageLogic
         $buttonLogic
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
@@ -1053,15 +1073,30 @@ class ImageHandler extends AndroidNodeHandler {
     final source = node.data['source'];
     final type = source['__type'];
     String idAttr = '';
-    if (type == 'HWFileImage') {
+    String srcAttr = '';
+    if (type == 'HWAssetImage') {
+      // Asset: reference a bundled drawable by sanitized basename (no ext).
+      final path = (source['path'] as String?) ?? '';
+      final base = p.basenameWithoutExtension(path);
+      final res = sanitizeIdentifier(base).toLowerCase();
+      if (res.isNotEmpty) {
+        srcAttr = ' android:src="@drawable/$res"';
+      }
+    } else if (type == 'HWFileImage') {
       final path = source['path'];
       if (path is Map && path['__type'] == 'HWBind') {
+        // Dynamic file image: resolved at update time via the provider.
         final key = path['key'] as String;
         usedBinds[key] = 'image';
         idAttr = 'android:id="@+id/hw_image_$key"';
+      } else if (path is String && path.isNotEmpty) {
+        // Static file image: wire a fixed Uri in the provider.
+        final suffix = sanitizeIdentifier(path).toLowerCase();
+        idAttr = 'android:id="@+id/hw_image_$suffix"';
+        context.registerStaticImageUri(suffix, path);
       }
     }
-    return '<ImageView $idAttr android:layout_width="match_parent" android:layout_height="wrap_content" android:scaleType="centerCrop" />';
+    return '<ImageView $idAttr$srcAttr android:layout_width="match_parent" android:layout_height="wrap_content" android:scaleType="centerCrop" />';
   }
 }
 

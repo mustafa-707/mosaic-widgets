@@ -617,7 +617,13 @@ class ImageHandler extends IosNodeHandler {
 
     String imageCode;
     if (type == 'HWAssetImage') {
-      imageCode = 'Image("${swiftEscape(source['path'] as String)}")';
+      // iOS asset catalogs reference assets by name without a file extension.
+      final rawPath = source['path'] as String;
+      final dot = rawPath.lastIndexOf('.');
+      final slash = rawPath.lastIndexOf('/');
+      final assetName =
+          (dot > slash && dot != -1) ? rawPath.substring(0, dot) : rawPath;
+      imageCode = 'Image("${swiftEscape(assetName)}")';
     } else if (type == 'HWFileImage') {
       final path = source['path'];
       final isBind = path is Map && path['__type'] == 'HWBind';
