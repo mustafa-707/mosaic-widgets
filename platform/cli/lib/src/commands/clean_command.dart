@@ -2,6 +2,22 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
 
+/// Deletes every *.swift file directly under [extensionDir] whose first line
+/// contains the sentinel `// MOSAIC-GENERATED`. Hand-written files are kept.
+/// Does nothing if the directory does not exist.
+void cleanIosGenerated(Directory extensionDir) {
+  if (!extensionDir.existsSync()) return;
+  for (final entity in extensionDir.listSync()) {
+    if (entity is File && p.extension(entity.path) == '.swift') {
+      final lines = entity.readAsLinesSync();
+      if (lines.isNotEmpty && lines.first.contains('// MOSAIC-GENERATED')) {
+        entity.deleteSync();
+        print('Deleted ${entity.path}');
+      }
+    }
+  }
+}
+
 class CleanCommand extends Command {
   @override
   final name = 'clean';
@@ -28,15 +44,8 @@ class CleanCommand extends Command {
     }
 
     print('Cleaning generated iOS files...');
-    final iosGeneratedDir = Directory(
-      'ios/HomeWidgetExtension/Widgets',
-    ); // Or refine based on structure
-    if (iosGeneratedDir.existsSync()) {
-      // In our current iOS generator, we place files directly in ios/HomeWidgetExtension
-      // Actually, my generator uses ios/HomeWidgetExtension/ProfileVP.swift
-    }
+    cleanIosGenerated(Directory('ios/HomeWidgetExtension'));
 
-    // For now, let's keep it simple and just log what needs to be cleaned
     print('Clean complete.');
   }
 

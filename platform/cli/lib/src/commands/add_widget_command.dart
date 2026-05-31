@@ -2,6 +2,27 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
 
+String widgetTemplate(String name) => '''
+import 'package:mosaic/mosaic.dart';
+
+HWDefinition build$name() {
+  return HWDefinition(
+    name: "$name",
+    root: HWContainer(
+      background: HWColor.hex("#111111"),
+      radius: 16,
+      child: HWPadding(
+        HWInsets.all(12),
+        HWColumn([
+          HWText("$name Widget", style: HWTextStyle(bold: true, size: 16)),
+          HWText(HWBind("subtitle"), style: HWTextStyle(size: 12, opacity: 0.7)),
+        ]),
+      ),
+    ),
+  );
+}
+''';
+
 class AddWidgetCommand extends Command {
   @override
   final name = 'add';
@@ -34,26 +55,7 @@ class AddWidgetSubCommand extends Command {
       return;
     }
 
-    await file.writeAsString('''
-import 'package:flutter/hw_dsl.dart';
-
-HWDefinition build$widgetName() {
-  return HWDefinition(
-    name: "$widgetName",
-    root: HWContainer(
-      background: HWColor.hex("#111111"),
-      radius: 16,
-      child: HWPadding(
-        HWInsets.all(12),
-        HWColumn([
-          HWText("$widgetName Widget", style: HWTextStyle(bold: true, size: 16)),
-          HWText(HWBind("subtitle"), style: HWTextStyle(size: 12, opacity: 0.7)),
-        ]),
-      ),
-    ),
-  );
-}
-''');
+    await file.writeAsString(widgetTemplate(widgetName));
 
     print('Created $filePath');
     print('Please add the following to your home_widget.yaml:');
