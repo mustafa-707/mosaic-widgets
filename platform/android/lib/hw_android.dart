@@ -28,6 +28,21 @@ class AndroidGenerator {
   final List<IRDefinition> definitions;
   final Map<String, AndroidNodeHandler> _handlers = {};
 
+  /// Drawable XML files to write under res/drawable, keyed by resource name
+  /// (without extension). Populated by handlers during layout generation and
+  /// flushed to disk in [generate]. Keyed map ensures identical drawables are
+  /// de-duplicated and stable across runs.
+  final Map<String, String> _drawables = {};
+
+  /// Registers a drawable XML body (content of the file) under [name] and
+  /// returns the resource reference (e.g. `@drawable/hw_bg_3`). The [name]
+  /// should be unique per distinct content; callers derive it from a content
+  /// hash so identical drawables collapse to one file.
+  String registerDrawable(String name, String xml) {
+    _drawables[name] = xml;
+    return '@drawable/$name';
+  }
+
   /// Returns a sanitized identifier safe for use as a Kotlin class name or
   /// Android resource name component.
   String _safeName(String n) => sanitizeIdentifier(n);
@@ -107,8 +122,20 @@ class AndroidGenerator {
       );
     }
 
+    await _writeDrawables(resDir);
+
     await _generateBridgeHelper(projectRoot);
     await _generateMosaicData(projectRoot);
+  }
+
+  Future<void> _writeDrawables(Directory resDir) async {
+    if (_drawables.isEmpty) return;
+    final drawableDir = Directory(p.join(resDir.path, 'drawable'));
+    if (!drawableDir.existsSync()) drawableDir.createSync(recursive: true);
+    for (final entry in _drawables.entries) {
+      final file = File(p.join(drawableDir.path, '${entry.key}.xml'));
+      await file.writeAsString(entry.value);
+    }
   }
 
   Future<void> _generateMosaicData(String projectRoot) async {
@@ -685,19 +712,40 @@ class ContainerHandler extends AndroidNodeHandler {
     final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final background = node.data['background']?['hex'];
     final gradient = node.data['gradient'];
+    final border = node.data['border'];
+    final radius = (node.data['radius'] ?? 0).toDouble();
     final widthVal = node.data['width'];
     final heightVal = node.data['height'];
 
     String bgAttr = '';
-    if (background != null) {
+    if (gradient != null && gradient['__type'] == 'HWLinearGradient') {
+      // Real gradient: write a <shape><gradient> drawable and reference it.
+      final colors = (gradient['colors'] as List).cast<Map>();
+      if (colors.isNotEmpty) {
+        final xml = _gradientDrawableXml(
+          context,
+          colors,
+          radius,
+          border,
+        );
+        final name = 'hw_gradient_${_stableHash(xml)}';
+        final ref = context.registerDrawable(name, xml);
+        bgAttr = ' android:background="$ref"';
+      }
+    } else if (border != null || (background != null && radius > 0)) {
+      // Border and/or rounded background: combine into a single shape drawable.
+      final xml = _shapeDrawableXml(
+        context,
+        background != null ? node.data['background'] as Map : null,
+        border,
+        radius,
+      );
+      final name = 'hw_bg_${_stableHash(xml)}';
+      final ref = context.registerDrawable(name, xml);
+      bgAttr = ' android:background="$ref"';
+    } else if (background != null) {
       final color = context.parseColor(node.data['background']);
       bgAttr = ' android:background="$color"';
-    } else if (gradient != null && gradient['__type'] == 'HWLinearGradient') {
-      final colors = gradient['colors'] as List;
-      if (colors.isNotEmpty) {
-        final firstColor = context.parseColor(colors[0]);
-        bgAttr = ' android:background="$firstColor"';
-      }
     }
 
     final width = widthVal != null ? '${widthVal}dp' : 'wrap_content';
@@ -723,6 +771,79 @@ class ContainerHandler extends AndroidNodeHandler {
     $marginAttr>
     ${context.nodeToXml(child, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: isInsideLinearLayout, isVertical: isVertical)}
 </FrameLayout>''';
+  }
+
+  /// Deterministic non-negative hash of the drawable content, used to name
+  /// drawable files so identical drawables collapse and distinct ones differ.
+  String _stableHash(String s) {
+    int h = 0;
+    for (final c in s.codeUnits) {
+      h = (h * 31 + c) & 0x7fffffff;
+    }
+    return h.toString();
+  }
+
+  /// Builds a `<shape><gradient>` drawable. Uses startColor/endColor for the
+  /// common 2-color case and adds centerColor for 3-stop gradients. Optionally
+  /// includes corner radius, a stroke (border) and is angle 0.
+  String _gradientDrawableXml(
+    AndroidGenerator context,
+    List<Map> colors,
+    double radius,
+    Object? border,
+  ) {
+    final parsed = colors
+        .map((c) => context.parseColor(c.cast<String, dynamic>()))
+        .toList();
+    String gradientTag;
+    if (parsed.length >= 3) {
+      gradientTag =
+          '    <gradient android:type="linear" android:angle="0"\n        android:startColor="${parsed.first}"\n        android:centerColor="${parsed[parsed.length ~/ 2]}"\n        android:endColor="${parsed.last}" />';
+    } else {
+      final end = parsed.length >= 2 ? parsed[1] : parsed.first;
+      gradientTag =
+          '    <gradient android:type="linear" android:angle="0"\n        android:startColor="${parsed.first}"\n        android:endColor="$end" />';
+    }
+    final corners = radius > 0
+        ? '\n    <corners android:radius="${radius}dp" />'
+        : '';
+    final stroke = _strokeTag(context, border);
+    return '''$xmlSentinel
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+$gradientTag$corners$stroke
+</shape>''';
+  }
+
+  /// Builds a `<shape>` drawable combining a solid fill (background), a stroke
+  /// (border) and corner radius. Any may be omitted.
+  String _shapeDrawableXml(
+    AndroidGenerator context,
+    Map? background,
+    Object? border,
+    double radius,
+  ) {
+    final solid = background != null
+        ? '\n    <solid android:color="${context.parseColor(background.cast<String, dynamic>())}" />'
+        : '';
+    final corners = radius > 0
+        ? '\n    <corners android:radius="${radius}dp" />'
+        : '';
+    final stroke = _strokeTag(context, border);
+    return '''$xmlSentinel
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">$solid$stroke$corners
+</shape>''';
+  }
+
+  String _strokeTag(AndroidGenerator context, Object? border) {
+    if (border == null) return '';
+    final b = border as Map;
+    final width = (b['width'] ?? 1.0).toDouble();
+    final color = context.parseColor((b['color'] as Map).cast<String, dynamic>());
+    return '\n    <stroke android:width="${width}dp" android:color="$color" />';
   }
 }
 
