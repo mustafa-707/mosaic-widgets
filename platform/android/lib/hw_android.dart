@@ -248,11 +248,14 @@ object HomeWidgetBridgeHelper {
         ? ' android:previewImage="@drawable/${def.previewImage}"'
         : '';
 
+    final period = def.updateInterval == null
+        ? 0
+        : (def.updateInterval! < 1800000 ? 1800000 : def.updateInterval!);
     return '''<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="${minWidth}dp"
     android:minHeight="${minHeight}dp"
-    android:updatePeriodMillis="86400000"
+    android:updatePeriodMillis="$period"
     android:initialLayout="@layout/hw_${_safeName(def.name).toLowerCase()}"
     $resizeMode
     $preview>
@@ -329,7 +332,7 @@ object HomeWidgetBridgeHelper {
             final url = kotlinEscape(action['url'] as String);
             return '''
         val intent$index = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("$url"))
-        val pendingIntent$index = android.app.PendingIntent.getActivity(context, $index, intent$index, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent$index = android.app.PendingIntent.getActivity(context, appWidgetId * 100 + $index, intent$index, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
         views.setOnClickPendingIntent(R.id.$viewId, pendingIntent$index)
         ''';
           } else if (action['__type'] == 'HWActionCallback') {
@@ -340,7 +343,7 @@ object HomeWidgetBridgeHelper {
             putExtra("callbackName", "$callbackName")
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
         }
-        val pendingIntent$index = android.app.PendingIntent.getBroadcast(context, $index, intent$index, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent$index = android.app.PendingIntent.getBroadcast(context, appWidgetId * 100 + $index, intent$index, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
         views.setOnClickPendingIntent(R.id.$viewId, pendingIntent$index)
         ''';
           } else {
@@ -350,7 +353,7 @@ object HomeWidgetBridgeHelper {
             putExtra("callbackName", "refresh_all")
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
         }
-        val pendingIntent$index = android.app.PendingIntent.getBroadcast(context, $index, intent$index, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+        val pendingIntent$index = android.app.PendingIntent.getBroadcast(context, appWidgetId * 100 + $index, intent$index, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
         views.setOnClickPendingIntent(R.id.$viewId, pendingIntent$index)
         ''';
           }
