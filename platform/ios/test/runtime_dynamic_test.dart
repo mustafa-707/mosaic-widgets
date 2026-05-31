@@ -69,6 +69,8 @@ void main() {
     ]);
     final s = r.swiftForTestW();
     expect(s, contains('entry.data["pic"]'));
-    expect(s, contains('contentsOfFile'));
+    // The widget delegates the nil-safe file load to the shared resolver,
+    // which uses UIImage(contentsOfFile:) under the hood.
+    expect(s, contains('resolveFileImage'));
   });
 }

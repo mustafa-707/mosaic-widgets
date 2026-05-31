@@ -81,6 +81,25 @@ $widgets
     final coreFile = File(p.join(iosDir.path, 'HomeWidgetCore.swift'));
     await coreFile.writeAsString('''$kGeneratedSentinel
 import SwiftUI
+import UIKit
+
+let kMosaicAppGroup = "${config.app.iosAppGroup}"
+
+/// Resolves a file-image path to a UIImage. Absolute paths are loaded directly;
+/// relative paths are resolved against the App Group container. Returns nil when
+/// the path is nil/empty or no image could be loaded.
+func resolveFileImage(_ path: String?) -> UIImage? {
+    guard let path = path, !path.isEmpty else { return nil }
+    if path.hasPrefix("/") {
+        return UIImage(contentsOfFile: path)
+    }
+    if let container = FileManager.default
+        .containerURL(forSecurityApplicationGroupIdentifier: kMosaicAppGroup) {
+        let full = container.appendingPathComponent(path).path
+        if let img = UIImage(contentsOfFile: full) { return img }
+    }
+    return UIImage(contentsOfFile: path)
+}
 
 extension Color {
     init(hex: String) {
@@ -112,6 +131,9 @@ extension Color {
   }
 
   String _generateSwiftUiWidget(IRDefinition def) {
+    final usedKeys = collectBindKeys(def.root).toList()..sort();
+    final keyList =
+        usedKeys.map((k) => '"${swiftEscape(k)}"').join(', ');
     return '''$kGeneratedSentinel
 import SwiftUI
 import WidgetKit
@@ -144,11 +166,20 @@ struct ${def.name}Provider: TimelineProvider {
         completion(timeline)
     }
 
+    // The App Group container path, used to resolve relative image file paths.
+    private static let appGroup = "${config.app.iosAppGroup}"
+
     private func loadData() -> [String: Any] {
-        if let defaults = UserDefaults(suiteName: "${config.app.iosAppGroup}") {
-            return defaults.dictionaryRepresentation()
+        var data: [String: Any] = [:]
+        guard let defaults = UserDefaults(suiteName: ${def.name}Provider.appGroup) else {
+            return ["btc_price": "GRP ERR", "battery_level": "ERR", "news_title": "App Group Config Error"]
         }
-        return ["btc_price": "GRP ERR", "battery_level": "ERR", "news_title": "App Group Config Error"]
+        for k in [$keyList] {
+            if let v = defaults.object(forKey: k) {
+                data[k] = v
+            }
+        }
+        return data
     }
 }
 
@@ -586,11 +617,13 @@ class ImageHandler extends IosNodeHandler {
       imageCode = 'Image("${swiftEscape(source['path'] as String)}")';
     } else if (type == 'HWFileImage') {
       final path = source['path'];
-      final pathValue = path is Map && path['__type'] == 'HWBind'
-          ? 'entry.data["${path['key']}"] as? String ?? ""'
-          : '"$path"';
-      imageCode =
-          'Image(uiImage: UIImage(contentsOfFile: $pathValue) ?? UIImage())';
+      final isBind = path is Map && path['__type'] == 'HWBind';
+      final pathValue = isBind
+          ? '(entry.data["${swiftEscape(path['key'] as String)}"] as? String)'
+          : '"${swiftEscape(path.toString())}"';
+      // Resolve the file via the shared helper (absolute paths used as-is,
+      // relative paths resolved against the App Group container). Nil-safe.
+      imageCode = 'Image(uiImage: resolveFileImage($pathValue) ?? UIImage())';
     } else {
       return '// Unsupported Image Source';
     }
@@ -615,9 +648,10 @@ class ProgressBarHandler extends IosNodeHandler {
   String handle(IRNode node, IosGenerator context) {
     final value = node.data['value'];
     final isBind = value is Map && value['__type'] == 'HWBind';
-    // Handle String, Double, Int by converting to String first then Double
+    // For binds, resolve the value from entry data at runtime. NSNumber covers
+    // Int/Double/Bool stored in UserDefaults; fall back to parsing a String.
     final valStr = isBind
-        ? 'Double("\\(entry.data[\"${value['key']}\"] ?? 0)") ?? 0.0'
+        ? '((entry.data["${swiftEscape(value['key'] as String)}"] as? NSNumber)?.doubleValue ?? Double("\\(entry.data["${swiftEscape(value['key'] as String)}"] ?? "0")") ?? 0)'
         : '$value';
     final max = node.data['max'] ?? 100.0;
     final color = node.data['color'];
@@ -654,14 +688,24 @@ class TimerHandler extends IosNodeHandler {
   @override
   String handle(IRNode node, IosGenerator context) {
     final targetEpoch = node.data['target'];
-    final DateTime target;
-    if (targetEpoch is int) {
-      target = DateTime.fromMillisecondsSinceEpoch(targetEpoch);
-    } else {
-      target = DateTime.parse(targetEpoch.toString());
-    }
+    final isBind = targetEpoch is Map && targetEpoch['__type'] == 'HWBind';
 
-    final seconds = target.millisecondsSinceEpoch / 1000.0;
+    final String dateExpr;
+    if (isBind) {
+      // Read the target epoch (milliseconds) from entry data at runtime.
+      final key = swiftEscape(targetEpoch['key'] as String);
+      dateExpr =
+          'Date(timeIntervalSince1970: ((entry.data["$key"] as? NSNumber)?.doubleValue ?? 0) / 1000.0)';
+    } else {
+      final DateTime target;
+      if (targetEpoch is int) {
+        target = DateTime.fromMillisecondsSinceEpoch(targetEpoch);
+      } else {
+        target = DateTime.parse(targetEpoch.toString());
+      }
+      final seconds = target.millisecondsSinceEpoch / 1000.0;
+      dateExpr = 'Date(timeIntervalSince1970: $seconds)';
+    }
 
     final style = node.data['style'] ?? {};
     final bold = style['bold'] == true ? '.bold()' : '';
@@ -672,7 +716,7 @@ class TimerHandler extends IosNodeHandler {
         ? '.font(.system(size: ${style['size']}))'
         : '';
 
-    return 'Text(Date(timeIntervalSince1970: $seconds), style: .timer)$bold$color$size.monospacedDigit()';
+    return 'Text($dateExpr, style: .timer)$bold$color$size.monospacedDigit()';
   }
 }
 
