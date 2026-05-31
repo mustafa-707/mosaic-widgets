@@ -8,7 +8,8 @@ class GenResult {
 
   GenResult(this.root);
 
-  String file(String rel) => p.join(root.path, rel);
+  /// Returns the **contents** of the file at [rel] (relative to the temp root).
+  String file(String rel) => File(p.join(root.path, rel)).readAsStringSync();
 
   bool exists(String rel) => File(p.join(root.path, rel)).existsSync();
 }

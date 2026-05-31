@@ -21,6 +21,10 @@ class AndroidGenerator {
   final List<IRDefinition> definitions;
   final Map<String, AndroidNodeHandler> _handlers = {};
 
+  /// Returns a sanitized identifier safe for use as a Kotlin class name or
+  /// Android resource name component.
+  String _safeName(String n) => sanitizeIdentifier(n);
+
   AndroidGenerator({required this.config, required this.definitions}) {
     _registerHandlers();
   }
@@ -58,7 +62,8 @@ class AndroidGenerator {
     if (!xmlDir.existsSync()) xmlDir.createSync(recursive: true);
 
     for (final def in definitions) {
-      final layoutName = 'hw_${def.name.toLowerCase()}';
+      final safe = _safeName(def.name);
+      final layoutName = 'hw_${safe.toLowerCase()}';
       final layoutFile = File(p.join(layoutDir.path, '$layoutName.xml'));
 
       final usedBinds = <String, String>{};
@@ -81,6 +86,7 @@ class AndroidGenerator {
       await _generateKotlinProvider(
         projectRoot,
         def,
+        safe,
         usedBinds,
         visibilityKeys,
         timers,
@@ -110,7 +116,7 @@ class AndroidGenerator {
     final file = File(p.join(kotlinDir.path, 'HomeWidgetBridgeHelper.kt'));
 
     final providerClasses = definitions
-        .map((d) => '${d.name}Provider')
+        .map((d) => '${_safeName(d.name)}Provider')
         .toList();
     final refreshAllLogic = providerClasses
         .map(
@@ -127,16 +133,18 @@ class AndroidGenerator {
 
     final refreshSpecificLogic = definitions
         .map(
-          (d) =>
-              '''
-            "${d.name}" -> {
-                context.sendBroadcast(android.content.Intent(context, ${d.name}Provider::class.java).apply {
+          (d) {
+            final safeCls = '${_safeName(d.name)}Provider';
+            return '''
+            "${kotlinEscape(d.name)}" -> {
+                context.sendBroadcast(android.content.Intent(context, $safeCls::class.java).apply {
                     action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
                     val ids = android.appwidget.AppWidgetManager.getInstance(context)
-                        .getAppWidgetIds(android.content.ComponentName(context, ${d.name}Provider::class.java))
+                        .getAppWidgetIds(android.content.ComponentName(context, $safeCls::class.java))
                     putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
                 })
-            }''',
+            }''';
+          },
         )
         .join('\n');
 
@@ -240,7 +248,7 @@ object HomeWidgetBridgeHelper {
     android:minWidth="${minWidth}dp"
     android:minHeight="${minHeight}dp"
     android:updatePeriodMillis="86400000"
-    android:initialLayout="@layout/hw_${def.name.toLowerCase()}"
+    android:initialLayout="@layout/hw_${_safeName(def.name).toLowerCase()}"
     $resizeMode
     $preview>
 </appwidget-provider>''';
@@ -249,6 +257,7 @@ object HomeWidgetBridgeHelper {
   Future<void> _generateKotlinProvider(
     String projectRoot,
     IRDefinition def,
+    String safe,
     Map<String, String> usedBinds,
     List<String> visibilityKeys,
     Map<String, String> timers,
@@ -269,7 +278,7 @@ object HomeWidgetBridgeHelper {
     );
     if (!kotlinDir.existsSync()) kotlinDir.createSync(recursive: true);
 
-    final className = '${def.name}Provider';
+    final className = '${safe}Provider';
     final file = File(p.join(kotlinDir.path, '$className.kt'));
 
     final bindLogic = usedBinds.entries
@@ -312,14 +321,14 @@ object HomeWidgetBridgeHelper {
           final viewId = index == 0 ? "hw_button_main" : "hw_button_$index";
 
           if (action['__type'] == 'HWLaunchUrlAction') {
-            final url = action['url'];
+            final url = kotlinEscape(action['url'] as String);
             return '''
         val intent$index = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("$url"))
         val pendingIntent$index = android.app.PendingIntent.getActivity(context, $index, intent$index, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
         views.setOnClickPendingIntent(R.id.$viewId, pendingIntent$index)
         ''';
           } else if (action['__type'] == 'HWActionCallback') {
-            final callbackName = action['callbackName'];
+            final callbackName = kotlinEscape(action['callbackName'] as String);
             return '''
         val intent$index = android.content.Intent(context, $className::class.java).apply {
             action = "com.example.hw_flutter.ACTION_CALLBACK"
@@ -384,7 +393,7 @@ class $className : AppWidgetProvider() {
 
     private fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
         val prefs = context.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
-        val views = RemoteViews(context.packageName, R.layout.hw_${def.name.toLowerCase()})
+        val views = RemoteViews(context.packageName, R.layout.hw_${safe.toLowerCase()})
         
         $bindLogic
         $timerLogic
@@ -535,7 +544,7 @@ class TextHandler extends AndroidNodeHandler {
     final size = node.data['style']?['size'] ?? 14;
     final style = node.data['style']?['bold'] == true ? 'bold' : 'normal';
 
-    return '<TextView $idAttr android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="$textValue" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style" />';
+    return '<TextView $idAttr android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="${xmlEscape(textValue)}" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style" />';
   }
 }
 
