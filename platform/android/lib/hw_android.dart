@@ -336,7 +336,7 @@ object HomeWidgetBridgeHelper {
             final callbackName = kotlinEscape(action['callbackName'] as String);
             return '''
         val intent$index = android.content.Intent(context, $className::class.java).apply {
-            action = "com.example.hw_flutter.ACTION_CALLBACK"
+            action = mosaicCallbackAction
             putExtra("callbackName", "$callbackName")
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
         }
@@ -346,7 +346,7 @@ object HomeWidgetBridgeHelper {
           } else {
             return '''
         val intent$index = android.content.Intent(context, $className::class.java).apply {
-            action = "com.example.hw_flutter.ACTION_CALLBACK"
+            action = mosaicCallbackAction
             putExtra("callbackName", "refresh_all")
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, intArrayOf(appWidgetId))
         }
@@ -367,6 +367,8 @@ import android.widget.RemoteViews
 import ${config.app.androidPackage}.R
 
 class $className : AppWidgetProvider() {
+    private val mosaicCallbackAction = "${config.app.androidPackage}.MOSAIC_CALLBACK"
+
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
@@ -375,7 +377,7 @@ class $className : AppWidgetProvider() {
 
     override fun onReceive(context: Context, intent: android.content.Intent) {
         super.onReceive(context, intent)
-        if (intent.action == "com.example.hw_flutter.ACTION_CALLBACK") {
+        if (intent.action == mosaicCallbackAction) {
             val callbackName = intent.getStringExtra("callbackName")
             if (callbackName == "refresh_all") {
                 HomeWidgetBridgeHelper.refreshAll(context)
