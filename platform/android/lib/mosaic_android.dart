@@ -58,6 +58,13 @@ class AndroidGenerator {
   /// Android resource name component.
   String _safeName(String n) => sanitizeIdentifier(n);
 
+  /// Sanitizes a bind [key] so it is safe to embed in an Android resource id
+  /// (`hw_<kind>_<id>`). Used for BOTH the layout `@+id/...` and the matching
+  /// `R.id....` reference in the Kotlin provider so they stay consistent. The
+  /// SharedPreferences lookup key passed to `MosaicData.resolve*` must remain
+  /// the ORIGINAL key — only the resource id is sanitized.
+  static String idForKey(String key) => sanitizeIdentifier(key);
+
   AndroidGenerator({required this.config, required this.definitions}) {
     _registerHandlers();
   }
@@ -435,15 +442,17 @@ object HomeWidgetBridgeHelper {
     final bindLogic = usedBinds.entries
         .map((entry) {
           final key = entry.key;
+          final id = idForKey(key);
+          final lit = kotlinEscape(key);
           final type = entry.value;
           switch (type) {
             case 'progress':
-              return 'views.setProgressBar(R.id.hw_progress_$key, 100, MosaicData.resolveDouble(context, "$key").toInt(), false)';
+              return 'views.setProgressBar(R.id.hw_progress_$id, 100, MosaicData.resolveDouble(context, "$lit").toInt(), false)';
             case 'image':
-              return 'views.setImageViewUri(R.id.hw_image_$key, android.net.Uri.parse(MosaicData.resolveString(context, "$key", "")))';
+              return 'views.setImageViewUri(R.id.hw_image_$id, android.net.Uri.parse(MosaicData.resolveString(context, "$lit", "")))';
             case 'text':
             default:
-              return 'views.setTextViewText(R.id.hw_text_$key, MosaicData.resolveString(context, "$key"))';
+              return 'views.setTextViewText(R.id.hw_text_$id, MosaicData.resolveString(context, "$lit"))';
           }
         })
         .join('\n        ');
@@ -463,7 +472,7 @@ object HomeWidgetBridgeHelper {
     final visibilityLogic = visibilityKeys
         .map(
           (key) =>
-              'views.setViewVisibility(R.id.hw_visibility_$key, if (MosaicData.resolveBool(context, "$key")) android.view.View.VISIBLE else android.view.View.GONE)',
+              'views.setViewVisibility(R.id.hw_visibility_${idForKey(key)}, if (MosaicData.resolveBool(context, "${kotlinEscape(key)}")) android.view.View.VISIBLE else android.view.View.GONE)',
         )
         .join('\n        ');
 
@@ -699,7 +708,7 @@ class TextHandler extends AndroidNodeHandler {
     if (isBind) {
       final key = text['key'] as String;
       usedBinds[key] = 'text';
-      idAttr = 'android:id="@+id/hw_text_$key"';
+      idAttr = 'android:id="@+id/hw_text_${AndroidGenerator.idForKey(key)}"';
     } else {
       textValue = text.toString();
     }
@@ -1032,6 +1041,7 @@ class VisibilityHandler extends AndroidNodeHandler {
     if (bindMap == null) return '<!-- missing bind -->';
     final key = bindMap['key'] as String;
     visibilityKeys.add(key);
+    final visId = AndroidGenerator.idForKey(key);
     final isSpacer = child.type == 'HWSpacer';
     final weightAttr = (isInsideLinearLayout && isSpacer)
         ? ' android:layout_weight="1"'
@@ -1049,7 +1059,7 @@ class VisibilityHandler extends AndroidNodeHandler {
 
     return '''
 <FrameLayout
-    android:id="@+id/hw_visibility_$key"
+    android:id="@+id/hw_visibility_$visId"
     android:layout_width="$width" android:layout_height="$height"$weightAttr>
     ${context.nodeToXml(child, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: isInsideLinearLayout, isVertical: isVertical)}
 </FrameLayout>''';
@@ -1088,7 +1098,7 @@ class ImageHandler extends AndroidNodeHandler {
         // Dynamic file image: resolved at update time via the provider.
         final key = path['key'] as String;
         usedBinds[key] = 'image';
-        idAttr = 'android:id="@+id/hw_image_$key"';
+        idAttr = 'android:id="@+id/hw_image_${AndroidGenerator.idForKey(key)}"';
       } else if (path is String && path.isNotEmpty) {
         // Static file image: wire a fixed Uri in the provider.
         final suffix = sanitizeIdentifier(path).toLowerCase();
@@ -1121,7 +1131,7 @@ class ProgressBarHandler extends AndroidNodeHandler {
     if (isBind) {
       final key = value['key'] as String;
       usedBinds[key] = 'progress';
-      idAttr = 'android:id="@+id/hw_progress_$key"';
+      idAttr = 'android:id="@+id/hw_progress_${AndroidGenerator.idForKey(key)}"';
     } else if (value != null) {
       // Static value: emit it directly into the layout (set at runtime for binds).
       final progress = (value as num).toInt();
