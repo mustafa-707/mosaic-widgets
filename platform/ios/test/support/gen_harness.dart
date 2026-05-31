@@ -22,6 +22,10 @@ class GenResult {
           .readAsStringSync();
 }
 
+/// Reads the first line of the file at the given absolute [path].
+String readFirstLine(String path) =>
+    File(path).readAsStringSync().split('\n').first;
+
 Future<GenResult> runIos(
   List<IRDefinition> defs, {
   HWConfig? config,

@@ -2,6 +2,10 @@ import 'dart:io';
 import 'package:hw_core/hw_core.dart';
 import 'package:path/path.dart' as p;
 
+/// Sentinel marker that must be the FIRST line of every generated .swift file.
+/// The CLI `clean` command checks the first line for this marker.
+const String kGeneratedSentinel = '// MOSAIC-GENERATED — do not edit';
+
 abstract class IosNodeHandler {
   String get type;
   String handle(IRNode node, IosGenerator context);
@@ -57,7 +61,7 @@ class IosGenerator {
     final widgets = definitions
         .map((def) => '        ${def.name}Widget()')
         .join('\n');
-    return '''
+    return '''$kGeneratedSentinel
 import SwiftUI
 import WidgetKit
 
@@ -75,7 +79,7 @@ $widgets
     if (!iosDir.existsSync()) iosDir.createSync(recursive: true);
 
     final coreFile = File(p.join(iosDir.path, 'HomeWidgetCore.swift'));
-    await coreFile.writeAsString('''
+    await coreFile.writeAsString('''$kGeneratedSentinel
 import SwiftUI
 
 extension Color {
@@ -108,7 +112,7 @@ extension Color {
   }
 
   String _generateSwiftUiWidget(IRDefinition def) {
-    return '''
+    return '''$kGeneratedSentinel
 import SwiftUI
 import WidgetKit
 
