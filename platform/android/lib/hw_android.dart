@@ -52,6 +52,12 @@ class AndroidGenerator {
   }
 
   Future<void> generate(String projectRoot) async {
+    final lower =
+        definitions.map((d) => _safeName(d.name).toLowerCase()).toList();
+    if (lower.toSet().length != lower.length) {
+      throw StateError('Widget name collision after sanitization: $lower');
+    }
+
     final resDir = Directory(
       p.join(projectRoot, 'android', 'app', 'src', 'main', 'res'),
     );
@@ -184,14 +190,13 @@ object HomeWidgetBridgeHelper {
   }
 
   String parseColor(Map<String, dynamic> colorData) {
-    String hex = colorData['hex'] as String;
+    String hex = (colorData['hex'] as String?) ?? '#FFFFFF';
+    if (!hex.startsWith('#')) hex = '#$hex';
     double opacity = (colorData['opacity'] ?? 1.0).toDouble();
     if (opacity < 1.0) {
-      int alpha = (opacity * 255).toInt();
+      int alpha = (opacity * 255).toInt().clamp(0, 255);
       String alphaHex = alpha.toRadixString(16).padLeft(2, '0').toUpperCase();
-      if (hex.startsWith('#')) {
-        return '#$alphaHex${hex.substring(1)}';
-      }
+      return '#$alphaHex${hex.substring(1)}';
     }
     return hex;
   }
