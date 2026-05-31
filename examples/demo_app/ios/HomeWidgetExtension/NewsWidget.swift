@@ -1,3 +1,4 @@
+// MOSAIC-GENERATED — do not edit
 import SwiftUI
 import WidgetKit
 
@@ -26,11 +27,20 @@ struct NewsWidgetProvider: TimelineProvider {
         completion(timeline)
     }
 
+    // The App Group container path, used to resolve relative image file paths.
+    private static let appGroup = "group.com.example.demo_app.widgets"
+
     private func loadData() -> [String: Any] {
-        if let defaults = UserDefaults(suiteName: "group.com.example.demo_app.widgets") {
-            return defaults.dictionaryRepresentation()
+        var data: [String: Any] = [:]
+        guard let defaults = UserDefaults(suiteName: NewsWidgetProvider.appGroup) else {
+            return ["btc_price": "GRP ERR", "battery_level": "ERR", "news_title": "App Group Config Error"]
         }
-        return ["btc_price": "GRP ERR", "battery_level": "ERR", "news_title": "App Group Config Error"]
+        for k in ["global_url", "news_title"] {
+            if let v = defaults.object(forKey: k) {
+                data[k] = v
+            }
+        }
+        return data
     }
 }
 
@@ -50,29 +60,32 @@ VStack(alignment: .leading, spacing: 0) {
     Text("TRENDING NOW").bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
 Spacer()
 HStack(alignment: .center, spacing: 0) {
-    Text(Date(timeIntervalSince1970: 1770123605.122), style: .timer).bold().foregroundColor(Color(red: 0.13333333333333333, green: 0.7725490196078432, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).monospacedDigit()
+    Text(Date(timeIntervalSince1970: 1780240387.341), style: .timer).bold().foregroundColor(Color(red: 0.13333333333333333, green: 0.7725490196078432, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).monospacedDigit()
 Text("LIVE").bold().foregroundColor(Color(red: 0.5803921568627451, green: 0.6392156862745098, blue: 0.7215686274509804, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 0.0, leading: 4.0, bottom: 0.0, trailing: 0.0))
 }
 }
 Spacer()
-Text("\(entry.data["news_title"] ?? "--")").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 14.0)).dynamicTypeSize(.large)
+Text("\(entry.data["news_title"] as? String ?? String(describing: entry.data["news_title"] ?? "--"))").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 14.0)).dynamicTypeSize(.large)
 Spacer()
 HStack(alignment: .center, spacing: 0) {
     VStack(alignment: .leading, spacing: 0) {
     Text("World News • Just now").foregroundColor(Color(red: 0.39215686274509803, green: 0.4549019607843137, blue: 0.5450980392156862, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
 }
 Spacer()
-Link(destination: URL(string: "hwcallback://refresh_news")!) {
-    Text("READ").bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 4.0, leading: 10.0, bottom: 4.0, trailing: 10.0))
+if let _encoded = "refresh_news".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+   let _u = URL(string: "mosaic-callback://\(_encoded)") {
+    Link(destination: _u) {
+        Text("READ").bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 4.0, leading: 10.0, bottom: 4.0, trailing: 10.0))
     .background(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 0.1))
     .clipShape(RoundedRectangle(cornerRadius: 8.0))
+    }
 }
 }
 }.padding(EdgeInsets(top: 16.0, leading: 16.0, bottom: 16.0, trailing: 16.0))
 }
-    .background(LinearGradient(gradient: Gradient(colors: [Color(hex: "#0F172A"), Color(hex: "#1E293B")]), startPoint: .top, endPoint: .bottom))
+    .background(LinearGradient(gradient: Gradient(colors: [Color(red: 0.058823529411764705, green: 0.09019607843137255, blue: 0.16470588235294117, opacity: 1.0), Color(red: 0.11764705882352941, green: 0.1607843137254902, blue: 0.23137254901960785, opacity: 1.0)]), startPoint: .topLeading, endPoint: .bottomTrailing))
     .clipShape(RoundedRectangle(cornerRadius: 24.0))
-    .overlay(RoundedRectangle(cornerRadius: 24.0).stroke(Color(hex: "#334155"), lineWidth: 1.0))
+    .overlay(RoundedRectangle(cornerRadius: 24.0).stroke(Color(red: 0.2, green: 0.2549019607843137, blue: 0.3333333333333333, opacity: 1.0), lineWidth: 1.0))
             .frame(width: geometry.size.width, height: geometry.size.height)
         }
         .widgetURL(URL(string: loadGlobalUrl()))

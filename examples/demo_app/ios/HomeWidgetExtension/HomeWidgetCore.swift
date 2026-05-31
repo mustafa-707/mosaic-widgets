@@ -1,4 +1,24 @@
+// MOSAIC-GENERATED — do not edit
 import SwiftUI
+import UIKit
+
+let kMosaicAppGroup = "group.com.example.demo_app.widgets"
+
+/// Resolves a file-image path to a UIImage. Absolute paths are loaded directly;
+/// relative paths are resolved against the App Group container. Returns nil when
+/// the path is nil/empty or no image could be loaded.
+func resolveFileImage(_ path: String?) -> UIImage? {
+    guard let path = path, !path.isEmpty else { return nil }
+    if path.hasPrefix("/") {
+        return UIImage(contentsOfFile: path)
+    }
+    if let container = FileManager.default
+        .containerURL(forSecurityApplicationGroupIdentifier: kMosaicAppGroup) {
+        let full = container.appendingPathComponent(path).path
+        if let img = UIImage(contentsOfFile: full) { return img }
+    }
+    return UIImage(contentsOfFile: path)
+}
 
 extension Color {
     init(hex: String) {

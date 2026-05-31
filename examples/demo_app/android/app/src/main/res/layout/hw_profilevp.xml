@@ -1,10 +1,11 @@
+<!-- MOSAIC-GENERATED -->
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <FrameLayout
     android:layout_width="wrap_content" android:layout_height="wrap_content"
-     android:background="#0F172A"
+     android:background="@drawable/hw_gradient_230926009"
     >
     <FrameLayout
     android:layout_width="match_parent"
@@ -15,7 +16,7 @@
      android:layout_marginTop="-20.0dp" android:layout_marginRight="-20.0dp">
     <FrameLayout
     android:layout_width="80.0dp" android:layout_height="80.0dp"
-     android:background="#1938BDF8"
+     android:background="@drawable/hw_bg_1727868943"
     >
     <FrameLayout android:layout_width="0dp" android:layout_height="0dp" />
 </FrameLayout>
@@ -44,7 +45,7 @@
 </LinearLayout>
 <FrameLayout
     android:layout_width="24.0dp" android:layout_height="24.0dp"
-     android:background="#38BDF8"
+     android:background="@drawable/hw_bg_1570290226"
     >
     <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent">
@@ -121,7 +122,7 @@
     android:clickable="true" android:focusable="true">
     <FrameLayout
     android:layout_width="wrap_content" android:layout_height="wrap_content"
-     android:background="#1E293B"
+     android:background="@drawable/hw_bg_834629625"
     >
     <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
@@ -137,7 +138,7 @@
     android:clickable="true" android:focusable="true">
     <FrameLayout
     android:layout_width="wrap_content" android:layout_height="wrap_content"
-     android:background="#38BDF8"
+     android:background="@drawable/hw_bg_500321235"
     >
     <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"

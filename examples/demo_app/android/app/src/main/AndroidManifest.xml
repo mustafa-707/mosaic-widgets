@@ -16,7 +16,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="hwdemo" />
+                <data android:scheme="mosaic" />
             </intent-filter>
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
@@ -53,6 +53,30 @@
                 android:resource="@xml/hw_newswidget_info" />
         </receiver>
             <receiver android:name="com.example.demo_app.hw_generated.CryptoWidgetProvider" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hw_cryptowidget_info" />
+        </receiver>
+            <receiver android:name="com.example.demo_app.mosaic_generated.ProfileVPProvider" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hw_profilevp_info" />
+        </receiver>
+            <receiver android:name="com.example.demo_app.mosaic_generated.NewsWidgetProvider" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hw_newswidget_info" />
+        </receiver>
+            <receiver android:name="com.example.demo_app.mosaic_generated.CryptoWidgetProvider" android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

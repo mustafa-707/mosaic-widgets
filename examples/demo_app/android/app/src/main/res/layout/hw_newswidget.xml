@@ -1,10 +1,11 @@
+<!-- MOSAIC-GENERATED -->
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
     <FrameLayout
     android:layout_width="wrap_content" android:layout_height="wrap_content"
-     android:background="#0F172A"
+     android:background="@drawable/hw_gradient_1032481114"
     >
     <FrameLayout
     android:layout_width="match_parent"
@@ -72,7 +73,7 @@
     android:clickable="true" android:focusable="true">
     <FrameLayout
     android:layout_width="wrap_content" android:layout_height="wrap_content"
-     android:background="#19F43F5E"
+     android:background="@drawable/hw_bg_651246003"
     >
     <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"

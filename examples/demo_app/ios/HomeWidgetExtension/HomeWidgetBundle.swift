@@ -1,3 +1,4 @@
+// MOSAIC-GENERATED — do not edit
 import SwiftUI
 import WidgetKit
 

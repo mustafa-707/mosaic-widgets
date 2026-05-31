@@ -3,7 +3,7 @@ import 'package:args/command_runner.dart';
 import 'package:path/path.dart' as p;
 
 String widgetTemplate(String name) => '''
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic/dsl.dart';
 
 MosaicDefinition build$name() {
   return MosaicDefinition(
