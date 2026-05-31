@@ -174,7 +174,7 @@ struct ${def.name}Widget: Widget {
         }
         .configurationDisplayName("${def.name}")
         .description("This is an auto-generated home widget.")
-        .supportedFamilies([${config.widgets.firstWhere((w) => w.name == def.name).ios.families.map((f) => '.$f').join(', ')}])
+        .supportedFamilies([${config.widgets.firstWhere((w) => w.name == def.name, orElse: () => throw StateError('No widget config entry named "${def.name}". Add it to mosaic.yaml.')).ios.families.map((f) => '.$f').join(', ')}])
         .contentMarginsDisabled()
     }
 }
@@ -325,7 +325,7 @@ class TextHandler extends IosNodeHandler {
     final isBind = text is Map && text['__type'] == 'HWBind';
     final textValue = isBind
         ? '"\\(entry.data[\"${text['key']}\"] ?? "--")"'
-        : '"$text"';
+        : '"${swiftEscape(text as String)}"';
     final style = node.data['style'] ?? {};
     final bold = style['bold'] == true ? '.bold()' : '';
     final color = style['color'] != null
@@ -490,7 +490,7 @@ class ButtonHandler extends IosNodeHandler {
       url = 'hwrefresh://';
     }
     return '''
-Link(destination: URL(string: "$url")!) {
+Link(destination: URL(string: "${swiftEscape(url)}")!) {
     ${context.nodeToSwiftUI(child)}
 }''';
   }
@@ -528,7 +528,7 @@ class ImageHandler extends IosNodeHandler {
 
     String imageCode;
     if (type == 'HWAssetImage') {
-      imageCode = 'Image("${source['path']}")';
+      imageCode = 'Image("${swiftEscape(source['path'] as String)}")';
     } else if (type == 'HWFileImage') {
       final path = source['path'];
       final pathValue = path is Map && path['__type'] == 'HWBind'
