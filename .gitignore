@@ -1,0 +1,10 @@
+.dart_tool/
+.packages
+build/
+.DS_Store
+*.iml
+.idea/
+.fvm/
+**/Pods/
+**/.symlinks/
+**/ephemeral/
