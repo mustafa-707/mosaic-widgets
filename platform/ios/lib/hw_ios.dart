@@ -209,8 +209,8 @@ class ColumnHandler extends IosNodeHandler {
   String get type => 'HWColumn';
   @override
   String handle(IRNode node, IosGenerator context) {
-    var childrenNodes = (node.data['children'] as List)
-        .map((e) => context.nodeToSwiftUI(IRNode.fromJson(e)))
+    var childrenNodes = ((node.data['children'] as List?) ?? const [])
+        .map((e) => context.nodeToSwiftUI(IRNode.fromJson(e as Map<String, dynamic>)))
         .toList();
 
     final mainAxis = node.data['mainAxisAlignment'] ?? 'start';
@@ -271,8 +271,8 @@ class RowHandler extends IosNodeHandler {
   String get type => 'HWRow';
   @override
   String handle(IRNode node, IosGenerator context) {
-    var childrenNodes = (node.data['children'] as List)
-        .map((e) => context.nodeToSwiftUI(IRNode.fromJson(e)))
+    var childrenNodes = ((node.data['children'] as List?) ?? const [])
+        .map((e) => context.nodeToSwiftUI(IRNode.fromJson(e as Map<String, dynamic>)))
         .toList();
 
     final mainAxis = node.data['mainAxisAlignment'] ?? 'start';
@@ -344,7 +344,9 @@ class ContainerHandler extends IosNodeHandler {
   String get type => 'HWContainer';
   @override
   String handle(IRNode node, IosGenerator context) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '// missing child';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final radius = node.data['radius'] ?? 0;
     final background = node.data['background']?['hex'];
     final gradient = node.data['gradient'];
@@ -418,7 +420,9 @@ class PaddingHandler extends IosNodeHandler {
   String get type => 'HWPadding';
   @override
   String handle(IRNode node, IosGenerator context) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '// missing child';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final insets = node.data['insets'] ?? {};
     return '${context.nodeToSwiftUI(child)}.padding(EdgeInsets(top: ${insets['top'] ?? 0}, leading: ${insets['left'] ?? 0}, bottom: ${insets['bottom'] ?? 0}, trailing: ${insets['right'] ?? 0}))';
   }
@@ -429,8 +433,8 @@ class StackHandler extends IosNodeHandler {
   String get type => 'HWStack';
   @override
   String handle(IRNode node, IosGenerator context) {
-    final children = (node.data['children'] as List)
-        .map((e) => IRNode.fromJson(e))
+    final children = ((node.data['children'] as List?) ?? const [])
+        .map((e) => IRNode.fromJson(e as Map<String, dynamic>))
         .toList();
     final alignment = _mapStackAlignment(node.data['alignment']);
     return '''
@@ -478,7 +482,9 @@ class ButtonHandler extends IosNodeHandler {
   String get type => 'HWButton';
   @override
   String handle(IRNode node, IosGenerator context) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '// missing child';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final action = node.data['action'];
     String url;
     if (action['__type'] == 'HWLaunchUrlAction') {
@@ -501,12 +507,15 @@ class VisibilityHandler extends IosNodeHandler {
   String get type => 'HWVisibility';
   @override
   String handle(IRNode node, IosGenerator context) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '// missing child';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final replacement = node.data['replacement'] != null
-        ? IRNode.fromJson(node.data['replacement'])
+        ? IRNode.fromJson(node.data['replacement'] as Map<String, dynamic>)
         : null;
-    final bind = node.data['bind'];
-    final key = bind['key'] as String;
+    final bindMap = node.data['bind'] as Map<String, dynamic>?;
+    if (bindMap == null) return '// missing bind';
+    final key = bindMap['key'] as String;
     final condition = 'entry.data["$key"] as? Bool ?? false';
     return '''
 if $condition {
@@ -581,8 +590,9 @@ class ListViewHandler extends IosNodeHandler {
   String get type => 'HWListView';
   @override
   String handle(IRNode node, IosGenerator context) {
-    final bind = node.data['bind'];
-    final key = bind['key'] as String;
+    final bindMap = node.data['bind'] as Map<String, dynamic>?;
+    if (bindMap == null) return '// missing bind';
+    final key = bindMap['key'] as String;
     // VERY experimental ListView for WidgetKit (usually uses ForEach)
     return '''
 ForEach(entry.data["$key"] as? [[String: Any]] ?? [], id: \\.self.description) { item in
@@ -625,7 +635,9 @@ class CenterHandler extends IosNodeHandler {
   String get type => 'HWCenter';
   @override
   String handle(IRNode node, IosGenerator context) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '// missing child';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     return '''
 ${context.nodeToSwiftUI(child)}
     .frame(maxWidth: .infinity, maxHeight: .infinity)''';
@@ -637,7 +649,9 @@ class PositionedHandler extends IosNodeHandler {
   String get type => 'HWPositioned';
   @override
   String handle(IRNode node, IosGenerator context) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '// missing child';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final top = node.data['top'];
     final left = node.data['left'];
     final right = node.data['right'];

@@ -426,8 +426,8 @@ class ColumnHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    final children = (node.data['children'] as List)
-        .map((e) => IRNode.fromJson(e))
+    final children = ((node.data['children'] as List?) ?? const [])
+        .map((e) => IRNode.fromJson(e as Map<String, dynamic>))
         .toList();
     final gravity = _mapGravity(
       node.data['mainAxisAlignment'],
@@ -479,8 +479,8 @@ class RowHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    final children = (node.data['children'] as List)
-        .map((e) => IRNode.fromJson(e))
+    final children = ((node.data['children'] as List?) ?? const [])
+        .map((e) => IRNode.fromJson(e as Map<String, dynamic>))
         .toList();
     final gravity = _mapGravity(
       node.data['mainAxisAlignment'],
@@ -567,7 +567,9 @@ class ContainerHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '<!-- missing child -->';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final background = node.data['background']?['hex'];
     final gradient = node.data['gradient'];
     final widthVal = node.data['width'];
@@ -625,7 +627,9 @@ class PaddingHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '<!-- missing child -->';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final insets = node.data['insets'];
     final pLeft = insets['left'] ?? 0;
     final pRight = insets['right'] ?? 0;
@@ -672,8 +676,8 @@ class StackHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    final children = (node.data['children'] as List)
-        .map((e) => IRNode.fromJson(e))
+    final children = ((node.data['children'] as List?) ?? const [])
+        .map((e) => IRNode.fromJson(e as Map<String, dynamic>))
         .toList();
     return '''
 <FrameLayout
@@ -721,7 +725,9 @@ class ButtonHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '<!-- missing child -->';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final action = node.data['action'];
     final index = buttons.length;
     buttons.add(action);
@@ -765,9 +771,12 @@ class VisibilityHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    final child = IRNode.fromJson(node.data['child']);
-    final bind = node.data['bind'];
-    final key = bind['key'] as String;
+    final childJson = node.data['child'];
+    if (childJson == null) return '<!-- missing child -->';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
+    final bindMap = node.data['bind'] as Map<String, dynamic>?;
+    if (bindMap == null) return '<!-- missing bind -->';
+    final key = bindMap['key'] as String;
     visibilityKeys.add(key);
     final isSpacer = child.type == 'HWSpacer';
     final weightAttr = (isInsideLinearLayout && isSpacer)
@@ -910,7 +919,9 @@ class PositionedHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '<!-- missing child -->';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final top = node.data['top'];
     final left = node.data['left'];
     final right = node.data['right'];
@@ -953,7 +964,9 @@ class CenterHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    final child = IRNode.fromJson(node.data['child']);
+    final childJson = node.data['child'];
+    if (childJson == null) return '<!-- missing child -->';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     return '''
 <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent">
