@@ -1,11 +1,17 @@
 name: mosaic_core
-description: A starting point for Dart libraries or applications.
+description: "Platform-agnostic intermediate representation, configuration, and code-generation primitives for the Mosaic native home-widget framework."
 publish_to: none
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+# TODO: update to the real repo URL
+repository: https://github.com/logatta/mosaic
+topics:
+  - home-widget
+  - code-generation
+  - widget
+  - dart
 
 environment:
-  sdk: ^3.10.7
+  sdk: ">=3.0.0 <4.0.0"
 
 # Add regular dependencies here.
 dependencies:

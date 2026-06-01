@@ -1,11 +1,17 @@
 name: mosaic_cli
-description: A simple command-line application.
+description: "Command-line tool to scaffold, generate, and manage native home widgets for the Mosaic framework."
 publish_to: none
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+# TODO: update to the real repo URL
+repository: https://github.com/logatta/mosaic
+topics:
+  - home-widget
+  - cli
+  - code-generation
+  - widget
 
 environment:
-  sdk: ^3.10.7
+  sdk: ">=3.0.0 <4.0.0"
 
 # Add regular dependencies here.
 dependencies:

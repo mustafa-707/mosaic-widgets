@@ -1,12 +1,19 @@
 name: mosaic
-description: "A new Flutter package project."
+description: "Build native iOS and Android home-screen widgets, lock-screen widgets, and Live Activities from a single Flutter-style Dart DSL."
 publish_to: none
-version: 0.0.1
-homepage:
+version: 1.0.0
+# TODO: update to the real repo URL
+repository: https://github.com/logatta/mosaic
+topics:
+  - home-widget
+  - widget
+  - ios
+  - android
+  - live-activities
 
 environment:
-  sdk: ^3.10.7
-  flutter: ">=1.17.0"
+  sdk: ">=3.0.0 <4.0.0"
+  flutter: ">=3.0.0"
 
 dependencies:
   flutter:
