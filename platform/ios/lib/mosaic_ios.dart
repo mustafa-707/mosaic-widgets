@@ -14,6 +14,11 @@ abstract class IosNodeHandler {
 class IosGenerator {
   final MosaicConfig config;
   final List<IRDefinition> definitions;
+
+  /// Live activity IR collected by the widget runner. Plumbed through for a
+  /// later wave; the iOS generator does not emit anything from it yet.
+  final List<Map<String, dynamic>> liveActivities;
+
   final Map<String, IosNodeHandler> _handlers = {};
 
   /// The Swift expression that `HWBind` keys are resolved against. Defaults to
@@ -23,7 +28,11 @@ class IosGenerator {
   /// global store.
   String bindSource = 'entry.data';
 
-  IosGenerator({required this.config, required this.definitions}) {
+  IosGenerator({
+    required this.config,
+    required this.definitions,
+    this.liveActivities = const [],
+  }) {
     _registerHandlers();
   }
 

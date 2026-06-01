@@ -101,6 +101,11 @@ List<String> _injectMainAxisSpacers(
 class AndroidGenerator {
   final MosaicConfig config;
   final List<IRDefinition> definitions;
+
+  /// Live activity IR collected by the widget runner. Plumbed through for a
+  /// later wave; the Android generator does not emit anything from it yet.
+  final List<Map<String, dynamic>> liveActivities;
+
   final Map<String, AndroidNodeHandler> _handlers = {};
 
   /// Drawable XML files to write under res/drawable, keyed by resource name
@@ -213,7 +218,11 @@ class AndroidGenerator {
   /// the ORIGINAL key — only the resource id is sanitized.
   static String idForKey(String key) => sanitizeIdentifier(key);
 
-  AndroidGenerator({required this.config, required this.definitions}) {
+  AndroidGenerator({
+    required this.config,
+    required this.definitions,
+    this.liveActivities = const [],
+  }) {
     _registerHandlers();
   }
 
