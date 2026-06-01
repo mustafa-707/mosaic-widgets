@@ -131,7 +131,7 @@ final ids = await MosaicLiveActivities.active();
 
 | Method | Signature | Notes |
 |--------|-----------|-------|
-| `start` | `Future<String?> start(String activityType, Map<String,String> initialState)` | Returns the activity id, or `null` if unavailable. |
+| `start` | `Future<String?> start(String activityType, Map<String,String> initialState, {bool push = false})` | Returns the activity id, or `null` if unavailable. `push: true` requests a per-activity APNs token (iOS only) on `onPushToken` — see section 6. |
 | `update` | `Future<void> update(String id, Map<String,String> state, {MActivityAlert? alert})` | `alert` shows a Lock Screen / Dynamic Island notification. |
 | `end` | `Future<void> end(String id, {Map<String,String>? finalState, MEndPolicy policy})` | `policy` defaults to `MEndPolicy.afterDefault`. |
 | `areEnabled` | `Future<bool> areEnabled()` | Whether Live Activities (iOS) / notifications (Android) are enabled. |
@@ -148,6 +148,7 @@ final ids = await MosaicLiveActivities.active();
 
 - Add `NSSupportsLiveActivities` → `true` to the **main app** `Info.plist`.
 - The generated `MosaicActivityController` is invoked from your `AppDelegate.swift` `mosaic_bridge` handler (`startActivity` / `updateActivity` / `endActivity` / `activitiesEnabled` / `activeActivities`), all gated `@available(iOS 16.1, *)`. Import `ActivityKit`.
+- For push updates, the AppDelegate reads `push` from the `startActivity` args (passing it to `MosaicActivityController.start`) and sets `MosaicActivityController.onPushToken` to forward each token over the channel as `liveActivityPushToken {id, token}` — see section 6.
 - Lock Screen view + Dynamic Island compact/minimal/expanded are all rendered.
 
 See [IOS_SETUP.md](IOS_SETUP.md) section 8.
@@ -174,8 +175,62 @@ The demo at `examples/demo_app` ships a complete reference:
 
 ---
 
+## 6. Push updates (APNs, iOS only)
+
+By default a Live Activity is driven locally with `MosaicLiveActivities.update(...)`. iOS 16.1+ can additionally update (and end) an activity **remotely via APNs** — useful when the update is driven by your backend (an order ships, a score changes) rather than the foreground app, including while the app is killed.
+
+### Enable push at start
+
+Pass `push: true` when starting the activity:
+
+```dart
+final id = await MosaicLiveActivities.start(
+  'OrderTracker',
+  {'status': 'Preparing your order', 'progress': '0.1', 'eta': '25 min'},
+  push: true, // request a per-activity APNs push token
+);
+```
+
+This requests the activity with `pushType: .token` on the iOS side.
+
+### Receive the token via `onPushToken`
+
+iOS issues a **per-activity** APNs push token (and may rotate it during the activity's lifetime). Each token is delivered to Flutter on the `MosaicLiveActivities.onPushToken` broadcast stream as a lowercase hex string:
+
+```dart
+final sub = MosaicLiveActivities.onPushToken.listen((MosaicPushToken t) {
+  // t.id    -> the activity id (same id returned by start)
+  // t.token -> the APNs push token, hex-encoded
+  myApi.registerLiveActivityToken(activityId: t.id, pushToken: t.token);
+});
+// ... cancel the subscription when you no longer need updates: sub.cancel();
+```
+
+Start listening **before** (or right as) you call `start(..., push: true)` so the first token isn't missed; the stream is a broadcast stream, so multiple listeners are fine.
+
+### Send updates from your server (out of scope)
+
+Once your server has the token it pushes updates/ends directly to APNs — **Mosaic does not do this part, and the APNs/server integration is the app's responsibility**. In outline:
+
+1. Send a push to APNs with topic `<your.bundle.id>.push-type.liveactivity` and header `apns-push-type: liveactivity`.
+2. The payload's `aps` contains `"event": "update"` (or `"end"`), a `"content-state"` matching the activity's content state (here the `{ "data": { ... } }` shape of `MosaicActivityAttributes.ContentState`), and a `"timestamp"`. An `"alert"` is optional for a Lock Screen / Dynamic Island banner.
+3. Authenticate to APNs with your key/certificate exactly as for normal push.
+
+The token can change; always use the latest value delivered on `onPushToken`. See Apple's "Updating and ending your Live Activity with ActivityKit push notifications" for the exact payload schema.
+
+### Android
+
+Android has **no push-token equivalent**. The Android "live activity" is an ongoing notification updated **locally only** via `MosaicLiveActivities.update(...)` from the app process; there is no remote/APNs path and `onPushToken` never emits on Android. `push: true` is simply ignored there.
+
+### ActivityKit constraints
+
+- `pushType: .token` and `activity.pushTokenUpdates` are iOS 16.1+ (the whole controller is gated `@available(iOS 16.1, *)`).
+- The token is observed for the activity's lifetime because ActivityKit may rotate it; each new token re-emits on `onPushToken`.
+- The host `Info.plist` still needs `NSSupportsLiveActivities = true`; remote pushes additionally require your APNs configuration (push capability + key/cert) on the **main app** target.
+
+---
+
 ## Limitations
 
-- **Push (APNs) updates** of Live Activities are not yet supported — updates flow through the app (`MosaicLiveActivities.update`).
 - **Per-activity typed content states** are not generated; all state is a generic `Map<String,String>`.
 - The Android ongoing notification is **not** a true Live Activity equivalent, and there is no Dynamic Island emulation.
