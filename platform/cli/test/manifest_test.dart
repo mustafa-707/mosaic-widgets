@@ -41,6 +41,28 @@ void main() {
     });
   });
 
+  group('configActivityTag', () {
+    test('emits the APPWIDGET_CONFIGURE intent-filter for the config activity',
+        () {
+      final tag = configActivityTag('com.acme.app', 'My Widget');
+      expect(
+        tag,
+        contains(
+          'android:name="com.acme.app.mosaic_generated.MyWidgetConfigActivity"',
+        ),
+      );
+      expect(tag, contains('android:exported="true"'));
+      expect(
+        tag,
+        contains(
+          'android:name="android.appwidget.action.APPWIDGET_CONFIGURE"',
+        ),
+      );
+      // Must NOT contain a raw (space-bearing) class name.
+      expect(tag, isNot(contains('My WidgetConfigActivity')));
+    });
+  });
+
   group('deepLinkFilter', () {
     test('escapes a scheme containing &', () {
       final filter = deepLinkFilter('my&scheme');

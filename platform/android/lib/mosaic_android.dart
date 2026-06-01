@@ -434,6 +434,12 @@ class AndroidGenerator {
         buttons,
       );
 
+      // Configurable widgets (definition carries params) get a config Activity
+      // that writes the chosen values into the shared "widget_data" store.
+      if (def.params.isNotEmpty) {
+        await _generateConfigActivity(projectRoot, def, safe);
+      }
+
       // The shared RemoteViewsService is regenerated whenever ANY definition
       // contains at least one list. It is keyed by the list key passed via the
       // launch intent, so a single service serves every list/widget.
@@ -1162,6 +1168,12 @@ object HomeWidgetBridgeHelper {
         ? ' android:previewImage="@drawable/${def.previewImage}"'
         : '';
 
+    // Configurable widgets bind a configuration Activity launched by the OS
+    // after the widget is dropped on the home screen.
+    final configure = def.params.isNotEmpty
+        ? ' android:configure="${config.app.androidPackage}.mosaic_generated.${_safeName(def.name)}ConfigActivity"'
+        : '';
+
     final period = def.updateInterval == null
         ? 0
         : (def.updateInterval! < 1800000 ? 1800000 : def.updateInterval!);
@@ -1173,7 +1185,7 @@ $xmlSentinel
     android:updatePeriodMillis="$period"
     android:initialLayout="@layout/hw_${_safeName(def.name).toLowerCase()}"
     $resizeMode
-    $preview>
+    $preview$configure>
 </appwidget-provider>''';
   }
 
@@ -1410,6 +1422,220 @@ class $className : AppWidgetProvider() {
         $buttonLogic
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
+    }
+}
+''');
+  }
+
+  /// Generates `<Name>ConfigActivity.kt` for a definition that carries
+  /// [IRDefinition.params]. The activity is the standard App Widget
+  /// configuration Activity (declared in the manifest with the
+  /// `APPWIDGET_CONFIGURE` action and referenced from the info XML via
+  /// `android:configure`).
+  ///
+  /// It builds a simple vertical [LinearLayout] in code (no XML layout — keeps
+  /// AAPT processing trivial) with one input control per param:
+  ///   text   -> EditText
+  ///   number -> EditText with InputType numeric flags
+  ///   toggle -> Switch
+  ///   choice -> Spinner over the declared choices
+  /// Each control is pre-filled from any previously-saved value in
+  /// "widget_data" falling back to the param's defaultValue. On "Save" each
+  /// value is written back into "widget_data" under the param `key` as a
+  /// String (so the existing [MosaicData] bind resolution renders it), the
+  /// activity result is set to RESULT_OK carrying EXTRA_APPWIDGET_ID, the
+  /// widget is updated by re-running the provider's update path, and the
+  /// activity finishes. The default result is RESULT_CANCELED per contract.
+  Future<void> _generateConfigActivity(
+    String projectRoot,
+    IRDefinition def,
+    String safe,
+  ) async {
+    final packagePath = config.app.androidPackage.replaceAll('.', '/');
+    final kotlinDir = Directory(
+      p.join(
+        projectRoot,
+        'android',
+        'app',
+        'src',
+        'main',
+        'kotlin',
+        packagePath,
+        'mosaic_generated',
+      ),
+    );
+    if (!kotlinDir.existsSync()) kotlinDir.createSync(recursive: true);
+
+    final className = '${safe}ConfigActivity';
+    final providerClass = '${safe}Provider';
+    final file = File(p.join(kotlinDir.path, '$className.kt'));
+
+    // Build the per-param control-construction, pre-fill and save logic. Each
+    // param gets a stable Kotlin field name `field<i>` and a label TextView.
+    final buildBuf = StringBuffer();
+    final saveBuf = StringBuffer();
+
+    for (var i = 0; i < def.params.length; i++) {
+      final param = def.params[i];
+      final key = (param['key'] as String?) ?? 'param$i';
+      final label = (param['label'] as String?) ?? key;
+      final type = (param['type'] as String?) ?? 'text';
+      final defaultValue = param['defaultValue'];
+      final defaultLit = kotlinEscape(defaultValue?.toString() ?? '');
+      final keyLit = kotlinEscape(key);
+      final labelLit = kotlinEscape(label);
+      final fieldName = 'field$i';
+
+      // Common: a label above the control.
+      buildBuf.writeln('''
+        layout.addView(TextView(this).apply { text = "$labelLit" })
+        val saved$i = prefs.getString("$keyLit", "$defaultLit") ?: "$defaultLit"''');
+
+      switch (type) {
+        case 'toggle':
+          buildBuf.writeln('''
+        val $fieldName = Switch(this).apply {
+            isChecked = saved$i.trim().lowercase() in setOf("true", "1", "yes")
+        }
+        layout.addView($fieldName)''');
+          saveBuf.writeln(
+            '        editor.putString("$keyLit", if ($fieldName.isChecked) "true" else "false")',
+          );
+          break;
+        case 'choice':
+          final choices =
+              (param['choices'] as List?)?.cast<dynamic>() ?? const [];
+          final choiceLits =
+              choices.map((c) => '"${kotlinEscape(c.toString())}"').join(', ');
+          buildBuf.writeln('''
+        val choices$i = listOf<String>($choiceLits)
+        val $fieldName = Spinner(this).apply {
+            adapter = ArrayAdapter(
+                this@$className,
+                android.R.layout.simple_spinner_dropdown_item,
+                choices$i,
+            )
+            val idx$i = choices$i.indexOf(saved$i)
+            if (idx$i >= 0) setSelection(idx$i)
+        }
+        layout.addView($fieldName)''');
+          saveBuf.writeln(
+            '        editor.putString("$keyLit", $fieldName.selectedItem?.toString() ?: "")',
+          );
+          break;
+        case 'number':
+          buildBuf.writeln('''
+        val $fieldName = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_FLAG_DECIMAL or InputType.TYPE_NUMBER_FLAG_SIGNED
+            setText(saved$i)
+        }
+        layout.addView($fieldName)''');
+          saveBuf.writeln(
+            '        editor.putString("$keyLit", $fieldName.text.toString())',
+          );
+          break;
+        case 'text':
+        default:
+          buildBuf.writeln('''
+        val $fieldName = EditText(this).apply {
+            inputType = InputType.TYPE_CLASS_TEXT
+            setText(saved$i)
+        }
+        layout.addView($fieldName)''');
+          saveBuf.writeln(
+            '        editor.putString("$keyLit", $fieldName.text.toString())',
+          );
+          break;
+      }
+    }
+
+    await file.writeAsString('''$kotlinSentinel
+package ${config.app.androidPackage}.mosaic_generated
+
+import android.app.Activity
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.text.InputType
+import android.widget.ArrayAdapter
+import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
+import android.widget.ScrollView
+import android.widget.Spinner
+import android.widget.Switch
+import android.widget.TextView
+import ${config.app.androidPackage}.R
+
+/// Configuration Activity for the "${def.name}" widget. Launched by the OS via
+/// the APPWIDGET_CONFIGURE action after the widget is placed. Persists the
+/// chosen param values into the shared "widget_data" SharedPreferences store
+/// (the same store [MosaicData] reads) and triggers a widget update.
+class $className : Activity() {
+    private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
+
+    private fun prefs(): android.content.SharedPreferences =
+        getSharedPreferences("widget_data", Context.MODE_PRIVATE)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // Per the config-activity contract the default result is CANCELED so
+        // that backing out leaves no widget placed.
+        setResult(RESULT_CANCELED)
+
+        appWidgetId = intent?.extras?.getInt(
+            AppWidgetManager.EXTRA_APPWIDGET_ID,
+            AppWidgetManager.INVALID_APPWIDGET_ID,
+        ) ?: AppWidgetManager.INVALID_APPWIDGET_ID
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            finish()
+            return
+        }
+
+        val prefs = prefs()
+
+        // Build the UI programmatically (no XML layout) to keep AAPT simple.
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(32, 32, 32, 32)
+        }
+
+$buildBuf
+        val saveButton = Button(this).apply { text = "Save" }
+        saveButton.setOnClickListener {
+            val editor = prefs.edit()
+$saveBuf
+            editor.apply()
+
+            // Update the widget by re-running the provider's update path.
+            val appWidgetManager = AppWidgetManager.getInstance(this)
+            val provider = $providerClass()
+            provider.onUpdate(this, appWidgetManager, intArrayOf(appWidgetId))
+
+            // Also broadcast an update so any other instances refresh.
+            sendBroadcast(Intent(this, $providerClass::class.java).apply {
+                action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                putExtra(
+                    AppWidgetManager.EXTRA_APPWIDGET_IDS,
+                    appWidgetManager.getAppWidgetIds(
+                        ComponentName(this@$className, $providerClass::class.java),
+                    ),
+                )
+            })
+
+            val resultValue = Intent().apply {
+                putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            }
+            setResult(RESULT_OK, resultValue)
+            finish()
+        }
+        layout.addView(saveButton)
+
+        val scroll = ScrollView(this).apply { addView(layout) }
+        setContentView(scroll)
     }
 }
 ''');

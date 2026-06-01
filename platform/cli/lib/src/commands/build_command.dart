@@ -29,6 +29,23 @@ String receiverTag(String androidPackage, String widgetName) {
         </receiver>''';
 }
 
+/// Builds the `<activity>` AndroidManifest entry for a configurable widget's
+/// configuration Activity. Mirrors [receiverTag]: the class name is derived
+/// with [sanitizeIdentifier] so it matches the Android generator's emitted
+/// `${sanitizeIdentifier(name)}ConfigActivity`. The activity declares the
+/// `APPWIDGET_CONFIGURE` action so the OS launches it after the widget is
+/// placed, and must be exported so the launcher can start it.
+String configActivityTag(String androidPackage, String widgetName) {
+  final safe = sanitizeIdentifier(widgetName);
+  final activityName = '$androidPackage.mosaic_generated.${safe}ConfigActivity';
+  return '''
+        <activity android:name="$activityName" android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>''';
+}
+
 /// Builds the `<service>` AndroidManifest entry for the shared Mosaic
 /// RemoteViewsService that backs every HWListView. A collection RemoteViews
 /// service MUST declare `android:permission="android.permission.BIND_REMOTEVIEWS"`
@@ -231,6 +248,21 @@ class BuildCommand extends Command {
             '$tag\n    </application>',
           );
           print('Added receiver for ${def.name} to AndroidManifest.xml');
+        }
+      }
+
+      // Configurable widgets (definition carries params) also declare a
+      // configuration Activity with the APPWIDGET_CONFIGURE intent filter.
+      if (def.params.isNotEmpty) {
+        final configName =
+            '$androidPackage.mosaic_generated.${safe}ConfigActivity';
+        if (!content.contains(configName) &&
+            content.contains('</application>')) {
+          content = content.replaceFirst(
+            '</application>',
+            '${configActivityTag(androidPackage, def.name)}\n    </application>',
+          );
+          print('Added config activity for ${def.name} to AndroidManifest.xml');
         }
       }
     }
