@@ -130,3 +130,8 @@
 {"file":"platform/android/test/configurable_android_test.dart","action":"Write","timestamp":"2026-06-01T12:07:12Z","important":false}
 {"file":"platform/ios/test/configurable_ios_test.dart","action":"Write","timestamp":"2026-06-01T12:07:20Z","important":false}
 {"file":"examples/demo_app/lib/platform/widgets/crypto.widget.dart","action":"Edit","timestamp":"2026-06-01T12:10:24Z","important":false}
+{"file":"platform/flutter/test/live_activity_api_test.dart","action":"Edit","timestamp":"2026-06-01T12:54:07Z","important":false}
+{"file":"platform/flutter/lib/bridge.dart","action":"Edit","timestamp":"2026-06-01T12:54:32Z","important":false}
+{"file":"platform/ios/test/live_activity_ios_test.dart","action":"Edit","timestamp":"2026-06-01T12:55:14Z","important":false}
+{"file":"examples/demo_app/ios/Runner/AppDelegate.swift","action":"Edit","timestamp":"2026-06-01T12:55:57Z","important":false}
+{"file":"DOCS/LIVE_ACTIVITIES.md","action":"Edit","timestamp":"2026-06-01T12:57:10Z","important":false}
