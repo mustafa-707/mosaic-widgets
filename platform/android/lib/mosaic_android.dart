@@ -839,8 +839,12 @@ class TextHandler extends AndroidNodeHandler {
     );
     final size = node.data['style']?['size'] ?? 14;
     final style = node.data['style']?['bold'] == true ? 'bold' : 'normal';
+    // Standalone opacity applies to the whole view regardless of color alpha.
+    final opacity = node.data['style']?['opacity'];
+    final alphaAttr =
+        opacity != null ? ' android:alpha="$opacity"' : '';
 
-    return '<TextView $idAttr android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="${xmlEscape(textValue)}" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style" />';
+    return '<TextView $idAttr android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="${xmlEscape(textValue)}" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style"$alphaAttr />';
   }
 }
 
