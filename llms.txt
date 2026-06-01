@@ -1,0 +1,34 @@
+# Mosaic
+
+> Mosaic generates native iOS (WidgetKit, Live Activities, Dynamic Island) and Android
+> (AppWidget/RemoteViews) home-screen widgets from a single Flutter-style Dart DSL. You write
+> declarative `MosaicDefinition` / `MosaicLiveActivity` builder functions; `mosaic_cli build`
+> emits native Swift/Kotlin/XML; the app pushes live data via `MosaicBridge`. Mosaic is not in
+> model training data — always use the documented API, never invent class names or imports.
+
+## Critical rules
+- Widget/Live-Activity definition files import `package:mosaic/dsl.dart` (pure Dart). App/bridge
+  code imports `package:mosaic/mosaic.dart`. Using the barrel in a definition file breaks the build.
+- Definitions are pure data (no Flutter widgets / no runtime logic); all dynamism is `MBind` + data
+  the app pushes. A widget's `build<Name>()` function name must exactly match its `mosaic.yaml` `name`.
+
+## Start here
+- [Mosaic skill (build widgets with AI)](skills/mosaic-widgets/SKILL.md): the canonical, self-contained API + workflow guide for agents and users.
+- [README](README.md): overview, features, quick start.
+- [Contributor / agent guide](AGENTS.md): repo layout, build/test/verify commands, conventions.
+
+## Reference
+- [DSL component reference](DOCS/DSL_REFERENCE.md): every node, style, action, enum.
+- [iOS setup](DOCS/IOS_SETUP.md): Widget Extension, App Group, AppDelegate wiring, Live Activities, accessory families.
+- [Android setup](DOCS/ANDROID_SETUP.md): MainActivity wiring, night colors, RTL, ongoing-notification live activities.
+- [Live Activities & Dynamic Island guide](DOCS/LIVE_ACTIVITIES.md): definition, lifecycle, alerts, push updates.
+
+## Planning
+- [Roadmap](docs/ROADMAP.md): business verticals → components, prioritized catalog.
+- [Publishing guide](docs/PUBLISHING.md): pub.dev publish order + path→version dep swap.
+
+## Packages (monorepo under platform/)
+- `mosaic` (platform/flutter): the DSL + `MosaicBridge` / `MosaicLiveActivities` runtime API.
+- `mosaic_core` (platform/core): IR, config (`mosaic.yaml`), widget runner.
+- `mosaic_android` (platform/android), `mosaic_ios` (platform/ios): native code generators.
+- `mosaic_cli` (platform/cli): `init` / `add widget` / `build` / `doctor` / `clean`.

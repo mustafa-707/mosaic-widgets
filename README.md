@@ -207,3 +207,21 @@ Follow these guides for platform-specific configuration:
 ## 📖 DSL Documentation
 
 See the [DSL Reference](DOCS/DSL_REFERENCE.md) for a full list of supported components and attributes, including adaptive colors, `MFormat`, accessory families, and the Live Activity components. For the focused Live Activity lifecycle guide, see the [Live Activities Guide](DOCS/LIVE_ACTIVITIES.md).
+
+## 🤖 AI / Agent Support
+
+Mosaic ships a self-contained agent skill so AI coding assistants build widgets with the **real**
+API instead of guessing (Mosaic is newer than most model training data).
+
+- **Skill:** [`skills/mosaic-widgets/SKILL.md`](skills/mosaic-widgets/SKILL.md) — the canonical API + workflow + gotchas, sufficient on its own.
+- **LLM index:** [`llms.txt`](llms.txt) — points an LLM at the key docs.
+- **Contributor/agent guide:** [`AGENTS.md`](AGENTS.md) — repo layout, build/test, and the native verification gate for working **on** Mosaic.
+
+**Install the skill** (Claude Code): copy it into your skills directory so any project can use it —
+
+```bash
+cp -r skills/mosaic-widgets ~/.claude/skills/
+```
+
+Then an assistant will load it whenever it sees a `mosaic.yaml`, a `package:mosaic` import, or a
+`*.widget.dart` / `*.live.dart` file.

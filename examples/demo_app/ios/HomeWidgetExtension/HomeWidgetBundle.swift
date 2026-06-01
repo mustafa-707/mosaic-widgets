@@ -10,6 +10,7 @@ struct HomeWidgetBundle: WidgetBundle {
         if #available(iOS 17.0, *) {
             CryptoWidgetWidget()
         }
+        WeatherWidget()
         if #available(iOS 16.1, *) {
             OrderTrackerLiveActivity()
         }

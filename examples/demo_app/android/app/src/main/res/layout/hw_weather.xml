@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOSAIC-GENERATED -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+     android:background="@drawable/hw_bg_1895953775"
+    >
+    <FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:paddingStart="14.0dp" android:paddingEnd="14.0dp"
+    android:paddingTop="14.0dp" android:paddingBottom="14.0dp">
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="top|start">
+    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="San Francisco" android:textColor="#FFFFFF" android:textSize="14.0sp" android:textStyle="bold" />
+<FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+<ImageView android:src="@drawable/ic_weather" android:tint="#FFD700" android:layout_width="32.0dp" android:layout_height="32.0dp" />
+<FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
+<TextView android:id="@+id/hw_text_temp" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="28.0sp" android:textStyle="bold" />
+</LinearLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>

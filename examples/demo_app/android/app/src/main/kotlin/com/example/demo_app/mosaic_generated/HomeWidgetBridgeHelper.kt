@@ -23,6 +23,12 @@ object HomeWidgetBridgeHelper {
                 .getAppWidgetIds(android.content.ComponentName(context, CryptoWidgetProvider::class.java))
             putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
         })
+        context.sendBroadcast(android.content.Intent(context, WeatherProvider::class.java).apply {
+            action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
+            val ids = android.appwidget.AppWidgetManager.getInstance(context)
+                .getAppWidgetIds(android.content.ComponentName(context, WeatherProvider::class.java))
+            putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+        })
     }
 
     fun refresh(context: Context, widgetName: String) {
@@ -48,6 +54,14 @@ object HomeWidgetBridgeHelper {
                     action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
                     val ids = android.appwidget.AppWidgetManager.getInstance(context)
                         .getAppWidgetIds(android.content.ComponentName(context, CryptoWidgetProvider::class.java))
+                    putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
+                })
+            }
+            "Weather" -> {
+                context.sendBroadcast(android.content.Intent(context, WeatherProvider::class.java).apply {
+                    action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
+                    val ids = android.appwidget.AppWidgetManager.getInstance(context)
+                        .getAppWidgetIds(android.content.ComponentName(context, WeatherProvider::class.java))
                     putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
                 })
             }

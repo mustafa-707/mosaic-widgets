@@ -19,6 +19,7 @@ widgets:
       sizes: [medium]
     ios:
       families: [systemMedium]
+
   - name: CryptoWidget
     entry: lib/platform/widgets/crypto.widget.dart
     android:
@@ -26,6 +27,14 @@ widgets:
       sizes: [medium]
     ios:
       families: [systemMedium, accessoryRectangular]
+
+  - name: Weather
+    entry: lib/platform/widgets/weather.widget.dart
+    android:
+      min_sdk: 21
+      sizes: [medium]
+    ios:
+      families: [systemSmall, systemMedium]
 
 live_activities:
   - name: OrderTracker
