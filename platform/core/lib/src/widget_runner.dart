@@ -3,12 +3,33 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'config.dart';
 
+/// Generates and executes a temporary Dart runner script that imports every
+/// widget and live-activity entry declared in [config], calls each builder
+/// function, and prints the collected IR JSON wrapped in
+/// `<<<MOSAIC_IR>>>…<<<END_MOSAIC_IR>>>` sentinels.
+///
+/// The output is then parsed back into structured maps by [parseIrOutput] and
+/// [parseLiveActivities], making [WidgetRunner] the bridge between the Dart
+/// DSL and the platform-specific code generators.
 class WidgetRunner {
+  /// The Mosaic project configuration that describes which widgets and live
+  /// activities to build.
   final MosaicConfig config;
+
+  /// Absolute path to the Flutter/Dart project root. Used to resolve relative
+  /// [MosaicWidgetConfig.entry] paths and as the working directory when
+  /// running the generated script.
   final String projectRoot;
 
+  /// Creates a [WidgetRunner] for the given [config] and [projectRoot].
   WidgetRunner({required this.config, required this.projectRoot});
 
+  /// Builds the source code of the temporary Dart runner script.
+  ///
+  /// The script imports each widget and live-activity entry file using
+  /// `file://` URIs, calls the corresponding `build<Name>()` function, and
+  /// prints the collected IR payload between sentinel markers so that
+  /// [runAll] can extract it from stdout.
   Future<String> buildRunnerScript() async {
     final imports = <String>[];
     final calls = <String>[];
@@ -98,6 +119,10 @@ void main() {
     );
   }
 
+  /// Runs the generated runner script and returns only the widget IR maps.
+  ///
+  /// Convenience wrapper around [runAll] that discards the live-activity
+  /// results and returns just the `widgets` list.
   Future<List<Map<String, dynamic>>> run() async {
     return (await runAll()).widgets;
   }
@@ -116,6 +141,10 @@ void main() {
     return jsonDecode(jsonStr);
   }
 
+  /// Extracts the widget IR maps from a runner script's [stdout].
+  ///
+  /// Handles both the legacy bare-list format (a JSON array of widget maps)
+  /// and the current envelope format (`{"widgets": [...], "liveActivities": [...]}`).
   static List<Map<String, dynamic>> parseIrOutput(String stdout) {
     final decoded = _decodePayload(stdout);
     // Legacy form: a bare list of widgets.
@@ -127,6 +156,10 @@ void main() {
         (decoded as Map)['widgets'] as List? ?? const []);
   }
 
+  /// Extracts the live-activity IR maps from a runner script's [stdout].
+  ///
+  /// Returns an empty list when the payload uses the legacy bare-list format,
+  /// which predates live-activity support.
   static List<Map<String, dynamic>> parseLiveActivities(String stdout) {
     final decoded = _decodePayload(stdout);
     if (decoded is! Map) {
