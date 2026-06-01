@@ -403,8 +403,11 @@ class TextHandler extends IosNodeHandler {
     final size = style['size'] != null
         ? '.font(.system(size: ${style['size']}))'
         : '';
+    final opacity = style['opacity'] != null
+        ? '.opacity(${style['opacity']})'
+        : '';
     // Use dynamicTypeSize to prevent text scaling with device accessibility settings
-    return 'Text($textValue)$bold$color$size.dynamicTypeSize(.large)';
+    return 'Text($textValue)$bold$color$size$opacity.dynamicTypeSize(.large)';
   }
 }
 
