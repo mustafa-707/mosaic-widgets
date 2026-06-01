@@ -123,6 +123,18 @@ class AndroidGenerator {
   /// [ImageHandler] for non-bound `HWFileImage` paths.
   final Map<String, String> _staticImageUris = {};
 
+  /// Visibility bind keys that also have a `replacement` subtree. For these the
+  /// provider toggles two views inversely: the child id (`hw_visibility_<id>`)
+  /// and the replacement id (`hw_visibility_<id>_alt`). Keys NOT in this set
+  /// keep the legacy single-view GONE behavior.
+  final Set<String> _visibilityWithReplacement = {};
+
+  /// Marks a visibility bind [key] as having a replacement subtree so the
+  /// provider emits the inverse-toggle logic for both views.
+  void registerVisibilityReplacement(String key) {
+    _visibilityWithReplacement.add(key);
+  }
+
   /// Registers a static file image URI for [viewSuffix] and returns the
   /// matching view id suffix so the handler can emit the layout id.
   void registerStaticImageUri(String viewSuffix, String uri) {
@@ -192,6 +204,7 @@ class AndroidGenerator {
       final timers = <String, String>{};
       final buttons = <Map<String, dynamic>>[];
       _staticImageUris.clear();
+      _visibilityWithReplacement.clear();
 
       final layoutXml = _generateLayoutXml(
         def.root,
@@ -548,8 +561,18 @@ $xmlSentinel
 
     final visibilityLogic = visibilityKeys
         .map(
-          (key) =>
-              'views.setViewVisibility(R.id.hw_visibility_${idForKey(key)}, if (MosaicData.resolveBool(context, "${kotlinEscape(key)}")) android.view.View.VISIBLE else android.view.View.GONE)',
+          (key) {
+            final id = idForKey(key);
+            final lit = kotlinEscape(key);
+            final base =
+                'views.setViewVisibility(R.id.hw_visibility_$id, if (MosaicData.resolveBool(context, "$lit")) android.view.View.VISIBLE else android.view.View.GONE)';
+            if (!_visibilityWithReplacement.contains(key)) return base;
+            // Replacement present: toggle the child and the replacement (_alt)
+            // inversely so exactly one is shown.
+            final alt =
+                'views.setViewVisibility(R.id.hw_visibility_${id}_alt, if (MosaicData.resolveBool(context, "$lit")) android.view.View.GONE else android.view.View.VISIBLE)';
+            return '$base\n        $alt';
+          },
         )
         .join('\n        ');
 
@@ -1156,12 +1179,32 @@ class VisibilityHandler extends AndroidNodeHandler {
               ? 'match_parent'
               : 'wrap_content');
 
-    return '''
+    final childView = '''
 <FrameLayout
     android:id="@+id/hw_visibility_$visId"
     android:layout_width="$width" android:layout_height="$height"$weightAttr>
     ${context.nodeToXml(child, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: isInsideLinearLayout, isVertical: isVertical)}
 </FrameLayout>''';
+
+    final replacementJson = node.data['replacement'];
+    if (replacementJson == null) {
+      // No replacement: keep legacy single-view GONE behavior.
+      return childView;
+    }
+
+    // Render the replacement subtree alongside the child; the provider toggles
+    // the two inversely so exactly one is visible at runtime.
+    context.registerVisibilityReplacement(key);
+    final replacement =
+        IRNode.fromJson(replacementJson as Map<String, dynamic>);
+    final replacementView = '''
+<FrameLayout
+    android:id="@+id/hw_visibility_${visId}_alt"
+    android:layout_width="$width" android:layout_height="$height"$weightAttr>
+    ${context.nodeToXml(replacement, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: isInsideLinearLayout, isVertical: isVertical)}
+</FrameLayout>''';
+
+    return '$childView\n$replacementView';
   }
 }
 
