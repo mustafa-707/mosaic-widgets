@@ -96,16 +96,16 @@ HStack(alignment: .center, spacing: 0) {
     Text("LIVE: ").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 8.0)).dynamicTypeSize(.large)
 Group {
     if #available(iOS 16.0, *) {
-        Text(timerInterval: Date(timeIntervalSince1970: 1780311012.658)...Date.distantFuture, countsDown: false)
+        Text(timerInterval: Date(timeIntervalSince1970: 1780312853.549)...Date.distantFuture, countsDown: false)
     } else {
-        Text(Date(timeIntervalSince1970: 1780311012.658), style: .timer)
+        Text(Date(timeIntervalSince1970: 1780312853.549), style: .timer)
     }
 }.foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
 }
 }
 }.padding(EdgeInsets(top: 12.0, leading: 12.0, bottom: 12.0, trailing: 12.0))
 }
-    .background(LinearGradient(gradient: Gradient(colors: [Color(red: 0.1450980392156863, green: 0.38823529411764707, blue: 0.9215686274509803, opacity: 1.0), Color(red: 0.11764705882352941, green: 0.22745098039215686, blue: 0.5411764705882353, opacity: 1.0)]), startPoint: .topLeading, endPoint: .bottomTrailing))
+    .background(LinearGradient(gradient: Gradient(colors: [Color(red: 0.1450980392156863, green: 0.38823529411764707, blue: 0.9215686274509803, opacity: 1.0), Color(red: 0.11764705882352941, green: 0.22745098039215686, blue: 0.5411764705882353, opacity: 1.0)]), startPoint: UnitPoint(x: 0.0, y: 0.5), endPoint: UnitPoint(x: 1.0, y: 0.5)))
     .clipShape(RoundedRectangle(cornerRadius: 24.0))
             .frame(width: geometry.size.width, height: geometry.size.height)
         }

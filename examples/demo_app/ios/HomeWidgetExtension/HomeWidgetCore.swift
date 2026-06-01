@@ -66,4 +66,29 @@ extension View {
             self.background(style)
         }
     }
+
+    /// Per-corner rounded clip. UnevenRoundedRectangle is iOS 16.4+, so on
+    /// older systems this falls back to a uniform RoundedRectangle using the
+    /// largest of the four corner radii. Keeps the extension type-checking at
+    /// the 16.1 deployment target.
+    @ViewBuilder func mosaicCornerClip(
+        topLeft: CGFloat,
+        topRight: CGFloat,
+        bottomLeft: CGFloat,
+        bottomRight: CGFloat
+    ) -> some View {
+        if #available(iOS 16.4, *) {
+            self.clipShape(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: topLeft,
+                    bottomLeadingRadius: bottomLeft,
+                    bottomTrailingRadius: bottomRight,
+                    topTrailingRadius: topRight
+                )
+            )
+        } else {
+            let maxRadius = max(max(topLeft, topRight), max(bottomLeft, bottomRight))
+            self.clipShape(RoundedRectangle(cornerRadius: maxRadius))
+        }
+    }
 }
