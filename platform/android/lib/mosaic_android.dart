@@ -156,6 +156,17 @@ class AndroidGenerator {
     _colorBinds.add((viewId: viewId, key: key, target: target));
   }
 
+  /// Format directive for bound text keys: maps a bind key to its MText
+  /// `format` ('decimal'|'currency'|'percent'|'date'|'relativeTime'). When set,
+  /// the provider formats the resolved string via `MosaicData.formatValue`
+  /// instead of showing it raw. Per-definition (cleared in [generate]).
+  final Map<String, String> _textFormats = {};
+
+  /// Records that bound text [key] should be rendered with [format].
+  void registerTextFormat(String key, String format) {
+    _textFormats[key] = format;
+  }
+
   /// Static file-image URIs to wire up at update time, keyed by the view id
   /// suffix (used to build `R.id.hw_image_<suffix>`). Populated by
   /// [ImageHandler] for non-bound `HWFileImage` paths.
@@ -257,6 +268,7 @@ class AndroidGenerator {
       _visibilityWithReplacement.clear();
       _timersCountUp.clear();
       _colorBinds.clear();
+      _textFormats.clear();
 
       final layoutXml = _generateLayoutXml(
         def.root,
@@ -350,6 +362,10 @@ $body
 package ${config.app.androidPackage}.mosaic_generated
 
 import android.content.Context
+import android.text.format.DateUtils
+import java.text.DateFormat
+import java.text.NumberFormat
+import java.util.Date
 import org.json.JSONArray
 
 /// Runtime accessor for bound widget data persisted in SharedPreferences.
@@ -396,6 +412,30 @@ object MosaicData {
             }
         } catch (e: Exception) {
             fallback
+        }
+    }
+
+    /// Formats a raw stored string for display with the device default Locale.
+    /// Numeric formats (decimal/currency/percent) parse [raw] as a Double;
+    /// time formats parse it as epoch MILLISECONDS (Long). On any parse failure
+    /// the raw string is returned unchanged.
+    ///   decimal      -> NumberFormat.getInstance()
+    ///   currency     -> NumberFormat.getCurrencyInstance()
+    ///   percent      -> NumberFormat.getPercentInstance()
+    ///   date         -> DateFormat.getDateInstance() on Date(epochMillis)
+    ///   relativeTime -> DateUtils.getRelativeTimeSpanString(epochMillis)
+    fun formatValue(raw: String, format: String): String {
+        return try {
+            when (format) {
+                "decimal" -> NumberFormat.getInstance().format(raw.toDouble())
+                "currency" -> NumberFormat.getCurrencyInstance().format(raw.toDouble())
+                "percent" -> NumberFormat.getPercentInstance().format(raw.toDouble())
+                "date" -> DateFormat.getDateInstance().format(Date(raw.toLong()))
+                "relativeTime" -> DateUtils.getRelativeTimeSpanString(raw.toLong()).toString()
+                else -> raw
+            }
+        } catch (e: Exception) {
+            raw
         }
     }
 
@@ -659,6 +699,12 @@ $xmlSentinel
               return 'views.setImageViewUri(R.id.hw_image_$id, android.net.Uri.parse(MosaicData.resolveString(context, "$lit", "")))';
             case 'text':
             default:
+              final format = _textFormats[key];
+              if (format != null) {
+                // Formatted bound text: resolve the raw string then format it
+                // with the device default Locale via MosaicData.formatValue.
+                return 'views.setTextViewText(R.id.hw_text_$id, MosaicData.formatValue(MosaicData.resolveString(context, "$lit"), "$format"))';
+              }
               return 'views.setTextViewText(R.id.hw_text_$id, MosaicData.resolveString(context, "$lit"))';
           }
         })
@@ -982,6 +1028,9 @@ class TextHandler extends AndroidNodeHandler {
       final key = text['key'] as String;
       usedBinds[key] = 'text';
       idAttr = 'android:id="@+id/hw_text_${AndroidGenerator.idForKey(key)}"';
+      // Bound text may carry a format directive applied at render time.
+      final format = node.data['format'] as String?;
+      if (format != null) context.registerTextFormat(key, format);
     } else {
       textValue = text.toString();
     }

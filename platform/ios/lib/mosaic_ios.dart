@@ -293,27 +293,52 @@ struct ${def.name}View: View {
 struct ${def.name}Widget: Widget {
     let kind: String = "${def.name}"
 
+    // Built at runtime so iOS 16+ lock-screen accessory families can be added
+    // under an availability check (their WidgetFamily cases are iOS 16+).
+    private var families: [WidgetFamily] {
+        ${_supportedFamiliesProperty(def)}
+    }
+
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: ${def.name}Provider()) { entry in
             ${def.name}View(entry: entry)
                 .containerBackground(.clear, for: .widget)
+                .widgetAccentable()
         }
         .configurationDisplayName("${def.name}")
         .description("This is an auto-generated home widget.")
-        .supportedFamilies([${_supportedFamilies(def)}])
+        .supportedFamilies(families)
         .contentMarginsDisabled()
     }
 }
 ''';
   }
 
-  /// Computes the SwiftUI `.supportedFamilies` list for [def].
+  /// Valid `ios.families` values: WidgetKit system families + the three iOS 16+
+  /// lock-screen accessory families.
+  static const Set<String> _systemFamilies = {
+    'systemSmall',
+    'systemMedium',
+    'systemLarge',
+    'systemExtraLarge',
+  };
+  static const Set<String> _accessoryFamilies = {
+    'accessoryRectangular',
+    'accessoryCircular',
+    'accessoryInline',
+  };
+
+  /// Emits the Swift body of the `families` computed property for [def].
   ///
   /// WidgetKit sizes widgets by family, so the families declared in mosaic.yaml
   /// (`ios.families`) are authoritative. When that list is empty/absent we fall
   /// back to deriving sensible families from the definition's advisory
   /// `resizeMode`/size so the widget is not silently un-renderable.
-  String _supportedFamilies(IRDefinition def) {
+  ///
+  /// Lock-screen accessory families (iOS 16+) are appended under an
+  /// `if #available(iOS 16.0, *)` gate so the extension still compiles when
+  /// targeting older iOS. An unknown family value is a gen-time error.
+  String _supportedFamiliesProperty(IRDefinition def) {
     final widget = config.widgets.firstWhere(
       (w) => w.name == def.name,
       orElse: () => throw StateError(
@@ -342,7 +367,35 @@ struct ${def.name}Widget: Widget {
               : (def.width >= 3 ? ['systemMedium'] : ['systemSmall']);
       }
     }
-    return resolved.map((f) => '.$f').join(', ');
+
+    // Validate and partition into system vs accessory families.
+    final systemSel = <String>[];
+    final accessorySel = <String>[];
+    for (final f in resolved) {
+      if (_systemFamilies.contains(f)) {
+        systemSel.add(f);
+      } else if (_accessoryFamilies.contains(f)) {
+        accessorySel.add(f);
+      } else {
+        final valid = [..._systemFamilies, ..._accessoryFamilies].join(', ');
+        throw StateError(
+            'Unknown ios.family "$f" for widget "${def.name}". '
+            'Valid families: $valid.');
+      }
+    }
+
+    final systemList = systemSel.map((f) => '.$f').join(', ');
+    if (accessorySel.isEmpty) {
+      // No accessory families: a plain literal, no availability gate needed.
+      return 'return [$systemList]';
+    }
+
+    final accessoryList = accessorySel.map((f) => '.$f').join(', ');
+    return '''var f: [WidgetFamily] = [$systemList]
+        if #available(iOS 16.0, *) {
+            f.append(contentsOf: [$accessoryList])
+        }
+        return f''';
   }
 
   /// Turns a canonical color wire map into a Swift `Color` expression.

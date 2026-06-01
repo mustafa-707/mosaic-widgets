@@ -96,9 +96,9 @@ HStack(alignment: .center, spacing: 0) {
     Text("LIVE: ").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 8.0)).dynamicTypeSize(.large)
 Group {
     if #available(iOS 16.0, *) {
-        Text(timerInterval: Date(timeIntervalSince1970: 1780299154.335)...Date.distantFuture, countsDown: false)
+        Text(timerInterval: Date(timeIntervalSince1970: 1780299232.952)...Date.distantFuture, countsDown: false)
     } else {
-        Text(Date(timeIntervalSince1970: 1780299154.335), style: .timer)
+        Text(Date(timeIntervalSince1970: 1780299232.952), style: .timer)
     }
 }.foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
 }
@@ -126,14 +126,21 @@ Group {
 struct CryptoWidgetWidget: Widget {
     let kind: String = "CryptoWidget"
 
+    // Built at runtime so iOS 16+ lock-screen accessory families can be added
+    // under an availability check (their WidgetFamily cases are iOS 16+).
+    private var families: [WidgetFamily] {
+        return [.systemMedium]
+    }
+
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: CryptoWidgetProvider()) { entry in
             CryptoWidgetView(entry: entry)
                 .containerBackground(.clear, for: .widget)
+                .widgetAccentable()
         }
         .configurationDisplayName("CryptoWidget")
         .description("This is an auto-generated home widget.")
-        .supportedFamilies([.systemMedium])
+        .supportedFamilies(families)
         .contentMarginsDisabled()
     }
 }

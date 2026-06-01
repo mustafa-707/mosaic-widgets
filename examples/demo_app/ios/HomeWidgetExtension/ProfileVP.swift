@@ -141,14 +141,21 @@ if #available(iOS 17.0, *) {
 struct ProfileVPWidget: Widget {
     let kind: String = "ProfileVP"
 
+    // Built at runtime so iOS 16+ lock-screen accessory families can be added
+    // under an availability check (their WidgetFamily cases are iOS 16+).
+    private var families: [WidgetFamily] {
+        return [.systemSmall, .systemMedium]
+    }
+
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: ProfileVPProvider()) { entry in
             ProfileVPView(entry: entry)
                 .containerBackground(.clear, for: .widget)
+                .widgetAccentable()
         }
         .configurationDisplayName("ProfileVP")
         .description("This is an auto-generated home widget.")
-        .supportedFamilies([.systemSmall, .systemMedium])
+        .supportedFamilies(families)
         .contentMarginsDisabled()
     }
 }

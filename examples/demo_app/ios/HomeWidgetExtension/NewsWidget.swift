@@ -60,7 +60,7 @@ VStack(alignment: .leading, spacing: 0) {
     Text("TRENDING NOW").bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
 Spacer()
 HStack(alignment: .center, spacing: 0) {
-    Text(Date(timeIntervalSince1970: 1780302754.334), style: .timer).bold().foregroundColor(Color(red: 0.13333333333333333, green: 0.7725490196078432, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).monospacedDigit()
+    Text(Date(timeIntervalSince1970: 1780302832.951), style: .timer).bold().foregroundColor(Color(red: 0.13333333333333333, green: 0.7725490196078432, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).monospacedDigit()
 Text("LIVE").bold().foregroundColor(Color(red: 0.5803921568627451, green: 0.6392156862745098, blue: 0.7215686274509804, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 0.0, leading: 4.0, bottom: 0.0, trailing: 0.0))
 }
 }
@@ -112,14 +112,21 @@ if #available(iOS 17.0, *) {
 struct NewsWidgetWidget: Widget {
     let kind: String = "NewsWidget"
 
+    // Built at runtime so iOS 16+ lock-screen accessory families can be added
+    // under an availability check (their WidgetFamily cases are iOS 16+).
+    private var families: [WidgetFamily] {
+        return [.systemMedium]
+    }
+
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: NewsWidgetProvider()) { entry in
             NewsWidgetView(entry: entry)
                 .containerBackground(.clear, for: .widget)
+                .widgetAccentable()
         }
         .configurationDisplayName("NewsWidget")
         .description("This is an auto-generated home widget.")
-        .supportedFamilies([.systemMedium])
+        .supportedFamilies(families)
         .contentMarginsDisabled()
     }
 }
