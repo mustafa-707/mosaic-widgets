@@ -298,6 +298,37 @@ class AndroidGenerator {
     }
   }
 
+  /// Writes the adaptive color resources to `res/values/mosaic_colors.xml`
+  /// (light) and `res/values-night/mosaic_colors.xml` (dark). Both files lead
+  /// with the XML declaration (AAPT requirement) then the generated sentinel.
+  Future<void> _writeColors(Directory resDir) async {
+    if (_colors.isEmpty) return;
+    final entries = _colors.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    String buildFile(bool night) {
+      final body = entries
+          .map((e) =>
+              '    <color name="${e.key}">${night ? e.value.dark : e.value.light}</color>')
+          .join('\n');
+      return '''<?xml version="1.0" encoding="utf-8"?>
+$xmlSentinel
+<resources>
+$body
+</resources>''';
+    }
+
+    final valuesDir = Directory(p.join(resDir.path, 'values'));
+    final nightDir = Directory(p.join(resDir.path, 'values-night'));
+    if (!valuesDir.existsSync()) valuesDir.createSync(recursive: true);
+    if (!nightDir.existsSync()) nightDir.createSync(recursive: true);
+
+    await File(p.join(valuesDir.path, 'mosaic_colors.xml'))
+        .writeAsString(buildFile(false));
+    await File(p.join(nightDir.path, 'mosaic_colors.xml'))
+        .writeAsString(buildFile(true));
+  }
+
   Future<void> _generateMosaicData(String projectRoot) async {
     final packagePath = config.app.androidPackage.replaceAll('.', '/');
     final kotlinDir = Directory(
@@ -487,13 +518,16 @@ object HomeWidgetBridgeHelper {
   /// must emit a neutral placeholder.
   bool isColorBind(Map colorData) => colorData['bind'] != null;
 
-  /// Applies [opacity] to a `#RRGGBB`/`#AARRGGBB` hex, returning `#AARRGGBB`.
+  /// Applies [opacity] to a `#RRGGBB`/`#AARRGGBB` hex. Returns the bare
+  /// `#RRGGBB` unchanged when [opacity] is 1.0 (matching the legacy inline
+  /// path); otherwise returns `#AARRGGBB` with the computed alpha.
   String _applyOpacity(String hex, double opacity) {
     if (!hex.startsWith('#')) hex = '#$hex';
     // Strip any existing alpha to the 6-digit RGB.
     String rgb = hex.substring(1);
     if (rgb.length == 8) rgb = rgb.substring(2);
-    final alpha = (opacity * 255).round().clamp(0, 255);
+    if (opacity >= 1.0) return '#$rgb';
+    final alpha = (opacity * 255).toInt().clamp(0, 255);
     final alphaHex = alpha.toRadixString(16).padLeft(2, '0').toUpperCase();
     return '#$alphaHex$rgb';
   }
@@ -674,6 +708,31 @@ $xmlSentinel
         )
         .join('\n        ');
 
+    // Runtime color binds: resolve a hex string from prefs, parse to an int
+    // color and apply via the appropriate RemoteViews call. Parse failures are
+    // swallowed (try/catch) so a bad value just leaves the placeholder.
+    final colorBindLogic = _colorBinds
+        .asMap()
+        .entries
+        .map((e) {
+          final i = e.key;
+          final cb = e.value;
+          final lit = kotlinEscape(cb.key);
+          final apply = switch (cb.target) {
+            'background' =>
+              'views.setInt(R.id.${cb.viewId}, "setBackgroundColor", c$i)',
+            'progress' =>
+              'views.setInt(R.id.${cb.viewId}, "setColorFilter", c$i)',
+            _ => 'views.setTextColor(R.id.${cb.viewId}, c$i)',
+          };
+          return '''
+        try {
+            val c$i = android.graphics.Color.parseColor(MosaicData.resolveString(context, "$lit"))
+            $apply
+        } catch (e: Exception) { }''';
+        })
+        .join('\n        ');
+
     final buttonLogic = buttons
         .asMap()
         .entries
@@ -763,6 +822,7 @@ class $className : AppWidgetProvider() {
         $timerLogic
         $visibilityLogic
         $staticImageLogic
+        $colorBindLogic
         $buttonLogic
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
@@ -925,8 +985,9 @@ class TextHandler extends AndroidNodeHandler {
     } else {
       textValue = text.toString();
     }
+    final colorData = node.data['style']?['color'] ?? {'hex': '#FFFFFF'};
     final color = context.parseColor(
-      node.data['style']?['color'] ?? {'hex': '#FFFFFF'},
+      (colorData as Map).cast<String, dynamic>(),
     );
     final size = node.data['style']?['size'] ?? 14;
     final style = node.data['style']?['bold'] == true ? 'bold' : 'normal';
@@ -934,6 +995,21 @@ class TextHandler extends AndroidNodeHandler {
     final opacity = node.data['style']?['opacity'];
     final alphaAttr =
         opacity != null ? ' android:alpha="$opacity"' : '';
+
+    // Bind-form text color: the TextView needs a stable id so the provider can
+    // resolve+apply the color at update. Reuse the text bind id when present;
+    // otherwise allocate a color-bind id.
+    if (context.isColorBind(colorData)) {
+      final colorKey = colorData['bind'] as String;
+      String viewId;
+      if (isBind) {
+        viewId = 'hw_text_${AndroidGenerator.idForKey(text['key'] as String)}';
+      } else {
+        viewId = 'hw_textcolor_${AndroidGenerator.idForKey(colorKey)}';
+        idAttr = 'android:id="@+id/$viewId"';
+      }
+      context.registerColorBind(viewId, colorKey, 'text');
+    }
 
     return '<TextView $idAttr android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="${xmlEscape(textValue)}" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style"$alphaAttr />';
   }
@@ -956,12 +1032,28 @@ class ContainerHandler extends AndroidNodeHandler {
     final childJson = node.data['child'];
     if (childJson == null) return '<!-- missing child -->';
     final child = IRNode.fromJson(childJson as Map<String, dynamic>);
-    final background = node.data['background']?['hex'];
+    final backgroundMap = node.data['background'] as Map?;
+    final isBgBind =
+        backgroundMap != null && context.isColorBind(backgroundMap);
+    // A non-bind background is "present" only if it carries a static color.
+    final background = (backgroundMap != null && !isBgBind)
+        ? backgroundMap['hex']
+        : null;
     final gradient = node.data['gradient'];
     final border = node.data['border'];
     final radius = (node.data['radius'] ?? 0).toDouble();
     final widthVal = node.data['width'];
     final heightVal = node.data['height'];
+
+    // Bind-form background: the FrameLayout needs an id so the provider can
+    // resolve+apply the background color at update time.
+    String idAttr = '';
+    if (isBgBind) {
+      final colorKey = backgroundMap['bind'] as String;
+      final viewId = 'hw_bgcolor_${AndroidGenerator.idForKey(colorKey)}';
+      idAttr = ' android:id="@+id/$viewId"';
+      context.registerColorBind(viewId, colorKey, 'background');
+    }
 
     String bgAttr = '';
     if (gradient != null && gradient['__type'] == 'HWLinearGradient') {
@@ -1013,7 +1105,7 @@ class ContainerHandler extends AndroidNodeHandler {
     }
 
     return '''
-<FrameLayout
+<FrameLayout$idAttr
     android:layout_width="$width" android:layout_height="$height"
     $bgAttr
     $marginAttr>

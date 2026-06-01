@@ -551,9 +551,20 @@ class TextHandler extends IosNodeHandler {
     final text = node.data['text'];
     final isBind = text is Map && text['__type'] == 'HWBind';
     final src = context.bindSource;
-    final textValue = isBind
-        ? '"\\($src[\"${swiftEscape(text['key'] as String)}\"] as? String ?? String(describing: $src[\"${swiftEscape(text['key'] as String)}\"] ?? \"--\"))"'
-        : '"${swiftEscape(text as String)}"';
+    final format = node.data['format'] as String?;
+
+    // Build the `Text(...)` expression. Formatting only applies to bound text;
+    // a static literal is rendered verbatim.
+    final String textExpr;
+    if (isBind && format != null) {
+      textExpr = _formattedText(format, swiftEscape(text['key'] as String), src);
+    } else {
+      final textValue = isBind
+          ? '"\\($src[\"${swiftEscape(text['key'] as String)}\"] as? String ?? String(describing: $src[\"${swiftEscape(text['key'] as String)}\"] ?? \"--\"))"'
+          : '"${swiftEscape(text as String)}"';
+      textExpr = 'Text($textValue)';
+    }
+
     final style = node.data['style'] ?? {};
     final bold = style['bold'] == true ? '.bold()' : '';
     final color = style['color'] != null
@@ -566,7 +577,32 @@ class TextHandler extends IosNodeHandler {
         ? '.opacity(${style['opacity']})'
         : '';
     // Use dynamicTypeSize to prevent text scaling with device accessibility settings
-    return 'Text($textValue)$bold$color$size$opacity.dynamicTypeSize(.large)';
+    return '$textExpr$bold$color$size$opacity.dynamicTypeSize(.large)';
+  }
+
+  /// Emits a `Text(...)` for a bound value formatted per MFormat, localized via
+  /// `Locale.current`. decimal/currency/percent parse the bound value as a
+  /// Double; date/relativeTime read it as epoch seconds (Double). The
+  /// `.formatted` style APIs used here are iOS15+.
+  String _formattedText(String format, String key, String src) {
+    // Parse a Double from the bound entry value (NSNumber or String).
+    final dbl =
+        '(($src["$key"] as? NSNumber)?.doubleValue ?? Double("\\($src["$key"] ?? "0")") ?? 0)';
+    switch (format) {
+      case 'decimal':
+        return 'Text($dbl.formatted(.number))';
+      case 'currency':
+        return 'Text($dbl.formatted(.currency(code: Locale.current.currency?.identifier ?? "USD")))';
+      case 'percent':
+        return 'Text($dbl.formatted(.percent))';
+      case 'date':
+        return 'Text((Date(timeIntervalSince1970: $dbl)).formatted(date: .abbreviated, time: .omitted))';
+      case 'relativeTime':
+        return 'Text(Date(timeIntervalSince1970: $dbl), style: .relative)';
+      default:
+        // Unknown format: fall back to the plain interpolated string.
+        return 'Text("\\($src["$key"] as? String ?? String(describing: $src["$key"] ?? "--"))")';
+    }
   }
 }
 

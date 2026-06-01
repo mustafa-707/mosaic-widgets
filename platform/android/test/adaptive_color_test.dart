@@ -20,8 +20,8 @@ void main() {
           'android/app/src/main/res/values-night/mosaic_colors.xml');
 
       // Light has the light color, night has the dark color.
-      expect(light, contains('#FFFFFFFF'));
-      expect(night, contains('#FF000000'));
+      expect(light, contains('#FFFFFF'));
+      expect(night, contains('#000000'));
 
       // Both reference a mosaic_ color name.
       expect(light, contains('<color name="mosaic_'));
@@ -61,7 +61,7 @@ void main() {
       expect(layout, contains('android:textColor="@color/mosaic_'));
       expect(
           r.file('android/app/src/main/res/values-night/mosaic_colors.xml'),
-          contains('#FF445566'));
+          contains('#445566'));
     });
   });
 
