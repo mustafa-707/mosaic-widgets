@@ -135,6 +135,18 @@ class AndroidGenerator {
     _visibilityWithReplacement.add(key);
   }
 
+  /// Timer ids that should count UP rather than down. The provider emits
+  /// `setChronometerCountDown(viewId, false)` for these. Count-down is the
+  /// default. `RemoteViews.setChronometerCountDown` requires API 24+; on lower
+  /// min SDKs the direction is ignored by the platform (the offset still
+  /// drives the displayed value).
+  final Set<String> _timersCountUp = {};
+
+  /// Marks timer [id] as counting up.
+  void registerTimerCountUp(String id) {
+    _timersCountUp.add(id);
+  }
+
   /// Registers a static file image URI for [viewSuffix] and returns the
   /// matching view id suffix so the handler can emit the layout id.
   void registerStaticImageUri(String viewSuffix, String uri) {
@@ -205,6 +217,7 @@ class AndroidGenerator {
       final buttons = <Map<String, dynamic>>[];
       _staticImageUris.clear();
       _visibilityWithReplacement.clear();
+      _timersCountUp.clear();
 
       final layoutXml = _generateLayoutXml(
         def.root,
@@ -551,10 +564,14 @@ $xmlSentinel
         .map((entry) {
           final id = entry.key;
           final targetEpoch = entry.value;
+          // Count direction: count-down by default; count-up when registered.
+          // setChronometerCountDown requires API 24+; ignored on lower SDKs.
+          final countDown = !_timersCountUp.contains(id);
           return '''
         val target$id = ${targetEpoch}L
         val offset$id = target$id - System.currentTimeMillis()
         views.setChronometer(R.id.hw_timer_$id, android.os.SystemClock.elapsedRealtime() + offset$id, null, true)
+        views.setChronometerCountDown(R.id.hw_timer_$id, $countDown)
       ''';
         })
         .join('\n        ');
@@ -1360,6 +1377,9 @@ class TimerHandler extends AndroidNodeHandler {
     final target = node.data['target'];
     final id = timers.length.toString();
     timers[id] = target.toString();
+    if (node.data['countUp'] == true) {
+      context.registerTimerCountUp(id);
+    }
 
     final color = context.parseColor(
       node.data['style']?['color'] ?? {'hex': '#FFFFFF'},
