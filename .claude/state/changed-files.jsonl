@@ -72,3 +72,5 @@
 {"file":"platform/ios/test/format_test.dart","action":"Write","timestamp":"2026-06-01T07:31:21Z","important":false}
 {"file":"platform/ios/test/accessory_test.dart","action":"Write","timestamp":"2026-06-01T07:32:56Z","important":false}
 {"file":"platform/android/test/format_test.dart","action":"Write","timestamp":"2026-06-01T07:33:08Z","important":false}
+{"file":"platform/ios/test/rtl_test.dart","action":"Write","timestamp":"2026-06-01T07:34:41Z","important":false}
+{"file":"platform/android/test/rtl_test.dart","action":"Write","timestamp":"2026-06-01T07:34:54Z","important":false}

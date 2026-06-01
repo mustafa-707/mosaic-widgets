@@ -55,6 +55,30 @@ object MosaicData {
         }
     }
 
+    /// Formats a raw stored string for display with the device default Locale.
+    /// Numeric formats (decimal/currency/percent) parse [raw] as a Double;
+    /// time formats parse it as epoch MILLISECONDS (Long). On any parse failure
+    /// the raw string is returned unchanged.
+    ///   decimal      -> NumberFormat.getInstance()
+    ///   currency     -> NumberFormat.getCurrencyInstance()
+    ///   percent      -> NumberFormat.getPercentInstance()
+    ///   date         -> DateFormat.getDateInstance() on Date(epochMillis)
+    ///   relativeTime -> DateUtils.getRelativeTimeSpanString(epochMillis)
+    fun formatValue(raw: String, format: String): String {
+        return try {
+            when (format) {
+                "decimal" -> NumberFormat.getInstance().format(raw.toDouble())
+                "currency" -> NumberFormat.getCurrencyInstance().format(raw.toDouble())
+                "percent" -> NumberFormat.getPercentInstance().format(raw.toDouble())
+                "date" -> DateFormat.getDateInstance().format(Date(raw.toLong()))
+                "relativeTime" -> DateUtils.getRelativeTimeSpanString(raw.toLong()).toString()
+                else -> raw
+            }
+        } catch (e: Exception) {
+            raw
+        }
+    }
+
     fun resolveList(ctx: Context, key: String): List<Map<String, String>> {
         return try {
             val raw = prefs(ctx).getString(key, null) ?: return emptyList()
