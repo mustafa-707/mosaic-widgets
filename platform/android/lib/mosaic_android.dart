@@ -567,10 +567,14 @@ $xmlSentinel
           // Count direction: count-down by default; count-up when registered.
           // setChronometerCountDown requires API 24+; ignored on lower SDKs.
           final countDown = !_timersCountUp.contains(id);
+          // Count-down: base = elapsedRealtime + offset (future target, ticks
+          // toward 0). Count-up: base = elapsedRealtime - offset (past target,
+          // ticks up from 0 / elapsed since target).
+          final baseSign = countDown ? '+' : '-';
           return '''
         val target$id = ${targetEpoch}L
         val offset$id = target$id - System.currentTimeMillis()
-        views.setChronometer(R.id.hw_timer_$id, android.os.SystemClock.elapsedRealtime() + offset$id, null, true)
+        views.setChronometer(R.id.hw_timer_$id, android.os.SystemClock.elapsedRealtime() $baseSign offset$id, null, true)
         views.setChronometerCountDown(R.id.hw_timer_$id, $countDown)
       ''';
         })
