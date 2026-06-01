@@ -32,6 +32,14 @@ class IRDefinition {
   /// Defaults to `'none'`.
   final String resizeMode;
 
+  /// User-editable parameters exposed to the OS configuration UI (iOS
+  /// `AppIntentConfiguration`, Android config `Activity`). Each entry mirrors
+  /// the DSL `MParam.toJson()` shape:
+  /// `{key, label, type, defaultValue, choices}`. The chosen value is later
+  /// resolved against the widget's bind namespace under `key`. Defaults to
+  /// an empty list (no configuration).
+  final List<Map<String, dynamic>> params;
+
   /// Creates an [IRDefinition].
   IRDefinition({
     required this.name,
@@ -41,6 +49,7 @@ class IRDefinition {
     this.height = 2,
     this.previewImage,
     this.resizeMode = 'none',
+    this.params = const [],
   });
 
   /// Deserializes an [IRDefinition] from a JSON map.
