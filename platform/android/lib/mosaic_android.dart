@@ -1143,12 +1143,14 @@ class ContainerHandler extends AndroidNodeHandler {
     final margin = node.data['margin'];
     String marginAttr = '';
     if (margin != null) {
+      // Use start/end (RTL-aware) for horizontal margins so layouts mirror in
+      // RTL locales. The IR keys stay logical left/right.
       if (margin['left'] != null)
-        marginAttr += ' android:layout_marginLeft="${margin['left']}dp"';
+        marginAttr += ' android:layout_marginStart="${margin['left']}dp"';
       if (margin['top'] != null)
         marginAttr += ' android:layout_marginTop="${margin['top']}dp"';
       if (margin['right'] != null)
-        marginAttr += ' android:layout_marginRight="${margin['right']}dp"';
+        marginAttr += ' android:layout_marginEnd="${margin['right']}dp"';
       if (margin['bottom'] != null)
         marginAttr += ' android:layout_marginBottom="${margin['bottom']}dp"';
     }
@@ -1286,7 +1288,7 @@ class PaddingHandler extends AndroidNodeHandler {
     return '''
 <FrameLayout
     android:layout_width="$width" android:layout_height="$height"$weightAttr
-    android:paddingLeft="${pLeft}dp" android:paddingRight="${pRight}dp"
+    android:paddingStart="${pLeft}dp" android:paddingEnd="${pRight}dp"
     android:paddingTop="${pTop}dp" android:paddingBottom="${pBottom}dp">
     ${context.nodeToXml(child, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: isInsideLinearLayout, isVertical: isVertical)}
 </FrameLayout>''';
@@ -1650,9 +1652,10 @@ class PositionedHandler extends AndroidNodeHandler {
     String gravity = 'top|start';
     String margins = '';
     if (top != null) margins += ' android:layout_marginTop="${top}dp"';
-    if (left != null) margins += ' android:layout_marginLeft="${left}dp"';
+    // RTL-aware: logical left/right map to start/end so positioning mirrors.
+    if (left != null) margins += ' android:layout_marginStart="${left}dp"';
     if (right != null) {
-      margins += ' android:layout_marginRight="${right}dp"';
+      margins += ' android:layout_marginEnd="${right}dp"';
       gravity = gravity.replaceFirst('start', 'end');
     }
     if (bottom != null) {
