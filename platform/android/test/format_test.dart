@@ -7,6 +7,15 @@ void main() {
         'android/app/src/main/kotlin/com/acme/app/mosaic_generated/TestWProvider.kt',
       );
 
+  String mosaicData(r) => r.file(
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/MosaicData.kt',
+      );
+
+  // Combined generated Kotlin (provider routing + MosaicData formatting). The
+  // spec asserts "provider Kotlin contains getCurrencyInstance"; the actual
+  // format call lives in MosaicData.formatValue which the provider invokes.
+  String kotlin(r) => provider(r) + '\n' + mosaicData(r);
+
   Map<String, dynamic> fmtText(String key, String format) => {
         '__type': 'HWText',
         'text': bind(key),
@@ -16,27 +25,27 @@ void main() {
 
   test('currency format on bound text uses getCurrencyInstance', () async {
     final r = await runAndroid([irDef(fmtText('price', 'currency'))]);
-    expect(provider(r), contains('getCurrencyInstance'));
+    expect(kotlin(r), contains('getCurrencyInstance'));
   });
 
   test('relativeTime format uses getRelativeTimeSpanString', () async {
     final r = await runAndroid([irDef(fmtText('when', 'relativeTime'))]);
-    expect(provider(r), contains('getRelativeTimeSpanString'));
+    expect(kotlin(r), contains('getRelativeTimeSpanString'));
   });
 
   test('decimal format uses getInstance', () async {
     final r = await runAndroid([irDef(fmtText('count', 'decimal'))]);
-    expect(provider(r), contains('NumberFormat.getInstance'));
+    expect(kotlin(r), contains('NumberFormat.getInstance'));
   });
 
   test('percent format uses getPercentInstance', () async {
     final r = await runAndroid([irDef(fmtText('rate', 'percent'))]);
-    expect(provider(r), contains('getPercentInstance'));
+    expect(kotlin(r), contains('getPercentInstance'));
   });
 
   test('date format uses getDateInstance', () async {
     final r = await runAndroid([irDef(fmtText('day', 'date'))]);
-    expect(provider(r), contains('getDateInstance'));
+    expect(kotlin(r), contains('getDateInstance'));
   });
 
   test('formatted bound text routes through MosaicData.formatValue', () async {
