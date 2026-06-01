@@ -1300,6 +1300,32 @@ class TextHandler extends AndroidNodeHandler {
     final alphaAttr =
         opacity != null ? ' android:alpha="$opacity"' : '';
 
+    // maxLines: clamp the line count and ellipsize the overflow with "...".
+    final maxLines = node.data['maxLines'];
+    final maxLinesAttr = maxLines != null
+        ? ' android:maxLines="$maxLines" android:ellipsize="end"'
+        : '';
+
+    // align: map the logical MTextAlign to BOTH gravity (pre-API-17 / layout
+    // positioning) and textAlignment (RTL-aware, API 17+). start->viewStart,
+    // center->center, end->viewEnd.
+    final align = node.data['align'] as String?;
+    String alignAttr = '';
+    if (align != null) {
+      final gravity = switch (align) {
+        'center' => 'center',
+        'end' => 'end',
+        _ => 'start',
+      };
+      final textAlignment = switch (align) {
+        'center' => 'center',
+        'end' => 'viewEnd',
+        _ => 'viewStart',
+      };
+      alignAttr =
+          ' android:gravity="$gravity" android:textAlignment="$textAlignment"';
+    }
+
     // Bind-form text color: the TextView needs a stable id so the provider can
     // resolve+apply the color at update. Reuse the text bind id when present;
     // otherwise allocate a color-bind id.
@@ -1315,7 +1341,7 @@ class TextHandler extends AndroidNodeHandler {
       context.registerColorBind(viewId, colorKey, 'text');
     }
 
-    return '<TextView $idAttr android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="${xmlEscape(textValue)}" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style"$alphaAttr />';
+    return '<TextView $idAttr android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="${xmlEscape(textValue)}" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style"$alphaAttr$maxLinesAttr$alignAttr />';
   }
 }
 
@@ -1346,8 +1372,17 @@ class ContainerHandler extends AndroidNodeHandler {
     final gradient = node.data['gradient'];
     final border = node.data['border'];
     final radius = (node.data['radius'] ?? 0).toDouble();
+    // Per-corner radii take precedence over the scalar radius when present.
+    final cornersData = node.data['corners'] as Map?;
     final widthVal = node.data['width'];
     final heightVal = node.data['height'];
+
+    // Shadow is unsupported by RemoteViews/AppWidgets (no real view drop
+    // shadow). Document the no-op so it is not silently dropped; the layout is
+    // otherwise unaffected.
+    final shadowComment = node.data['shadow'] != null
+        ? '<!-- shadow not supported by RemoteViews; ignored on Android -->\n'
+        : '';
 
     // Bind-form background: the FrameLayout needs an id so the provider can
     // resolve+apply the background color at update time.
@@ -1365,24 +1400,31 @@ class ContainerHandler extends AndroidNodeHandler {
       final colors = (gradient['colors'] as List).cast<Map>();
       if (colors.isNotEmpty) {
         final hasStops = (gradient['stops'] as List?)?.isNotEmpty ?? false;
+        final angle = (gradient['angle'] ?? 0).toDouble();
         final xml = _gradientDrawableXml(
           context,
           colors,
           radius,
           border,
+          angle: angle,
+          corners: cornersData,
           hasStops: hasStops,
         );
         final name = 'hw_gradient_${_stableHash(xml)}';
         final ref = context.registerDrawable(name, xml);
         bgAttr = ' android:background="$ref"';
       }
-    } else if (border != null || (background != null && radius > 0)) {
-      // Border and/or rounded background: combine into a single shape drawable.
+    } else if (border != null ||
+        cornersData != null ||
+        (background != null && radius > 0)) {
+      // Border, per-corner radii and/or rounded background: combine into a
+      // single shape drawable.
       final xml = _shapeDrawableXml(
         context,
         background != null ? node.data['background'] as Map : null,
         border,
         radius,
+        corners: cornersData,
       );
       final name = 'hw_bg_${_stableHash(xml)}';
       final ref = context.registerDrawable(name, xml);
@@ -1410,8 +1452,7 @@ class ContainerHandler extends AndroidNodeHandler {
         marginAttr += ' android:layout_marginBottom="${margin['bottom']}dp"';
     }
 
-    return '''
-<FrameLayout$idAttr
+    return '''$shadowComment<FrameLayout$idAttr
     android:layout_width="$width" android:layout_height="$height"
     $bgAttr
     $marginAttr>
@@ -1437,23 +1478,26 @@ class ContainerHandler extends AndroidNodeHandler {
     List<Map> colors,
     double radius,
     Object? border, {
+    double angle = 0,
+    Map? corners,
     bool hasStops = false,
   }) {
     final parsed = colors
         .map((c) => context.parseColor(c.cast<String, dynamic>()))
         .toList();
+    // Android <gradient android:angle> accepts ONLY multiples of 45 (0=L->R,
+    // 90=top->bottom, ...). Quantize the DSL degrees to the nearest 45.
+    final quantized = _quantizeAngle45(angle);
     String gradientTag;
     if (parsed.length >= 3) {
       gradientTag =
-          '    <gradient android:type="linear" android:angle="0"\n        android:startColor="${parsed.first}"\n        android:centerColor="${parsed[parsed.length ~/ 2]}"\n        android:endColor="${parsed.last}" />';
+          '    <gradient android:type="linear" android:angle="$quantized"\n        android:startColor="${parsed.first}"\n        android:centerColor="${parsed[parsed.length ~/ 2]}"\n        android:endColor="${parsed.last}" />';
     } else {
       final end = parsed.length >= 2 ? parsed[1] : parsed.first;
       gradientTag =
-          '    <gradient android:type="linear" android:angle="0"\n        android:startColor="${parsed.first}"\n        android:endColor="$end" />';
+          '    <gradient android:type="linear" android:angle="$quantized"\n        android:startColor="${parsed.first}"\n        android:endColor="$end" />';
     }
-    final corners = radius > 0
-        ? '\n    <corners android:radius="${radius}dp" />'
-        : '';
+    final cornersTag = _cornersTag(corners, radius);
     final stroke = _strokeTag(context, border);
     // Android <shape><gradient> only expresses start/center/end positions, so
     // arbitrary N-stop gradients are approximated. Surface the limitation as a
@@ -1466,8 +1510,34 @@ class ContainerHandler extends AndroidNodeHandler {
 $xmlSentinel$stopsComment
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-$gradientTag$corners$stroke
+$gradientTag$cornersTag$stroke
 </shape>''';
+  }
+
+  /// Quantizes an angle in degrees to the nearest multiple of 45 in [0, 315].
+  /// Android `<gradient android:angle>` only accepts multiples of 45.
+  int _quantizeAngle45(double angle) {
+    var rounded = (angle / 45).round() * 45;
+    rounded = rounded % 360;
+    if (rounded < 0) rounded += 360;
+    return rounded;
+  }
+
+  /// Builds a `<corners>` tag. Per-corner [corners] (topLeft/topRight/
+  /// bottomLeft/bottomRight) take precedence over the scalar [radius]. Returns
+  /// an empty string when neither rounds anything.
+  String _cornersTag(Map? corners, double radius) {
+    if (corners != null) {
+      final tl = (corners['topLeft'] ?? 0).toDouble();
+      final tr = (corners['topRight'] ?? 0).toDouble();
+      final bl = (corners['bottomLeft'] ?? 0).toDouble();
+      final br = (corners['bottomRight'] ?? 0).toDouble();
+      return '\n    <corners android:topLeftRadius="${tl}dp" android:topRightRadius="${tr}dp" android:bottomLeftRadius="${bl}dp" android:bottomRightRadius="${br}dp" />';
+    }
+    if (radius > 0) {
+      return '\n    <corners android:radius="${radius}dp" />';
+    }
+    return '';
   }
 
   /// Builds a `<shape>` drawable combining a solid fill (background), a stroke
@@ -1476,19 +1546,18 @@ $gradientTag$corners$stroke
     AndroidGenerator context,
     Map? background,
     Object? border,
-    double radius,
-  ) {
+    double radius, {
+    Map? corners,
+  }) {
     final solid = background != null
         ? '\n    <solid android:color="${context.parseColor(background.cast<String, dynamic>())}" />'
         : '';
-    final corners = radius > 0
-        ? '\n    <corners android:radius="${radius}dp" />'
-        : '';
+    final cornersTag = _cornersTag(corners, radius);
     final stroke = _strokeTag(context, border);
     return '''<?xml version="1.0" encoding="utf-8"?>
 $xmlSentinel
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">$solid$stroke$corners
+    android:shape="rectangle">$solid$stroke$cornersTag
 </shape>''';
   }
 
