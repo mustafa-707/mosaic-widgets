@@ -11,6 +11,8 @@ A powerful, DSL-based framework for building native iOS and Android home widgets
 - **Interactive**: Support for buttons, deep linking, and background refreshes.
 - **Live Runtime Data Binding**: Bind text, image file paths, progress values, visibility, and timer targets at runtime with `MBind`. Push values from your app via `MosaicBridge` and `refresh`/`refreshAll`.
 - **Rich UI**: Real linear gradients and borders, Stacks, Columns, Rows, Images (asset + file sources), and more.
+- **Adaptive Widgets**: OS light/dark theming and runtime-bound colors (`MColor.hex(dark:)`, `MColor.bind`), locale-aware value formatting (`MFormat`), automatic RTL mirroring, and iOS lock-screen accessory widgets.
+- **Live Activities & Dynamic Island**: Declare a `MosaicLiveActivity` (lock-screen banner + Dynamic Island) and drive it from Flutter with `MosaicLiveActivities.start/update/end`. Full iOS ActivityKit support; Android falls back to an ongoing notification.
 - **Asset Sync**: Automatically syncs images from your Flutter project to native drawable/xcassets folders.
 
 ## 🏗️ Architecture
@@ -109,6 +111,92 @@ await MosaicBridge.refreshAll();
 
 ---
 
+## 🎨 Theming (Adaptive Colors & Formatting)
+
+Colors adapt to the OS light/dark appearance and can be pushed at runtime, and bound values can be formatted with the device locale. Layouts also auto-mirror in RTL locales.
+
+```dart
+import 'package:mosaic/dsl.dart';
+
+MosaicDefinition buildCryptoWidget() {
+  return MosaicDefinition(
+    name: "CryptoWidget",
+    width: 2,
+    height: 2,
+    root: MColumn([
+      // Light/dark adaptive color (white in light mode, soft grey in dark).
+      const MText(
+        "BTC/USD",
+        style: MTextStyle(color: MColor.hex("#FFFFFF", dark: "#E5E7EB"), bold: true),
+      ),
+      // Locale-aware currency formatting of a bound numeric value.
+      MText(MBind("btc_price"), format: MFormat.currency),
+      // Runtime-bound color: the app pushes an "accent" hex string.
+      const MContainer(background: MColor.bind("accent"), child: MSpacer()),
+    ]),
+  );
+}
+```
+
+## 🔒 Lock Screen (iOS Accessory Widgets)
+
+Add an accessory family to a widget in `mosaic.yaml` to render it on the iOS 16+ Lock Screen. On accessory widgets the OS tints content (custom colors are largely ignored), and Mosaic emits `.widgetAccentable()`. Android skips accessory families (no general user Lock Screen widgets).
+
+```yaml
+widgets:
+  - name: CryptoWidget
+    entry: lib/widgets/crypto.widget.dart
+    ios:
+      families: [systemMedium, accessoryRectangular]  # also accessoryCircular, accessoryInline
+```
+
+## 🔴 Live Activities & Dynamic Island
+
+Declare a Live Activity in a `*.live.dart` entry (pure-Dart DSL), register it in `mosaic.yaml`, then drive its lifecycle from your app.
+
+```dart
+// lib/live_activities/order_tracker.live.dart
+import 'package:mosaic/dsl.dart';
+
+MosaicLiveActivity buildOrderTracker() {
+  return MosaicLiveActivity(
+    name: 'OrderTracker',
+    lockScreen: MText(MBind('status')),
+    dynamicIsland: MDynamicIsland(
+      compactLeading: const MText('🛵'),
+      compactTrailing: MText(MBind('eta')),
+      minimal: const MText('🛵'),
+      expanded: MExpanded(
+        center: MText(MBind('status')),
+        bottom: MProgressBar(value: MBind('progress')),
+      ),
+    ),
+  );
+}
+```
+
+```yaml
+live_activities:
+  - name: OrderTracker
+    entry: lib/live_activities/order_tracker.live.dart
+```
+
+```dart
+// App code drives the lifecycle (full barrel import).
+import 'package:mosaic/mosaic.dart';
+
+final id = await MosaicLiveActivities.start('OrderTracker', {
+  'status': 'Preparing', 'progress': '0.1', 'eta': '25 min',
+});
+await MosaicLiveActivities.update(id!, {'status': 'On the way', 'progress': '0.6', 'eta': '8 min'},
+    alert: const MActivityAlert(title: 'Order update', body: 'Your courier is nearby'));
+await MosaicLiveActivities.end(id, policy: MEndPolicy.afterDefault);
+```
+
+See the [Live Activities Guide](DOCS/LIVE_ACTIVITIES.md) for the full walkthrough.
+
+---
+
 ## 📱 Platform Setup
 
 Follow these guides for platform-specific configuration:
@@ -118,4 +206,4 @@ Follow these guides for platform-specific configuration:
 
 ## 📖 DSL Documentation
 
-See the [DSL Reference](DOCS/DSL_REFERENCE.md) for a full list of supported components and attributes.
+See the [DSL Reference](DOCS/DSL_REFERENCE.md) for a full list of supported components and attributes, including adaptive colors, `MFormat`, accessory families, and the Live Activity components. For the focused Live Activity lifecycle guide, see the [Live Activities Guide](DOCS/LIVE_ACTIVITIES.md).

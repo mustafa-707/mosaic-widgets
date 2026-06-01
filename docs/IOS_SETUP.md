@@ -68,6 +68,7 @@ The current reference implementation lives at
 import Flutter
 import UIKit
 import WidgetKit
+import ActivityKit  // required if you use Live Activities (Section 8)
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -131,7 +132,84 @@ await MosaicBridge.saveString('news_title', 'Hello iOS!');
 await MosaicBridge.refreshAll();
 ```
 
-## 7. Troubleshooting
+## 7. Lock-Screen Accessory Widgets (iOS 16+)
+
+To put a widget on the iOS Lock Screen, add an accessory family to its `ios.families` list in `mosaic.yaml`:
+
+```yaml
+widgets:
+  - name: CryptoWidget
+    entry: lib/widgets/crypto.widget.dart
+    ios:
+      families: [systemMedium, accessoryRectangular]  # also accessoryCircular, accessoryInline
+```
+
+The generator wraps accessory support in `if #available(iOS 16.0, *)` and maps each family to the matching `WidgetFamily`. On the Lock Screen the OS renders content tinted/monochrome (custom colors are largely ignored), and Mosaic emits `.widgetAccentable()` on accent-able content. No extra Xcode steps are required beyond adding the generated files (Section 3).
+
+## 8. Live Activities & Dynamic Island (iOS 16.1+)
+
+Live Activities require iOS 16.1+ and one extra Info.plist key. Dynamic Island compact/minimal/expanded presentations are supported.
+
+### Enable in Info.plist
+
+Add the following to the **main app** `Info.plist` (already present in the demo at `examples/demo_app/ios/Runner/Info.plist`):
+
+```xml
+<key>NSSupportsLiveActivities</key>
+<true/>
+```
+
+> `dart run mosaic_cli doctor` warns if this key is missing.
+
+### Route the lifecycle in AppDelegate
+
+The CLI generates a `MosaicActivityController` (and `MosaicActivityAttributes.swift`) into the widget extension, gated `@available(iOS 16.1, *)`. Your `AppDelegate.swift` `mosaic_bridge` handler routes the lifecycle method-channel calls to it. Import `ActivityKit` alongside `WidgetKit`. The reference implementation is `examples/demo_app/ios/Runner/AppDelegate.swift`:
+
+```swift
+import ActivityKit
+// ... inside channel.setMethodCallHandler:
+
+case "startActivity":
+  if #available(iOS 16.1, *) {
+    let args = call.arguments as! [String: Any]
+    let type = args["type"] as! String
+    let data = (args["data"] as? [String: String]) ?? [:]
+    result(MosaicActivityController.start(type: type, data: data))
+  } else {
+    result(FlutterError(code: "UNAVAILABLE", message: "Live Activities require iOS 16.1+", details: nil))
+  }
+
+case "updateActivity":
+  if #available(iOS 16.1, *) {
+    let args = call.arguments as! [String: Any]
+    MosaicActivityController.update(
+      id: args["id"] as! String,
+      data: (args["data"] as? [String: String]) ?? [:],
+      alertTitle: args["alertTitle"] as? String,
+      alertBody: args["alertBody"] as? String)
+    result(nil)
+  } else { result(false) }
+
+case "endActivity":
+  if #available(iOS 16.1, *) {
+    let args = call.arguments as! [String: Any]
+    MosaicActivityController.end(
+      id: args["id"] as! String,
+      data: args["data"] as? [String: String],
+      policy: (args["policy"] as? String) ?? "default")
+    result(nil)
+  } else { result(false) }
+
+case "activitiesEnabled":
+  if #available(iOS 16.1, *) { result(MosaicActivityController.enabled()) } else { result(false) }
+
+case "activeActivities":
+  if #available(iOS 16.1, *) { result(MosaicActivityController.active()) } else { result([String]()) }
+```
+
+See the [Live Activities Guide](LIVE_ACTIVITIES.md) for defining the activity and driving it from Flutter.
+
+## 9. Troubleshooting
 
 ### 🔴 Error: "Cycle inside Runner; building could produce unreliable results"
 

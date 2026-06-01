@@ -82,7 +82,52 @@ class MainActivity : FlutterActivity() {
 
 Copy this wiring into your own `MainActivity.kt`, adjusting the `mosaic_generated` package prefix to match your `android_package`.
 
-## 4. Deep Linking
+## 4. Adaptive Colors, RTL & Locale
+
+- **Dark mode**: adaptive colors (`MColor.hex(..., dark: ...)`) are generated as a `res/values/mosaic_colors.xml` + `res/values-night/mosaic_colors.xml` pair and referenced by `@color/mosaic_<hash>`. Android applies the night variant automatically based on the system theme. (`dart run mosaic_cli clean` removes these generated `values*/mosaic_colors.xml` files.)
+- **Runtime-bound colors** (`MColor.bind(...)`) are resolved at update time from the data store and applied to the `RemoteViews`.
+- **RTL**: layouts use `start`/`end` gravity and padding so they mirror automatically. Ensure your manifest's `<application>` has `android:supportsRtl="true"` (the CLI doctor warns if it is `false`).
+- **Formatting**: `MFormat` on bound `MText` values is applied with the device locale via `NumberFormat` / `DateFormat` / `DateUtils` when the provider updates.
+
+## 5. Live Activities (Ongoing Notification Fallback)
+
+Android has no true Live Activity, so Mosaic maps a `MosaicLiveActivity` to a **best-effort ongoing notification** built from the activity's `lockScreen` tree using `RemoteViews`. The Dynamic Island is **not applicable** on Android (those regions are ignored).
+
+- The CLI generates a `MosaicLiveActivityManager` (under your `mosaic_generated` package) that posts an ongoing notification on `start`, rebuilds the `RemoteViews` and re-notifies on `update` (an alert becomes a heads-up notification), and cancels it on `end`. Bind data is passed through the update path so changes are immediate.
+- Requires the `POST_NOTIFICATIONS` runtime permission on **API 33+**; your app should request it before starting an activity.
+- `MainActivity.kt` routes the lifecycle method-channel calls (`startActivity`, `updateActivity`, `endActivity`, `activitiesEnabled`, `activeActivities`) to the generated `MosaicLiveActivityManager`:
+
+```kotlin
+"startActivity" -> {
+    val type = call.argument<String>("activityType")
+    val state = (call.argument<Map<String, Any?>>("state") ?: emptyMap())
+        .mapValues { it.value?.toString() ?: "" }
+    val id = com.example.demo_app.mosaic_generated.MosaicLiveActivityManager.start(this, type!!, state)
+    result.success(id)
+}
+"updateActivity" -> {
+    val id = call.argument<String>("id")
+    val state = (call.argument<Map<String, Any?>>("state") ?: emptyMap())
+        .mapValues { it.value?.toString() ?: "" }
+    val alert = call.argument<Map<String, Any?>>("alert")
+    com.example.demo_app.mosaic_generated.MosaicLiveActivityManager.update(
+        this, id!!, state, alert?.get("title")?.toString(), alert?.get("body")?.toString())
+    result.success(null)
+}
+"endActivity" -> {
+    val id = call.argument<String>("id")
+    com.example.demo_app.mosaic_generated.MosaicLiveActivityManager.end(this, id!!)
+    result.success(null)
+}
+"activitiesEnabled" -> result.success(
+    com.example.demo_app.mosaic_generated.MosaicLiveActivityManager.enabled(this))
+"activeActivities" -> result.success(
+    com.example.demo_app.mosaic_generated.MosaicLiveActivityManager.active(this))
+```
+
+See the [Live Activities Guide](LIVE_ACTIVITIES.md) for the full walkthrough.
+
+## 6. Deep Linking
 
 The CLI automatically adds a deep-link intent filter to your `MainActivity` in `AndroidManifest.xml`. The scheme comes from `deep_link_scheme` under `app:` in `mosaic.yaml` and **defaults to `mosaic`** (so links look like `mosaic://...`). Handle these links in Flutter:
 
@@ -94,7 +139,7 @@ MosaicBridge.onDeepLink.listen((url) {
 });
 ```
 
-## 5. Manual Verification
+## 7. Manual Verification
 
 If widgets do not appear in the widget picker:
 1.  Check `AndroidManifest.xml` to ensure the `<receiver>` tags were added correctly inside the `<application>` tag.
