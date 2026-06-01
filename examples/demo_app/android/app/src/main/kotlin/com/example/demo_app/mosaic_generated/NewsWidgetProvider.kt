@@ -43,7 +43,7 @@ class NewsWidgetProvider : AppWidgetProvider() {
         val views = RemoteViews(context.packageName, R.layout.hw_newswidget)
         
         views.setTextViewText(R.id.hw_text_news_title, MosaicData.resolveString(context, "news_title"))
-                val target0 = 1780319435476L
+                val target0 = 1780321952693L
         val offset0 = target0 - System.currentTimeMillis()
         views.setChronometer(R.id.hw_timer_0, android.os.SystemClock.elapsedRealtime() + offset0, null, true)
         views.setChronometerCountDown(R.id.hw_timer_0, true)
