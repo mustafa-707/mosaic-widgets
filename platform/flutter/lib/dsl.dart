@@ -18,18 +18,23 @@ class MBind {
   Map<String, dynamic> toJson() => {'__type': 'HWBind', 'key': key};
 }
 
+/// Value formatting modes for text bindings.
+enum MFormat { decimal, currency, percent, date, relativeTime }
+
 /// Text widget for home widgets.
 class MText extends MNode {
   final Object text; // String OR MBind
   final MTextStyle style;
+  final MFormat? format;
 
-  const MText(this.text, {this.style = const MTextStyle()});
+  const MText(this.text, {this.style = const MTextStyle(), this.format});
 
   @override
   Map<String, dynamic> toJson() => {
     '__type': 'HWText',
     'text': text is MBind ? (text as MBind).toJson() : text,
     'style': style.toJson(),
+    'format': format?.name,
   };
 }
 
@@ -404,11 +409,19 @@ class MTextStyle {
 }
 
 class MColor {
-  final String hex;
+  final String? hex; // light value (null only for bind form)
+  final String? dark; // optional OS dark-mode value
+  final String? bind; // runtime data key (mutually exclusive with hex)
   final double opacity;
-  const MColor.hex(this.hex, {this.opacity = 1.0});
 
-  Map<String, dynamic> toJson() => {'hex': hex, 'opacity': opacity};
+  const MColor.hex(this.hex, {this.dark, this.opacity = 1.0}) : bind = null;
+  const MColor.bind(this.bind, {this.opacity = 1.0})
+    : hex = null,
+      dark = null;
+
+  Map<String, dynamic> toJson() => bind != null
+      ? {'bind': bind, 'opacity': opacity}
+      : {'hex': hex, 'dark': dark, 'opacity': opacity};
 }
 
 class MInsets {
