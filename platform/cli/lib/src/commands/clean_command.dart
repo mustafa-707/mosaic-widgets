@@ -31,6 +31,19 @@ void cleanAndroidDrawables(Directory drawableDir) {
   }
 }
 
+/// Deletes `values/mosaic_colors.xml` and `values-night/mosaic_colors.xml`
+/// under the given Android [resDir]. Other files in those directories are kept.
+/// Does nothing for directories or files that do not exist.
+void cleanAndroidColors(Directory resDir) {
+  for (final subdir in ['values', 'values-night']) {
+    final file = File(p.join(resDir.path, subdir, 'mosaic_colors.xml'));
+    if (file.existsSync()) {
+      file.deleteSync();
+      print('Deleted ${file.path}');
+    }
+  }
+}
+
 class CleanCommand extends Command {
   @override
   final name = 'clean';
@@ -57,6 +70,7 @@ class CleanCommand extends Command {
     }
 
     cleanAndroidDrawables(Directory('android/app/src/main/res/drawable'));
+    cleanAndroidColors(Directory('android/app/src/main/res'));
 
     print('Cleaning generated iOS files...');
     cleanIosGenerated(Directory('ios/HomeWidgetExtension'));

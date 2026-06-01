@@ -15,6 +15,19 @@ void main() {
     expect(File(p.join(dir.path, 'my_icon.xml')).existsSync(), isTrue);
   });
 
+  test('cleanAndroidColors removes mosaic_colors.xml and keeps user files', () {
+    final resDir = Directory.systemTemp.createTempSync('mosaic_res_');
+    final valuesDir = Directory(p.join(resDir.path, 'values'))..createSync();
+    final valuesNightDir = Directory(p.join(resDir.path, 'values-night'))..createSync();
+    File(p.join(valuesDir.path, 'mosaic_colors.xml')).writeAsStringSync('<resources/>');
+    File(p.join(valuesNightDir.path, 'mosaic_colors.xml')).writeAsStringSync('<resources/>');
+    File(p.join(valuesDir.path, 'strings.xml')).writeAsStringSync('<resources/>');
+    cleanAndroidColors(resDir);
+    expect(File(p.join(valuesDir.path, 'mosaic_colors.xml')).existsSync(), isFalse);
+    expect(File(p.join(valuesNightDir.path, 'mosaic_colors.xml')).existsSync(), isFalse);
+    expect(File(p.join(valuesDir.path, 'strings.xml')).existsSync(), isTrue);
+  });
+
   test('removes only MOSAIC-GENERATED swift files', () {
     final dir = Directory.systemTemp.createTempSync('mosaic_clean_');
     File(p.join(dir.path, 'Foo.swift'))
