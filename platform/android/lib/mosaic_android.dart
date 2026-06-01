@@ -1205,7 +1205,30 @@ class ImageHandler extends AndroidNodeHandler {
         context.registerStaticImageUri(suffix, path);
       }
     }
-    return '<ImageView $idAttr$srcAttr android:layout_width="match_parent" android:layout_height="wrap_content" android:scaleType="centerCrop" />';
+    final scaleType = _mapFit(node.data['fit'] as String?);
+    return '<ImageView $idAttr$srcAttr android:layout_width="match_parent" android:layout_height="wrap_content" android:scaleType="$scaleType" />';
+  }
+
+  /// Maps a Flutter MBoxFit value to the closest Android ImageView scaleType.
+  /// Defaults to centerCrop (BoxFit.cover) when unset or unrecognized.
+  String _mapFit(String? fit) {
+    switch (fit) {
+      case 'contain':
+        return 'fitCenter';
+      case 'fill':
+        return 'fitXY';
+      case 'fitWidth':
+        return 'fitStart';
+      case 'fitHeight':
+        return 'fitEnd';
+      case 'none':
+        return 'center';
+      case 'scaleDown':
+        return 'centerInside';
+      case 'cover':
+      default:
+        return 'centerCrop';
+    }
   }
 }
 
