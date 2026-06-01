@@ -157,6 +157,27 @@ void main() {
       expect(swift, contains('AlertConfiguration'));
     });
 
+    test('start supports push tokens (pushType + pushTokenUpdates)', () async {
+      final res = await runIos(
+        const [],
+        liveActivities: [orderTrackerActivity()],
+      );
+
+      final swift = readFile(res.file(
+          'ios/HomeWidgetExtension/MosaicActivityController.swift'));
+
+      // start takes a push flag and requests a token push type when set.
+      expect(swift, contains('push: Bool'));
+      expect(swift, contains('pushType: .token'));
+
+      // It observes the per-activity push token stream and hex-encodes it,
+      // forwarding via the static onPushToken hook the AppDelegate sets.
+      expect(swift, contains('pushTokenUpdates'));
+      expect(swift, contains('onPushToken'));
+      // Hex-encode the token Data.
+      expect(swift, contains(r'%02x'));
+    });
+
     test('bundle registers live activities under an iOS 16.1 gate', () async {
       final res = await runIos(
         const [],

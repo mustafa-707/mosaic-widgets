@@ -16,6 +16,16 @@ import ActivityKit
                                               binaryMessenger: controller.binaryMessenger)
     mosaicChannel = channel
 
+    // Forward per-activity APNs push tokens (from Live Activities started with
+    // push:true) to Flutter. The Dart side surfaces these on
+    // MosaicLiveActivities.onPushToken; register them with your server so it can
+    // push updates/ends via APNs (server side is the app's responsibility).
+    if #available(iOS 16.1, *) {
+      MosaicActivityController.onPushToken = { [weak channel] id, token in
+        channel?.invokeMethod("liveActivityPushToken", arguments: ["id": id, "token": token])
+      }
+    }
+
     channel.setMethodCallHandler({
       (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
       
@@ -69,7 +79,8 @@ import ActivityKit
             return
           }
           let data = (args["state"] as? [String: String]) ?? [:]
-          result(MosaicActivityController.start(type: type, data: data))
+          let push = (args["push"] as? Bool) ?? false
+          result(MosaicActivityController.start(type: type, data: data, push: push))
         } else {
           result(FlutterError(code: "UNAVAILABLE", message: "Live Activities require iOS 16.1+", details: nil))
         }

@@ -9,18 +9,40 @@ import Foundation
 
 @available(iOS 16.1, *)
 enum MosaicActivityController {
+    /// Set by the host AppDelegate to forward per-activity APNs push tokens to
+    /// Flutter over the `mosaic_bridge` channel (method `liveActivityPushToken`,
+    /// arguments `{id, token}`). The token is delivered as a lowercase hex
+    /// string. Left nil when push updates are not wired up.
+    static var onPushToken: ((String, String) -> Void)?
+
     /// Requests a new Live Activity and returns its id (nil on failure).
     ///
-    /// Uses the iOS 16.1 `request(attributes:contentState:)` overload (the
-    /// `content:`/`ActivityContent` form is 16.2+).
-    static func start(type: String, data: [String: String]) -> String? {
+    /// Uses the iOS 16.1 `request(attributes:contentState:pushType:)` overload
+    /// (the `content:`/`ActivityContent` form is 16.2+).
+    ///
+    /// When [push] is true the activity is requested with `pushType: .token`,
+    /// and a detached Task observes `activity.pushTokenUpdates` — each emitted
+    /// `Data` is hex-encoded and forwarded via [onPushToken] so the host app
+    /// can register it with its server for APNs-driven updates. ActivityKit may
+    /// rotate the token, so the stream is observed for the activity's lifetime.
+    static func start(type: String, data: [String: String], push: Bool = false) -> String? {
         let attributes = MosaicActivityAttributes(activityType: type)
         let state = MosaicActivityAttributes.ContentState(data: data)
         do {
             let activity = try Activity.request(
                 attributes: attributes,
-                contentState: state
+                contentState: state,
+                pushType: push ? .token : nil
             )
+            if push {
+                let id = activity.id
+                Task.detached {
+                    for await tokenData in activity.pushTokenUpdates {
+                        let token = tokenData.map { String(format: "%02x", $0) }.joined()
+                        MosaicActivityController.onPushToken?(id, token)
+                    }
+                }
+            }
             return activity.id
         } catch {
             NSLog("MosaicActivityController.start failed: \(error)")
