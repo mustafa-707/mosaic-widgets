@@ -104,5 +104,24 @@ void main() {
       expect(kt, contains('NotificationChannel'));
       expect(kt, contains('NotificationManagerCompat'));
     });
+
+    test('maintains an id->type map populated in start', () async {
+      final kt = await genManager();
+      // A companion map remembering which type each started id used.
+      expect(kt, contains('idTypes'));
+      expect(kt, contains('mutableMapOf<String, String>()'));
+      // start records the type under the id.
+      expect(kt, contains('idTypes[id] = type'));
+    });
+
+    test('update resolves the type from the map, not passing id as type',
+        () async {
+      final kt = await genManager();
+      // The update path must look up the activity type via the id->type map and
+      // pass THAT to buildNotification (so layoutFor picks the custom layout),
+      // never re-using the id as the type.
+      expect(kt, contains('idTypes[id] ?: id'));
+      expect(kt, isNot(contains('buildNotification(context, id, id,')));
+    });
   });
 }
