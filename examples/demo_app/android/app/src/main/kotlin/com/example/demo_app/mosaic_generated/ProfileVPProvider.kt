@@ -45,6 +45,7 @@ class ProfileVPProvider : AppWidgetProvider() {
         
         
         
+        
                 val intent0 = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("hwdemo://profile/details"))
         val pendingIntent0 = android.app.PendingIntent.getActivity(context, appWidgetId * 100 + 0, intent0, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
         views.setOnClickPendingIntent(R.id.hw_button_main, pendingIntent0)
