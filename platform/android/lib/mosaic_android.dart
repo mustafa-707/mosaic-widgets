@@ -1815,8 +1815,25 @@ class ProgressBarHandler extends AndroidNodeHandler {
     final colorData = node.data['color'];
     String tintAttr = '';
     if (colorData is Map) {
-      final color = context.parseColor(colorData.cast<String, dynamic>());
-      tintAttr = ' android:progressTint="$color"';
+      final colorMap = colorData.cast<String, dynamic>();
+      if (context.isColorBind(colorMap)) {
+        // Bind-form tint: the ProgressBar needs a stable id so the provider can
+        // resolve+apply the color at update time via setColorFilter. Reuse the
+        // value bind id when present; otherwise allocate a color-bind id.
+        final colorKey = colorMap['bind'] as String;
+        String viewId;
+        if (isBind) {
+          viewId =
+              'hw_progress_${AndroidGenerator.idForKey(value['key'] as String)}';
+        } else {
+          viewId = 'hw_progresscolor_${AndroidGenerator.idForKey(colorKey)}';
+          idAttr = 'android:id="@+id/$viewId"';
+        }
+        context.registerColorBind(viewId, colorKey, 'progress');
+      } else {
+        final color = context.parseColor(colorMap);
+        tintAttr = ' android:progressTint="$color"';
+      }
     }
     return '<ProgressBar $idAttr style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="$max"$progressAttr$tintAttr />';
   }
