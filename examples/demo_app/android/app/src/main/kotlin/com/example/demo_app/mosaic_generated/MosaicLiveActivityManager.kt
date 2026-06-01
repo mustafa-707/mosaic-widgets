@@ -30,6 +30,12 @@ object MosaicLiveActivityManager {
     /// ids are derived from this set; cleared by [end].
     private val activeIds = LinkedHashSet<String>()
 
+    /// Maps each posted live-activity id to the activity TYPE it was started
+    /// with. [update]/[end] resolve the type from here so the custom
+    /// `hw_la_<type>` RemoteViews layout is preserved across updates instead of
+    /// falling back to the system default.
+    private val idTypes = mutableMapOf<String, String>()
+
     private fun prefs(context: Context) =
         context.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
 
@@ -100,6 +106,7 @@ object MosaicLiveActivityManager {
         ensureChannel(context, highImportance = false)
         val id = type
         activeIds.add(id)
+        idTypes[id] = type
         val notification = buildNotification(context, type, id, null, null)
         NotificationManagerCompat.from(context).notify(notificationId(id), notification)
         return id
@@ -119,13 +126,15 @@ object MosaicLiveActivityManager {
         val alerting = alertTitle != null || alertBody != null
         ensureChannel(context, highImportance = alerting)
         activeIds.add(id)
-        val notification = buildNotification(context, id, id, alertTitle, alertBody)
+        val type = idTypes[id] ?: id
+        val notification = buildNotification(context, type, id, alertTitle, alertBody)
         NotificationManagerCompat.from(context).notify(notificationId(id), notification)
     }
 
     /// Ends the live activity [id] by cancelling its notification.
     fun end(context: Context, id: String) {
         activeIds.remove(id)
+        idTypes.remove(id)
         NotificationManagerCompat.from(context).cancel(notificationId(id))
     }
 
