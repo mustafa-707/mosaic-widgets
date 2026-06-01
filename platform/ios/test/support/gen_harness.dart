@@ -26,6 +26,9 @@ class GenResult {
 String readFirstLine(String path) =>
     File(path).readAsStringSync().split('\n').first;
 
+/// Reads the entire contents of the file at the given absolute [path].
+String readFile(String path) => File(path).readAsStringSync();
+
 Future<GenResult> runIos(
   List<IRDefinition> defs, {
   MosaicConfig? config,

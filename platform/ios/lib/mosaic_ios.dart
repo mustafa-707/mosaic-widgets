@@ -62,6 +62,76 @@ class IosGenerator {
     await bundleFile.writeAsString(_generateWidgetBundle());
 
     await generateCore(projectRoot);
+    await generateIntents(projectRoot);
+  }
+
+  /// Generates the shared AppIntents file used by iOS 17+ interactive buttons.
+  ///
+  /// WidgetKit AppIntents run in the widget extension process and CANNOT invoke
+  /// the Flutter engine directly. The bridge is therefore asynchronous via the
+  /// App Group: a callback intent writes the pending callback name + timestamp
+  /// into the shared UserDefaults under `mosaic_pending_callback`, and the host
+  /// app is expected to read & clear that key when it next becomes active
+  /// (e.g. in AppDelegate/SceneDelegate willEnterForeground) and then dispatch
+  /// the registered Dart `backgroundCallback`.
+  Future<void> generateIntents(String projectRoot) async {
+    final iosDir = Directory(p.join(projectRoot, 'ios', 'HomeWidgetExtension'));
+    if (!iosDir.existsSync()) iosDir.createSync(recursive: true);
+
+    final file = File(p.join(iosDir.path, 'MosaicIntents.swift'));
+    await file.writeAsString('''$kGeneratedSentinel
+import AppIntents
+import WidgetKit
+import Foundation
+
+// iOS 17+ interactive widgets dispatch these AppIntents from Button(intent:).
+// They run inside the widget extension process — they CANNOT call the Flutter
+// engine. The callback intent therefore records the request into the App Group
+// (`mosaic_pending_callback`); the host app must read & clear that key on
+// resume to fire the Dart backgroundCallback. See generateIntents() docs.
+
+/// Reloads all widget timelines. Used by MRefreshAction buttons on iOS 17+.
+@available(iOS 17.0, *)
+struct MosaicRefreshIntent: AppIntent {
+    static var title: LocalizedStringResource = "Refresh Widget"
+    static var isDiscoverable: Bool = false
+
+    func perform() async throws -> some IntentResult {
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}
+
+/// Records a pending Mosaic callback into the App Group so the host app can
+/// pick it up on next foreground, then reloads timelines. Used by
+/// MActionCallback buttons on iOS 17+.
+@available(iOS 17.0, *)
+struct MosaicCallbackIntent: AppIntent {
+    static var title: LocalizedStringResource = "Mosaic Callback"
+    static var isDiscoverable: Bool = false
+
+    @Parameter(title: "Callback Name")
+    var callbackName: String
+
+    init() {}
+
+    init(callbackName: String) {
+        self.callbackName = callbackName
+    }
+
+    func perform() async throws -> some IntentResult {
+        if let defaults = UserDefaults(suiteName: kMosaicAppGroup) {
+            let payload: [String: Any] = [
+                "callback": callbackName,
+                "timestamp": Date().timeIntervalSince1970,
+            ]
+            defaults.set(payload, forKey: "mosaic_pending_callback")
+        }
+        WidgetCenter.shared.reloadAllTimelines()
+        return .result()
+    }
+}
+''');
   }
 
   String _generateWidgetBundle() {
@@ -631,18 +701,34 @@ if let _u = URL(string: "$url") {
 }''';
     } else if (action['__type'] == 'HWActionCallback') {
       final callbackName = swiftEscape(action['callbackName'] as String);
-      // Build the mosaic-callback URL safely at runtime using percent-encoding.
+      // iOS 17+: dispatch a real AppIntent that records the pending callback in
+      // the App Group (the host app fires the Dart backgroundCallback on
+      // resume). Pre-iOS17: fall back to the mosaic-callback:// deep link Link,
+      // which only re-opens the app. The mosaic-callback URL is built at
+      // runtime via percent-encoding to stay force-unwrap-free.
       return '''
-if let _encoded = "$callbackName".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-   let _u = URL(string: "mosaic-callback://\\(_encoded)") {
+if #available(iOS 17.0, *) {
+    Button(intent: MosaicCallbackIntent(callbackName: "$callbackName")) {
+        $childSwift
+    }
+    .buttonStyle(.plain)
+} else if let _encoded = "$callbackName".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+          let _u = URL(string: "mosaic-callback://\\(_encoded)") {
     Link(destination: _u) {
         $childSwift
     }
 }''';
     } else {
-      // hwrefresh — static well-formed URL, still no force-unwrap
+      // hwrefresh. iOS 17+: AppIntent reloads timelines in-process. Pre-iOS17:
+      // fall back to the hwrefresh:// deep link Link (static well-formed URL,
+      // still no force-unwrap).
       return '''
-if let _u = URL(string: "hwrefresh://") {
+if #available(iOS 17.0, *) {
+    Button(intent: MosaicRefreshIntent()) {
+        $childSwift
+    }
+    .buttonStyle(.plain)
+} else if let _u = URL(string: "hwrefresh://") {
     Link(destination: _u) {
         $childSwift
     }
