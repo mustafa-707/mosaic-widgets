@@ -4,6 +4,17 @@ import 'package:path/path.dart' as p;
 import 'package:test/test.dart';
 
 void main() {
+  test('cleanAndroidDrawables removes hw_-prefixed files and keeps user files', () {
+    final dir = Directory.systemTemp.createTempSync('mosaic_drawable_');
+    File(p.join(dir.path, 'hw_gradient_1.xml')).writeAsStringSync('<shape/>');
+    File(p.join(dir.path, 'hw_bg_dark.xml')).writeAsStringSync('<shape/>');
+    File(p.join(dir.path, 'my_icon.xml')).writeAsStringSync('<vector/>');
+    cleanAndroidDrawables(dir);
+    expect(File(p.join(dir.path, 'hw_gradient_1.xml')).existsSync(), isFalse);
+    expect(File(p.join(dir.path, 'hw_bg_dark.xml')).existsSync(), isFalse);
+    expect(File(p.join(dir.path, 'my_icon.xml')).existsSync(), isTrue);
+  });
+
   test('removes only MOSAIC-GENERATED swift files', () {
     final dir = Directory.systemTemp.createTempSync('mosaic_clean_');
     File(p.join(dir.path, 'Foo.swift'))

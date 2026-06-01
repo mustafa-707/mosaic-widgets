@@ -18,6 +18,19 @@ void cleanIosGenerated(Directory extensionDir) {
   }
 }
 
+/// Deletes every file directly under [drawableDir] whose basename starts with
+/// `hw_`. User-created drawables (no `hw_` prefix) are kept.
+/// Does nothing if the directory does not exist.
+void cleanAndroidDrawables(Directory drawableDir) {
+  if (!drawableDir.existsSync()) return;
+  for (final entity in drawableDir.listSync()) {
+    if (entity is File && p.basename(entity.path).startsWith('hw_')) {
+      entity.deleteSync();
+      print('Deleted ${entity.path}');
+    }
+  }
+}
+
 class CleanCommand extends Command {
   @override
   final name = 'clean';
@@ -42,6 +55,8 @@ class CleanCommand extends Command {
     if (androidXml.existsSync()) {
       _deleteFilesByPrefix(androidXml, 'hw_');
     }
+
+    cleanAndroidDrawables(Directory('android/app/src/main/res/drawable'));
 
     print('Cleaning generated iOS files...');
     cleanIosGenerated(Directory('ios/HomeWidgetExtension'));
