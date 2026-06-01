@@ -21,13 +21,24 @@ class MBind {
 /// Value formatting modes for text bindings.
 enum MFormat { decimal, currency, percent, date, relativeTime }
 
+/// Horizontal text alignment.
+enum MTextAlign { start, center, end }
+
 /// Text widget for home widgets.
 class MText extends MNode {
   final Object text; // String OR MBind
   final MTextStyle style;
   final MFormat? format;
+  final int? maxLines;
+  final MTextAlign? align;
 
-  const MText(this.text, {this.style = const MTextStyle(), this.format});
+  const MText(
+    this.text, {
+    this.style = const MTextStyle(),
+    this.format,
+    this.maxLines,
+    this.align,
+  });
 
   @override
   Map<String, dynamic> toJson() => {
@@ -35,6 +46,8 @@ class MText extends MNode {
     'text': text is MBind ? (text as MBind).toJson() : text,
     'style': style.toJson(),
     'format': format?.name,
+    'maxLines': maxLines,
+    'align': align?.name,
   };
 }
 
@@ -115,6 +128,11 @@ class MContainer extends MNode {
   final double? height;
 
   final MInsets? margin;
+  final MShadow? shadow;
+
+  /// Per-corner radius. When non-null, takes precedence over the scalar
+  /// [radius] field for rounding.
+  final MRadius? corners;
 
   const MContainer({
     required this.child,
@@ -125,6 +143,8 @@ class MContainer extends MNode {
     this.width,
     this.height,
     this.margin,
+    this.shadow,
+    this.corners,
   });
 
   @override
@@ -138,6 +158,53 @@ class MContainer extends MNode {
     'width': width,
     'height': height,
     'margin': margin?.toJson(),
+    'shadow': shadow?.toJson(),
+    'corners': corners?.toJson(),
+  };
+}
+
+/// Drop shadow for a container.
+class MShadow {
+  final MColor? color;
+  final double blur;
+  final double dx;
+  final double dy;
+
+  const MShadow({this.color, this.blur = 8, this.dx = 0, this.dy = 2});
+
+  Map<String, dynamic> toJson() => {
+    'color': color?.toJson(),
+    'blur': blur,
+    'dx': dx,
+    'dy': dy,
+  };
+}
+
+/// Per-corner radius for a container.
+class MRadius {
+  final double topLeft;
+  final double topRight;
+  final double bottomLeft;
+  final double bottomRight;
+
+  const MRadius({
+    this.topLeft = 0,
+    this.topRight = 0,
+    this.bottomLeft = 0,
+    this.bottomRight = 0,
+  });
+
+  const MRadius.all(double value)
+    : topLeft = value,
+      topRight = value,
+      bottomLeft = value,
+      bottomRight = value;
+
+  Map<String, dynamic> toJson() => {
+    'topLeft': topLeft,
+    'topRight': topRight,
+    'bottomLeft': bottomLeft,
+    'bottomRight': bottomRight,
   };
 }
 
@@ -157,13 +224,18 @@ abstract class MGradient {
 class MLinearGradient extends MGradient {
   final List<MColor> colors;
   final List<double>? stops;
-  const MLinearGradient({required this.colors, this.stops});
+
+  /// Direction in degrees. 0 = left→right, 90 = top→bottom.
+  final double angle;
+
+  const MLinearGradient({required this.colors, this.stops, this.angle = 0});
 
   @override
   Map<String, dynamic> toJson() => {
     '__type': 'HWLinearGradient',
     'colors': colors.map((c) => c.toJson()).toList(),
     'stops': stops,
+    'angle': angle,
   };
 }
 
@@ -173,6 +245,94 @@ class MSpacer extends MNode {
 
   @override
   Map<String, dynamic> toJson() => {'__type': 'HWSpacer'};
+}
+
+/// Divider line (horizontal by default, optionally vertical).
+class MDivider extends MNode {
+  final double thickness;
+  final MColor? color;
+  final bool vertical;
+  final double indent;
+
+  const MDivider({
+    this.thickness = 1,
+    this.color,
+    this.vertical = false,
+    this.indent = 0,
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+    '__type': 'HWDivider',
+    'thickness': thickness,
+    'color': color?.toJson(),
+    'vertical': vertical,
+    'indent': indent,
+  };
+}
+
+/// Icon widget. iOS uses an SF Symbol name; Android uses a drawable resource
+/// name. At least one should be provided.
+class MIcon extends MNode {
+  final String? sfSymbol;
+  final String? androidDrawable;
+  final double size;
+  final MColor? color;
+
+  const MIcon({this.sfSymbol, this.androidDrawable, this.size = 24, this.color});
+
+  @override
+  Map<String, dynamic> toJson() => {
+    '__type': 'HWIcon',
+    'sfSymbol': sfSymbol,
+    'androidDrawable': androidDrawable,
+    'size': size,
+    'color': color?.toJson(),
+  };
+}
+
+/// Circular gauge / ring progress indicator.
+class MGauge extends MNode {
+  final Object value; // double OR MBind
+  final double max;
+  final MColor? trackColor;
+  final MColor? fillColor;
+  final double lineWidth;
+
+  const MGauge({
+    required this.value,
+    this.max = 100,
+    this.trackColor,
+    this.fillColor,
+    this.lineWidth = 6,
+  });
+
+  @override
+  Map<String, dynamic> toJson() => {
+    '__type': 'HWGauge',
+    'value': value is MBind ? (value as MBind).toJson() : value,
+    'max': max,
+    'trackColor': trackColor?.toJson(),
+    'fillColor': fillColor?.toJson(),
+    'lineWidth': lineWidth,
+  };
+}
+
+/// Badge overlay showing a count on top of a child.
+class MBadge extends MNode {
+  final MNode child;
+  final Object count; // String/int OR MBind
+  final MColor? color;
+
+  const MBadge({required this.child, required this.count, this.color});
+
+  @override
+  Map<String, dynamic> toJson() => {
+    '__type': 'HWBadge',
+    'child': child.toJson(),
+    'count': count is MBind ? (count as MBind).toJson() : count,
+    'color': color?.toJson(),
+  };
 }
 
 /// Stack layout (overlaps children).
