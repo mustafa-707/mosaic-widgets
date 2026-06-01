@@ -206,6 +206,12 @@ struct ${def.name}View: View {
     }
 }
 
+// NOTE: On iOS, widget sizing is governed by WidgetFamily / supportedFamilies,
+// not by the definition's width/height. The definition's width=${def.width},
+// height=${def.height} and previewImage are advisory on iOS and not used by
+// WidgetKit, which sizes by family and renders the placeholder() view for
+// previews. resizeMode=${def.resizeMode} only acts as a fallback for deriving
+// supportedFamilies when mosaic.yaml lists no ios.families for this widget.
 struct ${def.name}Widget: Widget {
     let kind: String = "${def.name}"
 
@@ -216,11 +222,49 @@ struct ${def.name}Widget: Widget {
         }
         .configurationDisplayName("${def.name}")
         .description("This is an auto-generated home widget.")
-        .supportedFamilies([${config.widgets.firstWhere((w) => w.name == def.name, orElse: () => throw StateError('No widget config entry named "${def.name}". Add it to mosaic.yaml.')).ios.families.map((f) => '.$f').join(', ')}])
+        .supportedFamilies([${_supportedFamilies(def)}])
         .contentMarginsDisabled()
     }
 }
 ''';
+  }
+
+  /// Computes the SwiftUI `.supportedFamilies` list for [def].
+  ///
+  /// WidgetKit sizes widgets by family, so the families declared in mosaic.yaml
+  /// (`ios.families`) are authoritative. When that list is empty/absent we fall
+  /// back to deriving sensible families from the definition's advisory
+  /// `resizeMode`/size so the widget is not silently un-renderable.
+  String _supportedFamilies(IRDefinition def) {
+    final widget = config.widgets.firstWhere(
+      (w) => w.name == def.name,
+      orElse: () => throw StateError(
+          'No widget config entry named "${def.name}". Add it to mosaic.yaml.'),
+    );
+    final families = widget.ios.families;
+    final List<String> resolved;
+    if (families.isNotEmpty) {
+      resolved = families.toList();
+    } else {
+      // Fallback derived from the advisory resizeMode / declared size.
+      switch (def.resizeMode) {
+        case 'both':
+          resolved = ['systemSmall', 'systemMedium', 'systemLarge'];
+          break;
+        case 'horizontal':
+          resolved = ['systemMedium', 'systemLarge'];
+          break;
+        case 'vertical':
+          resolved = ['systemSmall', 'systemLarge'];
+          break;
+        default:
+          // 'none' or unknown: pick by declared height (advisory grid cells).
+          resolved = def.height >= 3
+              ? ['systemLarge']
+              : (def.width >= 3 ? ['systemMedium'] : ['systemSmall']);
+      }
+    }
+    return resolved.map((f) => '.$f').join(', ');
   }
 
   String _colorToSwift(Map<String, dynamic>? data) {
