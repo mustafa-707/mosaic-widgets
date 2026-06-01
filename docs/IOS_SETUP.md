@@ -172,8 +172,8 @@ import ActivityKit
 case "startActivity":
   if #available(iOS 16.1, *) {
     let args = call.arguments as! [String: Any]
-    let type = args["type"] as! String
-    let data = (args["data"] as? [String: String]) ?? [:]
+    let type = args["activityType"] as! String
+    let data = (args["state"] as? [String: String]) ?? [:]
     result(MosaicActivityController.start(type: type, data: data))
   } else {
     result(FlutterError(code: "UNAVAILABLE", message: "Live Activities require iOS 16.1+", details: nil))
@@ -182,11 +182,12 @@ case "startActivity":
 case "updateActivity":
   if #available(iOS 16.1, *) {
     let args = call.arguments as! [String: Any]
+    let alert = args["alert"] as? [String: Any]
     MosaicActivityController.update(
       id: args["id"] as! String,
-      data: (args["data"] as? [String: String]) ?? [:],
-      alertTitle: args["alertTitle"] as? String,
-      alertBody: args["alertBody"] as? String)
+      data: (args["state"] as? [String: String]) ?? [:],
+      alertTitle: alert?["title"] as? String,
+      alertBody: alert?["body"] as? String)
     result(nil)
   } else { result(false) }
 
@@ -195,8 +196,8 @@ case "endActivity":
     let args = call.arguments as! [String: Any]
     MosaicActivityController.end(
       id: args["id"] as! String,
-      data: args["data"] as? [String: String],
-      policy: (args["policy"] as? String) ?? "default")
+      data: args["state"] as? [String: String],
+      policy: (args["policy"] as? String) ?? "afterDefault")
     result(nil)
   } else { result(false) }
 

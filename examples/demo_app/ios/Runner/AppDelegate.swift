@@ -64,11 +64,11 @@ import ActivityKit
         // generated into the widget extension target (gated @available(iOS 16.1)).
         if #available(iOS 16.1, *) {
           guard let args = call.arguments as? [String: Any],
-                let type = args["type"] as? String else {
-            result(FlutterError(code: "INVALID_ARGUMENTS", message: "type is required", details: nil))
+                let type = args["activityType"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENTS", message: "activityType is required", details: nil))
             return
           }
-          let data = (args["data"] as? [String: String]) ?? [:]
+          let data = (args["state"] as? [String: String]) ?? [:]
           result(MosaicActivityController.start(type: type, data: data))
         } else {
           result(FlutterError(code: "UNAVAILABLE", message: "Live Activities require iOS 16.1+", details: nil))
@@ -81,12 +81,13 @@ import ActivityKit
             result(FlutterError(code: "INVALID_ARGUMENTS", message: "id is required", details: nil))
             return
           }
-          let data = (args["data"] as? [String: String]) ?? [:]
+          let data = (args["state"] as? [String: String]) ?? [:]
+          let alert = args["alert"] as? [String: Any]
           MosaicActivityController.update(
             id: id,
             data: data,
-            alertTitle: args["alertTitle"] as? String,
-            alertBody: args["alertBody"] as? String
+            alertTitle: alert?["title"] as? String,
+            alertBody: alert?["body"] as? String
           )
           result(nil)
         } else {
@@ -102,8 +103,8 @@ import ActivityKit
           }
           MosaicActivityController.end(
             id: id,
-            data: args["data"] as? [String: String],
-            policy: (args["policy"] as? String) ?? "default"
+            data: args["state"] as? [String: String],
+            policy: (args["policy"] as? String) ?? "afterDefault"
           )
           result(nil)
         } else {
