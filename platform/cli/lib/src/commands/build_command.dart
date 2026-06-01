@@ -78,14 +78,21 @@ class BuildCommand extends Command {
       config: config,
       projectRoot: Directory.current.path,
     );
-    final irData = await runner.run();
+    final ir = await runner.runAll();
 
-    final irDefinitions = irData.map((e) => IRDefinition.fromJson(e)).toList();
+    final irDefinitions =
+        ir.widgets.map((e) => IRDefinition.fromJson(e)).toList();
+    final liveActivities = ir.liveActivities;
+
+    if (liveActivities.isNotEmpty) {
+      print('Generating ${liveActivities.length} live activities...');
+    }
 
     print('Generating Android code...');
     final androidGenerator = AndroidGenerator(
       config: config,
       definitions: irDefinitions,
+      liveActivities: liveActivities,
     );
     await androidGenerator.generate(runner.projectRoot);
 
@@ -93,6 +100,7 @@ class BuildCommand extends Command {
     final iosGenerator = IosGenerator(
       config: config,
       definitions: irDefinitions,
+      liveActivities: liveActivities,
     );
     await iosGenerator.generate(runner.projectRoot);
 
