@@ -1,33 +1,67 @@
 // MOSAIC-GENERATED — do not edit
 import SwiftUI
 import WidgetKit
+import AppIntents
 
 struct CryptoWidgetEntry: TimelineEntry {
     let date: Date
     let data: [String: Any]
 }
 
-struct CryptoWidgetProvider: TimelineProvider {
+// iOS 17+ user-configurable parameters surfaced in the widget's edit sheet.
+// The chosen values are copied into the timeline entry's `data` dict by the
+// provider so the widget tree's existing bind resolution (entry.data[key])
+// renders them.
+@available(iOS 17.0, *)
+struct CryptoWidgetConfigIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "CryptoWidget"
+    static var description = IntentDescription("Configure this widget.")
+
+    // choices: "BTC/USD", "ETH/USD", "SOL/USD"
+    @Parameter(title: "Trading Pair", default: "BTC/USD")
+    var pair: String
+
+    @Parameter(title: "Custom Label", default: "BITCOIN")
+    var label: String
+
+    @Parameter(title: "Decimals", default: 2.0)
+    var decimals: Double
+
+    @Parameter(title: "Compact Mode", default: false)
+    var compact: Bool
+
+    init() {}
+}
+
+@available(iOS 17.0, *)
+struct CryptoWidgetProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> CryptoWidgetEntry {
         CryptoWidgetEntry(date: Date(), data: [:])
     }
 
-    func getSnapshot(in context: Context, completion: @escaping (CryptoWidgetEntry) -> ()) {
-        let entry = CryptoWidgetEntry(date: Date(), data: loadData())
-        completion(entry)
+    func snapshot(for configuration: CryptoWidgetConfigIntent, in context: Context) async -> CryptoWidgetEntry {
+        CryptoWidgetEntry(date: Date(), data: mergedData(configuration))
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        let entry = CryptoWidgetEntry(date: Date(), data: loadData())
-        
-                let timeline = Timeline(entries: [entry], policy: .atEnd)
-        
-        
-        completion(timeline)
+    func timeline(for configuration: CryptoWidgetConfigIntent, in context: Context) async -> Timeline<CryptoWidgetEntry> {
+        let entry = CryptoWidgetEntry(date: Date(), data: mergedData(configuration))
+        return Timeline(entries: [entry], policy: .atEnd)
     }
 
     // The App Group container path, used to resolve relative image file paths.
     private static let appGroup = "group.com.example.demo_app.widgets"
+
+    // Loads App-Group-backed data, then overlays the configured param values
+    // (stringified) under their param keys so binds resolve to the user's
+    // choices.
+    private func mergedData(_ configuration: CryptoWidgetConfigIntent) -> [String: Any] {
+        var data = loadData()
+        data["pair"] = configuration.pair
+        data["label"] = configuration.label
+        data["decimals"] = configuration.decimals == configuration.decimals.rounded() ? String(Int(configuration.decimals)) : String(configuration.decimals)
+        data["compact"] = configuration.compact ? "true" : "false"
+        return data
+    }
 
     private func loadData() -> [String: Any] {
         var data: [String: Any] = [:]
@@ -43,9 +77,10 @@ struct CryptoWidgetProvider: TimelineProvider {
     }
 }
 
+@available(iOS 17.0, *)
 struct CryptoWidgetView: View {
     var entry: CryptoWidgetEntry
-    
+
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .topLeading) {
@@ -96,9 +131,9 @@ HStack(alignment: .center, spacing: 0) {
     Text("LIVE: ").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 8.0)).dynamicTypeSize(.large)
 Group {
     if #available(iOS 16.0, *) {
-        Text(timerInterval: Date(timeIntervalSince1970: 1780315420.832)...Date.distantFuture, countsDown: false)
+        Text(timerInterval: Date(timeIntervalSince1970: 1780315835.478)...Date.distantFuture, countsDown: false)
     } else {
-        Text(Date(timeIntervalSince1970: 1780315420.832), style: .timer)
+        Text(Date(timeIntervalSince1970: 1780315835.478), style: .timer)
     }
 }.foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
 }
@@ -117,17 +152,12 @@ Group {
     }
 }
 
-// NOTE: On iOS, widget sizing is governed by WidgetFamily / supportedFamilies,
-// not by the definition's width/height. The definition's width=2,
-// height=2 and previewImage are advisory on iOS and not used by
-// WidgetKit, which sizes by family and renders the placeholder() view for
-// previews. resizeMode=both only acts as a fallback for deriving
-// supportedFamilies when mosaic.yaml lists no ios.families for this widget.
+// NOTE: width=2, height=2, previewImage and resizeMode=both
+// are advisory on iOS; WidgetKit sizes by family.
+@available(iOS 17.0, *)
 struct CryptoWidgetWidget: Widget {
     let kind: String = "CryptoWidget"
 
-    // Built at runtime so iOS 16+ lock-screen accessory families can be added
-    // under an availability check (their WidgetFamily cases are iOS 16+).
     private var families: [WidgetFamily] {
         var f: [WidgetFamily] = [.systemMedium]
         if #available(iOS 16.0, *) {
@@ -137,13 +167,13 @@ struct CryptoWidgetWidget: Widget {
     }
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: CryptoWidgetProvider()) { entry in
+        AppIntentConfiguration(kind: kind, intent: CryptoWidgetConfigIntent.self, provider: CryptoWidgetProvider()) { entry in
             CryptoWidgetView(entry: entry)
                 .mosaicContainerBackground(.clear)
                 .widgetAccentable()
         }
         .configurationDisplayName("CryptoWidget")
-        .description("This is an auto-generated home widget.")
+        .description("This is an auto-generated configurable widget.")
         .supportedFamilies(families)
         .contentMarginsDisabled()
     }

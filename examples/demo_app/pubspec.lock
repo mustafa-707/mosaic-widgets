@@ -169,7 +169,7 @@ packages:
       path: "../../platform/flutter"
       relative: true
     source: path
-    version: "0.0.1"
+    version: "1.0.0"
   mosaic_android:
     dependency: transitive
     description:

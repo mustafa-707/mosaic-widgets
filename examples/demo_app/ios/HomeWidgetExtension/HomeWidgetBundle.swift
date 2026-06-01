@@ -7,7 +7,9 @@ struct HomeWidgetBundle: WidgetBundle {
     var body: some Widget {
         ProfileVPWidget()
         NewsWidgetWidget()
-        CryptoWidgetWidget()
+        if #available(iOS 17.0, *) {
+            CryptoWidgetWidget()
+        }
         if #available(iOS 16.1, *) {
             OrderTrackerLiveActivity()
         }

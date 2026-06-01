@@ -6,6 +6,36 @@ MosaicDefinition buildCryptoWidget() {
     width: 2,
     height: 2,
     resizeMode: MResizeMode.both,
+    // User-configurable parameters surfaced in the OS configuration UI. Each
+    // chosen value is written into the shared store under its key and resolves
+    // via MBind of the same name.
+    params: const [
+      MParam(
+        key: "pair",
+        label: "Trading Pair",
+        type: MParamType.choice,
+        defaultValue: "BTC/USD",
+        choices: ["BTC/USD", "ETH/USD", "SOL/USD"],
+      ),
+      MParam(
+        key: "label",
+        label: "Custom Label",
+        type: MParamType.text,
+        defaultValue: "BITCOIN",
+      ),
+      MParam(
+        key: "decimals",
+        label: "Decimals",
+        type: MParamType.number,
+        defaultValue: 2,
+      ),
+      MParam(
+        key: "compact",
+        label: "Compact Mode",
+        type: MParamType.toggle,
+        defaultValue: false,
+      ),
+    ],
     root: MContainer(
       gradient: const MLinearGradient(
         colors: [
