@@ -790,8 +790,26 @@ class TimerHandler extends IosNodeHandler {
     final size = style['size'] != null
         ? '.font(.system(size: ${style['size']}))'
         : '';
+    final modifiers = '$bold$color$size.monospacedDigit()';
 
-    return 'Text($dateExpr, style: .timer)$bold$color$size.monospacedDigit()';
+    final countUp = node.data['countUp'] == true;
+    if (countUp) {
+      // Counting up: SwiftUI's relative timer Text counts down by default, so
+      // we use Text(timerInterval:countsDown:) with countsDown: false to show
+      // elapsed time from the target date. That initializer is iOS 16+, so we
+      // gate it and fall back to the plain `.timer` style (which counts down)
+      // on iOS 14/15 — the closest available behavior.
+      return '''
+Group {
+    if #available(iOS 16.0, *) {
+        Text(timerInterval: $dateExpr...Date.distantFuture, countsDown: false)
+    } else {
+        Text($dateExpr, style: .timer)
+    }
+}$modifiers''';
+    }
+
+    return 'Text($dateExpr, style: .timer)$modifiers';
   }
 }
 
