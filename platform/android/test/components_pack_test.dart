@@ -128,6 +128,13 @@ void main() {
       // fillColor -> progressTint, trackColor -> backgroundTint
       expect(xml, contains('android:progressTint="#00FF00"'));
       expect(xml, contains('android:backgroundTint="#222222"'));
+      // lineWidth has no analogue on a linear ProgressBar: the drop is
+      // surfaced via a documented comment rather than silently ignored.
+      expect(
+        xml,
+        contains(
+            '<!-- gauge lineWidth ignored: approximated as linear ProgressBar on Android -->'),
+      );
     });
 
     test('gauge value bind reuses the progress runtime-bind path', () async {

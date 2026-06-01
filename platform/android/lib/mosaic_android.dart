@@ -153,12 +153,16 @@ class AndroidGenerator {
   /// target ('text' → setTextColor, 'background' → setInt setBackgroundColor,
   /// 'progress' → setInt setColorFilter on the tint). Populated by handlers
   /// that encounter a bind-form color; flushed in [_generateKotlinProvider].
-  final List<({String viewId, String key, String target})> _colorBinds = [];
+  final List<
+      ({String viewId, String key, String target, double opacity})> _colorBinds = [];
 
   /// Registers a runtime color bind for [viewId] resolving prefs [key] applied
-  /// via [target] ('text' | 'background' | 'progress').
-  void registerColorBind(String viewId, String key, String target) {
-    _colorBinds.add((viewId: viewId, key: key, target: target));
+  /// via [target] ('text' | 'background' | 'progress'). [opacity] (default 1.0)
+  /// is applied to the resolved color's alpha channel in the provider; an
+  /// opacity of 1.0 leaves the parsed color untouched.
+  void registerColorBind(String viewId, String key, String target,
+      {double opacity = 1.0}) {
+    _colorBinds.add((viewId: viewId, key: key, target: target, opacity: opacity));
   }
 
   /// Format directive for bound text keys: maps a bind key to its MText
@@ -1294,16 +1298,29 @@ $xmlSentinel
           final i = e.key;
           final cb = e.value;
           final lit = kotlinEscape(cb.key);
+          // Bind-form colors may carry an opacity (<1.0); apply it to the
+          // parsed color's alpha channel. Opacity 1.0 leaves the color as-is.
+          final String colorVar;
+          final String opacityLine;
+          if (cb.opacity < 1.0) {
+            final alpha = (cb.opacity * 255).toInt().clamp(0, 255);
+            opacityLine =
+                '\n            val c$i = (cRaw$i and 0x00FFFFFF.toInt()) or ($alpha shl 24)';
+            colorVar = 'c$i';
+          } else {
+            opacityLine = '';
+            colorVar = 'cRaw$i';
+          }
           final apply = switch (cb.target) {
             'background' =>
-              'views.setInt(R.id.${cb.viewId}, "setBackgroundColor", c$i)',
+              'views.setInt(R.id.${cb.viewId}, "setBackgroundColor", $colorVar)',
             'progress' =>
-              'views.setInt(R.id.${cb.viewId}, "setColorFilter", c$i)',
-            _ => 'views.setTextColor(R.id.${cb.viewId}, c$i)',
+              'views.setInt(R.id.${cb.viewId}, "setColorFilter", $colorVar)',
+            _ => 'views.setTextColor(R.id.${cb.viewId}, $colorVar)',
           };
           return '''
         try {
-            val c$i = android.graphics.Color.parseColor(MosaicData.resolveString(context, "$lit"))
+            val cRaw$i = android.graphics.Color.parseColor(MosaicData.resolveString(context, "$lit"))$opacityLine
             $apply
         } catch (e: Exception) { }''';
         })
@@ -1854,7 +1871,8 @@ class TextHandler extends AndroidNodeHandler {
         viewId = 'hw_textcolor_${AndroidGenerator.idForKey(colorKey)}';
         idAttr = 'android:id="@+id/$viewId"';
       }
-      context.registerColorBind(viewId, colorKey, 'text');
+      context.registerColorBind(viewId, colorKey, 'text',
+          opacity: (colorData['opacity'] ?? 1.0).toDouble());
     }
 
     return '<TextView $idAttr android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="${xmlEscape(textValue)}" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style"$alphaAttr$maxLinesAttr$alignAttr />';
@@ -1907,7 +1925,8 @@ class ContainerHandler extends AndroidNodeHandler {
       final colorKey = backgroundMap['bind'] as String;
       final viewId = 'hw_bgcolor_${AndroidGenerator.idForKey(colorKey)}';
       idAttr = ' android:id="@+id/$viewId"';
-      context.registerColorBind(viewId, colorKey, 'background');
+      context.registerColorBind(viewId, colorKey, 'background',
+          opacity: (backgroundMap['opacity'] ?? 1.0).toDouble());
     }
 
     String bgAttr = '';
@@ -2426,7 +2445,8 @@ class ProgressBarHandler extends AndroidNodeHandler {
           viewId = 'hw_progresscolor_${AndroidGenerator.idForKey(colorKey)}';
           idAttr = 'android:id="@+id/$viewId"';
         }
-        context.registerColorBind(viewId, colorKey, 'progress');
+        context.registerColorBind(viewId, colorKey, 'progress',
+            opacity: (colorMap['opacity'] ?? 1.0).toDouble());
       } else {
         final color = context.parseColor(colorMap);
         tintAttr = ' android:progressTint="$color"';
@@ -2498,8 +2518,11 @@ class TimerHandler extends AndroidNodeHandler {
     );
     final size = node.data['style']?['size'] ?? 14;
     final style = node.data['style']?['bold'] == true ? 'bold' : 'normal';
+    // Standalone opacity applies to the whole view (mirror TextHandler).
+    final opacity = node.data['style']?['opacity'];
+    final alphaAttr = opacity != null ? ' android:alpha="$opacity"' : '';
 
-    return '<Chronometer android:id="@+id/hw_timer_$id" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style" />';
+    return '<Chronometer android:id="@+id/hw_timer_$id" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style"$alphaAttr />';
   }
 }
 
@@ -2671,7 +2694,14 @@ class GaugeHandler extends AndroidNodeHandler {
           ' android:backgroundTint="${context.parseColor(track.cast<String, dynamic>())}"';
     }
 
+    // lineWidth styles the arc stroke on iOS; a linear ProgressBar has no arc,
+    // so the value is dropped. Surface the drop with a comment when present.
+    final lineWidthComment = node.data['lineWidth'] != null
+        ? '<!-- gauge lineWidth ignored: approximated as linear ProgressBar on Android -->\n'
+        : '';
+
     return '<!-- gauge approximated as linear progress on Android (RemoteViews has no arc) -->\n'
+        '$lineWidthComment'
         '<ProgressBar$idAttr style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="$max"$progressAttr$tintAttr />';
   }
 }

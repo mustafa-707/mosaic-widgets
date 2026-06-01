@@ -38,7 +38,7 @@ class CryptoWidgetProvider : AppWidgetProvider() {
         
         views.setTextViewText(R.id.hw_text_btc_price, MosaicData.formatValue(MosaicData.resolveString(context, "btc_price"), "currency"))
         views.setTextViewText(R.id.hw_text_btc_change, MosaicData.resolveString(context, "btc_change"))
-                val target0 = 1780319435368L
+                val target0 = 1780325036467L
         val offset0 = target0 - System.currentTimeMillis()
         views.setChronometer(R.id.hw_timer_0, android.os.SystemClock.elapsedRealtime() - offset0, null, true)
         views.setChronometerCountDown(R.id.hw_timer_0, false)
@@ -46,8 +46,8 @@ class CryptoWidgetProvider : AppWidgetProvider() {
         
         
                 try {
-            val c0 = android.graphics.Color.parseColor(MosaicData.resolveString(context, "accent"))
-            views.setInt(R.id.hw_bgcolor_accent, "setBackgroundColor", c0)
+            val cRaw0 = android.graphics.Color.parseColor(MosaicData.resolveString(context, "accent"))
+            views.setInt(R.id.hw_bgcolor_accent, "setBackgroundColor", cRaw0)
         } catch (e: Exception) { }
         
                 val intent0 = android.content.Intent(context, CryptoWidgetProvider::class.java).apply {
