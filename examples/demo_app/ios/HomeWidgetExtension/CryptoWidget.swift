@@ -51,14 +51,14 @@ struct CryptoWidgetView: View {
             ZStack(alignment: .topLeading) {
     Spacer()
     .frame(width: 100.0, height: 100.0)
-    .background(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.1))
+    .background(Color(hex: (entry.data["accent"] as? String) ?? "#00000000"))
     .clipShape(RoundedRectangle(cornerRadius: 50.0))
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
 VStack(alignment: .leading, spacing: 0) {
     HStack(alignment: .center, spacing: 0) {
     VStack(alignment: .leading, spacing: 0) {
     Text("BITCOIN").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
-Text("BTC/USD").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 14.0)).dynamicTypeSize(.large)
+Text("BTC/USD").bold().foregroundColor(Color(light: Color(hex: "#FFFFFF"), dark: Color(hex: "#E5E7EB"))).font(.system(size: 14.0)).dynamicTypeSize(.large)
 }
 Spacer()
 Text("₿").font(.system(size: 18.0)).dynamicTypeSize(.large)
@@ -69,7 +69,7 @@ Text("₿").font(.system(size: 18.0)).dynamicTypeSize(.large)
 }
 Spacer()
 VStack(alignment: .leading, spacing: 0) {
-    Text("\(entry.data["btc_price"] as? String ?? String(describing: entry.data["btc_price"] ?? "--"))").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 20.0)).dynamicTypeSize(.large)
+    Text(((entry.data["btc_price"] as? NSNumber)?.doubleValue ?? Double("\(entry.data["btc_price"] ?? "0")") ?? 0).formatted(.currency(code: Locale.current.currency?.identifier ?? "USD"))).bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 20.0)).dynamicTypeSize(.large)
 HStack(alignment: .center, spacing: 0) {
     Text("\(entry.data["btc_change"] as? String ?? String(describing: entry.data["btc_change"] ?? "--"))").bold().foregroundColor(Color(red: 0.2901960784313726, green: 0.8705882352941177, blue: 0.5019607843137255, opacity: 1.0)).font(.system(size: 12.0)).dynamicTypeSize(.large)
 Text("24h").foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 12.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 0.0, leading: 4.0, bottom: 0.0, trailing: 0.0))
@@ -96,9 +96,9 @@ HStack(alignment: .center, spacing: 0) {
     Text("LIVE: ").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 8.0)).dynamicTypeSize(.large)
 Group {
     if #available(iOS 16.0, *) {
-        Text(timerInterval: Date(timeIntervalSince1970: 1780299294.43)...Date.distantFuture, countsDown: false)
+        Text(timerInterval: Date(timeIntervalSince1970: 1780299540.368)...Date.distantFuture, countsDown: false)
     } else {
-        Text(Date(timeIntervalSince1970: 1780299294.43), style: .timer)
+        Text(Date(timeIntervalSince1970: 1780299540.368), style: .timer)
     }
 }.foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
 }
@@ -129,7 +129,11 @@ struct CryptoWidgetWidget: Widget {
     // Built at runtime so iOS 16+ lock-screen accessory families can be added
     // under an availability check (their WidgetFamily cases are iOS 16+).
     private var families: [WidgetFamily] {
-        return [.systemMedium]
+        var f: [WidgetFamily] = [.systemMedium]
+        if #available(iOS 16.0, *) {
+            f.append(contentsOf: [.accessoryRectangular])
+        }
+        return f
     }
 
     var body: some WidgetConfiguration {

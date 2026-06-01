@@ -13,17 +13,17 @@
     <FrameLayout
     android:layout_width="wrap_content" android:layout_height="wrap_content"
     android:layout_gravity="top|end"
-     android:layout_marginTop="-30.0dp" android:layout_marginRight="-30.0dp">
-    <FrameLayout
+     android:layout_marginTop="-30.0dp" android:layout_marginEnd="-30.0dp">
+    <FrameLayout android:id="@+id/hw_bgcolor_accent"
     android:layout_width="100.0dp" android:layout_height="100.0dp"
-     android:background="@drawable/hw_bg_1202058783"
+    
     >
     <FrameLayout android:layout_width="0dp" android:layout_height="0dp" />
 </FrameLayout>
 </FrameLayout>
 <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="12.0dp" android:paddingRight="12.0dp"
+    android:paddingStart="12.0dp" android:paddingEnd="12.0dp"
     android:paddingTop="12.0dp" android:paddingBottom="12.0dp">
     <LinearLayout
     android:layout_width="match_parent"
@@ -41,7 +41,7 @@
     android:orientation="vertical"
     android:gravity="top|start">
     <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="BITCOIN" android:textColor="#93C5FD" android:textSize="10.0sp" android:textStyle="bold" />
-<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="BTC/USD" android:textColor="#FFFFFF" android:textSize="14.0sp" android:textStyle="bold" />
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="BTC/USD" android:textColor="@color/mosaic_1890917449" android:textSize="14.0sp" android:textStyle="bold" />
 </LinearLayout>
 <Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
 <FrameLayout
@@ -73,7 +73,7 @@
     <TextView android:id="@+id/hw_text_btc_change" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#4ADE80" android:textSize="12.0sp" android:textStyle="bold" />
 <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="4.0dp" android:paddingRight="0.0dp"
+    android:paddingStart="4.0dp" android:paddingEnd="0.0dp"
     android:paddingTop="0.0dp" android:paddingBottom="0.0dp">
     <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="24h" android:textColor="#93C5FD" android:textSize="12.0sp" android:textStyle="normal" />
 </FrameLayout>
@@ -95,7 +95,7 @@
     >
     <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="12.0dp" android:paddingRight="12.0dp"
+    android:paddingStart="12.0dp" android:paddingEnd="12.0dp"
     android:paddingTop="6.0dp" android:paddingBottom="6.0dp">
     <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Refresh" android:textColor="#FFFFFF" android:textSize="10.0sp" android:textStyle="bold" />
 </FrameLayout>

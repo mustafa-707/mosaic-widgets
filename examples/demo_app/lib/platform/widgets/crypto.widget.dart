@@ -23,7 +23,8 @@ MosaicDefinition buildCryptoWidget() {
             width: 100,
             height: 100,
             radius: 50,
-            background: MColor.hex("#FFFFFF", opacity: 0.1),
+            // Runtime-bound accent color (app pushes an "accent" hex).
+            background: MColor.bind("accent"),
             child: MSpacer(),
           ),
         ),
@@ -48,8 +49,9 @@ MosaicDefinition buildCryptoWidget() {
                   ),
                   const MText(
                     "BTC/USD",
+                    // Adaptive color: white in light mode, soft grey in dark.
                     style: MTextStyle(
-                      color: MColor.hex("#FFFFFF"),
+                      color: MColor.hex("#FFFFFF", dark: "#E5E7EB"),
                       size: 14,
                       bold: true,
                     ),
@@ -70,7 +72,8 @@ MosaicDefinition buildCryptoWidget() {
               MColumn(crossAxisAlignment: MCrossAxisAlignment.start, [
                 MText(
                   MBind("btc_price"),
-                  // Use 20 to fit better
+                  // Locale-aware currency formatting of the bound numeric value.
+                  format: MFormat.currency,
                   style: const MTextStyle(
                     color: MColor.hex("#FFFFFF"),
                     size: 20,

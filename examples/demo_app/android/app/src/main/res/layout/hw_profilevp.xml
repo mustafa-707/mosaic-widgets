@@ -13,7 +13,7 @@
     <FrameLayout
     android:layout_width="wrap_content" android:layout_height="wrap_content"
     android:layout_gravity="top|end"
-     android:layout_marginTop="-20.0dp" android:layout_marginRight="-20.0dp">
+     android:layout_marginTop="-20.0dp" android:layout_marginEnd="-20.0dp">
     <FrameLayout
     android:layout_width="80.0dp" android:layout_height="80.0dp"
      android:background="@drawable/hw_bg_21522405"
@@ -23,7 +23,7 @@
 </FrameLayout>
 <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="12.0dp" android:paddingRight="12.0dp"
+    android:paddingStart="12.0dp" android:paddingEnd="12.0dp"
     android:paddingTop="12.0dp" android:paddingBottom="12.0dp">
     <LinearLayout
     android:layout_width="match_parent"
@@ -82,7 +82,7 @@
 </LinearLayout>
 <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="0.0dp" android:paddingRight="0.0dp"
+    android:paddingStart="0.0dp" android:paddingEnd="0.0dp"
     android:paddingTop="4.0dp" android:paddingBottom="4.0dp">
     <ProgressBar android:id="@+id/hw_progress_battery_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="100" android:progressTint="#38BDF8" />
 </FrameLayout>
@@ -111,7 +111,7 @@
 </LinearLayout>
 <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="0.0dp" android:paddingRight="0.0dp"
+    android:paddingStart="0.0dp" android:paddingEnd="0.0dp"
     android:paddingTop="4.0dp" android:paddingBottom="4.0dp">
     <ProgressBar android:id="@+id/hw_progress_memory_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="100" android:progressTint="#22C55E" />
 </FrameLayout>
@@ -132,7 +132,7 @@
     >
     <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="8.0dp" android:paddingRight="8.0dp"
+    android:paddingStart="8.0dp" android:paddingEnd="8.0dp"
     android:paddingTop="6.0dp" android:paddingBottom="6.0dp">
     <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Details" android:textColor="#FFFFFF" android:textSize="10.0sp" android:textStyle="bold" />
 </FrameLayout>
@@ -149,7 +149,7 @@
     >
     <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="8.0dp" android:paddingRight="8.0dp"
+    android:paddingStart="8.0dp" android:paddingEnd="8.0dp"
     android:paddingTop="6.0dp" android:paddingBottom="6.0dp">
     <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Refresh" android:textColor="#0F172A" android:textSize="10.0sp" android:textStyle="bold" />
 </FrameLayout>

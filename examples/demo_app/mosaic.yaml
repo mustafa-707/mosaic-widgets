@@ -25,4 +25,4 @@ widgets:
       min_sdk: 21
       sizes: [medium]
     ios:
-      families: [systemMedium]
+      families: [systemMedium, accessoryRectangular]

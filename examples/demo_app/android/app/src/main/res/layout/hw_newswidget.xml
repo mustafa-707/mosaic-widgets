@@ -13,7 +13,7 @@
     <FrameLayout
     android:layout_width="wrap_content" android:layout_height="wrap_content"
     android:layout_gravity="bottom|start"
-     android:layout_marginTop="0.0dp" android:layout_marginLeft="0.0dp" android:layout_marginBottom="0.0dp">
+     android:layout_marginTop="0.0dp" android:layout_marginStart="0.0dp" android:layout_marginBottom="0.0dp">
     <FrameLayout
     android:layout_width="4.0dp" android:layout_height="100.0dp"
      android:background="#F43F5E"
@@ -23,7 +23,7 @@
 </FrameLayout>
 <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="16.0dp" android:paddingRight="16.0dp"
+    android:paddingStart="16.0dp" android:paddingEnd="16.0dp"
     android:paddingTop="16.0dp" android:paddingBottom="16.0dp">
     <LinearLayout
     android:layout_width="match_parent"
@@ -45,7 +45,7 @@
     <Chronometer android:id="@+id/hw_timer_0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#22C55E" android:textSize="10.0sp" android:textStyle="bold" />
 <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="4.0dp" android:paddingRight="0.0dp"
+    android:paddingStart="4.0dp" android:paddingEnd="0.0dp"
     android:paddingTop="0.0dp" android:paddingBottom="0.0dp">
     <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="LIVE" android:textColor="#94A3B8" android:textSize="10.0sp" android:textStyle="bold" />
 </FrameLayout>
@@ -77,7 +77,7 @@
     >
     <FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingLeft="10.0dp" android:paddingRight="10.0dp"
+    android:paddingStart="10.0dp" android:paddingEnd="10.0dp"
     android:paddingTop="4.0dp" android:paddingBottom="4.0dp">
     <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="READ" android:textColor="#F43F5E" android:textSize="10.0sp" android:textStyle="bold" />
 </FrameLayout>
