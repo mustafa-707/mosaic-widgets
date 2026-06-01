@@ -1,39 +1,55 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# mosaic_android
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/tools/pub/writing-package-pages). 
+**Android RemoteViews and Kotlin code generator for the Mosaic ecosystem.**
 
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/to/develop-packages). 
--->
+`mosaic_android` walks the Mosaic IR tree and emits the Kotlin `AppWidgetProvider`
+subclasses, `RemoteViews` builders, XML metadata, and `res/values` color resources
+required to render a Mosaic widget on Android home screens.
 
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+This package is **used by `mosaic_cli`** during `dart run mosaic_cli build`. App
+developers do not add it directly — add [`mosaic_cli`](https://pub.dev/packages/mosaic_cli)
+as a dev dependency instead.
 
-## Features
+## Ecosystem
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+| Package | Role |
+|---------|------|
+| [mosaic](https://pub.dev/packages/mosaic) | Flutter DSL + `MosaicBridge` runtime |
+| [mosaic_core](https://pub.dev/packages/mosaic_core) | IR, config, runner primitives |
+| **mosaic_android** ← _you are here_ | Android RemoteViews/Kotlin generator |
+| [mosaic_ios](https://pub.dev/packages/mosaic_ios) | iOS WidgetKit/Live Activity generator |
+| [mosaic_cli](https://pub.dev/packages/mosaic_cli) | `dart run mosaic_cli build` and friends |
 
-## Getting started
+## Install
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Only add this explicitly if you are building a custom code-generation pipeline.
 
-## Usage
-
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
-
-```dart
-const like = 'sample';
+```yaml
+dev_dependencies:
+  mosaic_android: ^1.0.0
 ```
 
-## Additional information
+## What's generated
 
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+For each widget registered in `mosaic.yaml`, `mosaic_android` emits:
+
+- A Kotlin `AppWidgetProvider` subclass (`<Name>Provider.kt`) that builds a
+  `RemoteViews` tree from the Mosaic IR.
+- `MosaicData.kt` — reads the shared `HomeWidgetPlugin` data store and exposes
+  bound `MBind` values to the provider at update time.
+- `res/values/mosaic_colors.xml` and `res/values-night/mosaic_colors.xml` — adaptive
+  color resources for `MColor.hex(dark:)` pairs.
+- `res/xml/<name>_info.xml` — AppWidget provider metadata files.
+- For Live Activities: `MosaicLiveActivityManager.kt` that maps Flutter
+  `MosaicLiveActivities.start/update/end` calls to Android ongoing notifications
+  built from the `lockScreen` tree.
+
+## Supported DSL features
+
+All core layout and widget nodes are supported. Current limitation:
+
+- **`MListView`** is not yet implemented on Android; the build throws a clear error.
+  Use `MColumn` to enumerate items in the meantime.
+
+For all supported DSL nodes and attributes see the
+[DSL Reference](https://github.com/your-org/mosaic/blob/main/DOCS/DSL_REFERENCE.md).
