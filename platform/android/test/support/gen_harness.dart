@@ -12,6 +12,30 @@ class GenResult {
   String file(String rel) => File(p.join(root.path, rel)).readAsStringSync();
 
   bool exists(String rel) => File(p.join(root.path, rel)).existsSync();
+
+  /// All generated resource XML files under `res/` (layout, xml, drawable).
+  List<File> resXmlFiles() {
+    final resDir = Directory(
+      p.join(root.path, 'android', 'app', 'src', 'main', 'res'),
+    );
+    if (!resDir.existsSync()) return const [];
+    return resDir
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.xml'))
+        .toList();
+  }
+
+  /// Asserts (returns the offending path, or null) that every generated res
+  /// XML file's FIRST line is the XML declaration — AAPT rejects any file
+  /// whose declaration is not the first bytes.
+  String? firstNonXmlDeclFile() {
+    for (final f in resXmlFiles()) {
+      final firstLine = f.readAsStringSync().split('\n').first.trimRight();
+      if (!firstLine.startsWith('<?xml')) return f.path;
+    }
+    return null;
+  }
 }
 
 Future<GenResult> runAndroid(
