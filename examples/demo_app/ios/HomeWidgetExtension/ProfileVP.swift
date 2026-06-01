@@ -102,7 +102,14 @@ HStack(alignment: .center, spacing: 0) {
     }
 }
 Spacer()
-if let _u = URL(string: "hwrefresh://") {
+if #available(iOS 17.0, *) {
+    Button(intent: MosaicRefreshIntent()) {
+        Text("Refresh").bold().foregroundColor(Color(red: 0.058823529411764705, green: 0.09019607843137255, blue: 0.16470588235294117, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 6.0, leading: 8.0, bottom: 6.0, trailing: 8.0))
+    .background(Color(red: 0.2196078431372549, green: 0.7411764705882353, blue: 0.9725490196078431, opacity: 1.0))
+    .clipShape(RoundedRectangle(cornerRadius: 8.0))
+    }
+    .buttonStyle(.plain)
+} else if let _u = URL(string: "hwrefresh://") {
     Link(destination: _u) {
         Text("Refresh").bold().foregroundColor(Color(red: 0.058823529411764705, green: 0.09019607843137255, blue: 0.16470588235294117, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 6.0, leading: 8.0, bottom: 6.0, trailing: 8.0))
     .background(Color(red: 0.2196078431372549, green: 0.7411764705882353, blue: 0.9725490196078431, opacity: 1.0))
@@ -125,6 +132,12 @@ if let _u = URL(string: "hwrefresh://") {
     }
 }
 
+// NOTE: On iOS, widget sizing is governed by WidgetFamily / supportedFamilies,
+// not by the definition's width/height. The definition's width=2,
+// height=2 and previewImage are advisory on iOS and not used by
+// WidgetKit, which sizes by family and renders the placeholder() view for
+// previews. resizeMode=both only acts as a fallback for deriving
+// supportedFamilies when mosaic.yaml lists no ios.families for this widget.
 struct ProfileVPWidget: Widget {
     let kind: String = "ProfileVP"
 

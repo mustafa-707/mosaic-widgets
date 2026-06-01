@@ -77,7 +77,14 @@ Text("24h").foregroundColor(Color(red: 0.5764705882352941, green: 0.772549019607
 }
 Spacer()
 HStack(alignment: .center, spacing: 0) {
-    if let _u = URL(string: "hwrefresh://") {
+    if #available(iOS 17.0, *) {
+    Button(intent: MosaicRefreshIntent()) {
+        Text("Refresh").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 6.0, leading: 12.0, bottom: 6.0, trailing: 12.0))
+    .background(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.1))
+    .clipShape(RoundedRectangle(cornerRadius: 10.0))
+    }
+    .buttonStyle(.plain)
+} else if let _u = URL(string: "hwrefresh://") {
     Link(destination: _u) {
         Text("Refresh").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 6.0, leading: 12.0, bottom: 6.0, trailing: 12.0))
     .background(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.1))
@@ -87,7 +94,13 @@ HStack(alignment: .center, spacing: 0) {
 Spacer()
 HStack(alignment: .center, spacing: 0) {
     Text("LIVE: ").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 8.0)).dynamicTypeSize(.large)
-Text(Date(timeIntervalSince1970: 1780296904.262), style: .timer).foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
+Group {
+    if #available(iOS 16.0, *) {
+        Text(timerInterval: Date(timeIntervalSince1970: 1780297604.968)...Date.distantFuture, countsDown: false)
+    } else {
+        Text(Date(timeIntervalSince1970: 1780297604.968), style: .timer)
+    }
+}.foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
 }
 }
 }.padding(EdgeInsets(top: 12.0, leading: 12.0, bottom: 12.0, trailing: 12.0))
@@ -104,6 +117,12 @@ Text(Date(timeIntervalSince1970: 1780296904.262), style: .timer).foregroundColor
     }
 }
 
+// NOTE: On iOS, widget sizing is governed by WidgetFamily / supportedFamilies,
+// not by the definition's width/height. The definition's width=2,
+// height=2 and previewImage are advisory on iOS and not used by
+// WidgetKit, which sizes by family and renders the placeholder() view for
+// previews. resizeMode=both only acts as a fallback for deriving
+// supportedFamilies when mosaic.yaml lists no ios.families for this widget.
 struct CryptoWidgetWidget: Widget {
     let kind: String = "CryptoWidget"
 

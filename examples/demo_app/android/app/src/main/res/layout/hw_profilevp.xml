@@ -43,6 +43,7 @@
     <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="SYSTEM STATUS" android:textColor="#38BDF8" android:textSize="9.0sp" android:textStyle="bold" />
 <TextView android:id="@+id/hw_text_system_status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="12.0sp" android:textStyle="bold" />
 </LinearLayout>
+<Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
 <FrameLayout
     android:layout_width="24.0dp" android:layout_height="24.0dp"
      android:background="@drawable/hw_bg_2078011272"
@@ -57,6 +58,7 @@
 </FrameLayout>
 </FrameLayout>
 </LinearLayout>
+<Space android:layout_width="wrap_content" android:layout_height="0dp" android:layout_weight="1" />
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -68,6 +70,7 @@
     android:orientation="horizontal"
     android:gravity="start|center_vertical">
     <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Battery" android:textColor="#94A3B8" android:textSize="12.0sp" android:textStyle="normal" />
+<Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -81,9 +84,10 @@
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:paddingLeft="0.0dp" android:paddingRight="0.0dp"
     android:paddingTop="4.0dp" android:paddingBottom="4.0dp">
-    <ProgressBar android:id="@+id/hw_progress_battery_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="100" />
+    <ProgressBar android:id="@+id/hw_progress_battery_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="100" android:progressTint="#38BDF8" />
 </FrameLayout>
 </LinearLayout>
+<Space android:layout_width="wrap_content" android:layout_height="0dp" android:layout_weight="1" />
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -95,6 +99,7 @@
     android:orientation="horizontal"
     android:gravity="start|center_vertical">
     <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Memory" android:textColor="#94A3B8" android:textSize="12.0sp" android:textStyle="normal" />
+<Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -108,9 +113,10 @@
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:paddingLeft="0.0dp" android:paddingRight="0.0dp"
     android:paddingTop="4.0dp" android:paddingBottom="4.0dp">
-    <ProgressBar android:id="@+id/hw_progress_memory_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="100" />
+    <ProgressBar android:id="@+id/hw_progress_memory_progress" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="100" android:progressTint="#22C55E" />
 </FrameLayout>
 </LinearLayout>
+<Space android:layout_width="wrap_content" android:layout_height="0dp" android:layout_weight="1" />
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -132,6 +138,7 @@
 </FrameLayout>
 </FrameLayout>
 </FrameLayout>
+<Space android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
 <FrameLayout
     android:id="@+id/hw_button_1"
     android:layout_width="match_parent" android:layout_height="wrap_content"

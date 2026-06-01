@@ -60,7 +60,7 @@ VStack(alignment: .leading, spacing: 0) {
     Text("TRENDING NOW").bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
 Spacer()
 HStack(alignment: .center, spacing: 0) {
-    Text(Date(timeIntervalSince1970: 1780300504.261), style: .timer).bold().foregroundColor(Color(red: 0.13333333333333333, green: 0.7725490196078432, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).monospacedDigit()
+    Text(Date(timeIntervalSince1970: 1780301204.967), style: .timer).bold().foregroundColor(Color(red: 0.13333333333333333, green: 0.7725490196078432, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).monospacedDigit()
 Text("LIVE").bold().foregroundColor(Color(red: 0.5803921568627451, green: 0.6392156862745098, blue: 0.7215686274509804, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 0.0, leading: 4.0, bottom: 0.0, trailing: 0.0))
 }
 }
@@ -72,8 +72,15 @@ HStack(alignment: .center, spacing: 0) {
     Text("World News • Just now").foregroundColor(Color(red: 0.39215686274509803, green: 0.4549019607843137, blue: 0.5450980392156862, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
 }
 Spacer()
-if let _encoded = "refresh_news".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-   let _u = URL(string: "mosaic-callback://\(_encoded)") {
+if #available(iOS 17.0, *) {
+    Button(intent: MosaicCallbackIntent(callbackName: "refresh_news")) {
+        Text("READ").bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 4.0, leading: 10.0, bottom: 4.0, trailing: 10.0))
+    .background(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 0.1))
+    .clipShape(RoundedRectangle(cornerRadius: 8.0))
+    }
+    .buttonStyle(.plain)
+} else if let _encoded = "refresh_news".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+          let _u = URL(string: "mosaic-callback://\(_encoded)") {
     Link(destination: _u) {
         Text("READ").bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 4.0, leading: 10.0, bottom: 4.0, trailing: 10.0))
     .background(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 0.1))
@@ -96,6 +103,12 @@ if let _encoded = "refresh_news".addingPercentEncoding(withAllowedCharacters: .u
     }
 }
 
+// NOTE: On iOS, widget sizing is governed by WidgetFamily / supportedFamilies,
+// not by the definition's width/height. The definition's width=4,
+// height=1 and previewImage are advisory on iOS and not used by
+// WidgetKit, which sizes by family and renders the placeholder() view for
+// previews. resizeMode=horizontal only acts as a fallback for deriving
+// supportedFamilies when mosaic.yaml lists no ios.families for this widget.
 struct NewsWidgetWidget: Widget {
     let kind: String = "NewsWidget"
 
