@@ -52,6 +52,10 @@ class IosGenerator {
     _register(TimerHandler());
     _register(CenterHandler());
     _register(PositionedHandler());
+    _register(DividerHandler());
+    _register(IconHandler());
+    _register(GaugeHandler());
+    _register(BadgeHandler());
   }
 
   void _register(IosNodeHandler handler) {
@@ -1354,6 +1358,123 @@ class CenterHandler extends IosNodeHandler {
     return '''
 ${context.nodeToSwiftUI(child)}
     .frame(maxWidth: .infinity, maxHeight: .infinity)''';
+  }
+}
+
+class DividerHandler extends IosNodeHandler {
+  @override
+  String get type => 'HWDivider';
+  @override
+  String handle(IRNode node, IosGenerator context) {
+    final thickness = node.data['thickness'] ?? 1.0;
+    final indent = node.data['indent'] ?? 0;
+    final colorMap = node.data['color'];
+    // Default to a faint separator color when none is given.
+    final fill = colorMap != null
+        ? context._colorToSwift(colorMap)
+        : 'Color.gray.opacity(0.3)';
+    final vertical = node.data['vertical'] == true;
+    if (vertical) {
+      // A vertical rule: width = thickness, stretch height. Indent pads
+      // top/bottom via .vertical so the rule doesn't touch the edges.
+      return 'Rectangle().fill($fill).frame(width: $thickness).padding(.vertical, $indent)';
+    }
+    // Horizontal rule: height = thickness, indent pads the sides.
+    return 'Rectangle().fill($fill).frame(height: $thickness).padding(.horizontal, $indent)';
+  }
+}
+
+class IconHandler extends IosNodeHandler {
+  @override
+  String get type => 'HWIcon';
+  @override
+  String handle(IRNode node, IosGenerator context) {
+    final sfSymbol = node.data['sfSymbol'] as String?;
+    // SwiftUI needs a concrete SF Symbol name; when the DSL only supplied an
+    // androidDrawable (sfSymbol null) fall back to a stable placeholder glyph.
+    final symbol = (sfSymbol != null && sfSymbol.isNotEmpty)
+        ? swiftEscape(sfSymbol)
+        : 'questionmark';
+    final size = node.data['size'] ?? 24.0;
+    final colorMap = node.data['color'];
+    final color = colorMap != null
+        ? '.foregroundColor(${context._colorToSwift(colorMap)})'
+        : '';
+    return 'Image(systemName: "$symbol").font(.system(size: $size))$color';
+  }
+}
+
+class GaugeHandler extends IosNodeHandler {
+  @override
+  String get type => 'HWGauge';
+  @override
+  String handle(IRNode node, IosGenerator context) {
+    final value = node.data['value'];
+    final isBind = value is Map && value['__type'] == 'HWBind';
+    final src = context.bindSource;
+    // Resolve the value as a Double. Binds parse NSNumber/String from the data
+    // dictionary; a literal is emitted verbatim.
+    final String valStr;
+    if (isBind) {
+      final key = swiftEscape(value['key'] as String);
+      valStr =
+          '(($src["$key"] as? NSNumber)?.doubleValue ?? Double("\\($src["$key"] ?? "0")") ?? 0)';
+    } else {
+      valStr = '$value';
+    }
+    final max = node.data['max'] ?? 100.0;
+    final lineWidth = node.data['lineWidth'] ?? 6.0;
+    final trackMap = node.data['trackColor'];
+    final fillMap = node.data['fillColor'];
+    final track = trackMap != null
+        ? context._colorToSwift(trackMap)
+        : 'Color.gray.opacity(0.3)';
+    final fill = fillMap != null ? context._colorToSwift(fillMap) : 'Color.blue';
+    // Trim fraction guarded against a zero max to avoid NaN.
+    final fraction = 'min(max(($valStr) / ${max == 0 ? 1.0 : max}, 0), 1)';
+    return '''
+ZStack {
+    Circle().stroke($track, lineWidth: $lineWidth)
+    Circle().trim(from: 0, to: $fraction).stroke($fill, style: StrokeStyle(lineWidth: $lineWidth, lineCap: .round)).rotationEffect(.degrees(-90))
+}''';
+  }
+}
+
+class BadgeHandler extends IosNodeHandler {
+  @override
+  String get type => 'HWBadge';
+  @override
+  String handle(IRNode node, IosGenerator context) {
+    final childJson = node.data['child'];
+    if (childJson == null) return '// missing child';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
+    final childSwift = context.nodeToSwiftUI(child);
+    final count = node.data['count'];
+    final isBind = count is Map && count['__type'] == 'HWBind';
+    final src = context.bindSource;
+    final String countExpr;
+    if (isBind) {
+      final key = swiftEscape(count['key'] as String);
+      // Render the bound count as a string (covers Int/Double/String stored
+      // in the data dictionary).
+      countExpr =
+          '"\\($src[\"$key\"] as? String ?? String(describing: $src[\"$key\"] ?? \"\"))"';
+    } else {
+      countExpr = '"${swiftEscape(count.toString())}"';
+    }
+    final colorMap = node.data['color'];
+    final color =
+        colorMap != null ? context._colorToSwift(colorMap) : 'Color.red';
+    return '''
+$childSwift
+    .overlay(alignment: .topTrailing) {
+        Text($countExpr)
+            .font(.system(size: 10))
+            .foregroundColor(.white)
+            .padding(.horizontal, 5)
+            .padding(.vertical, 2)
+            .background(Capsule().fill($color))
+    }''';
   }
 }
 
