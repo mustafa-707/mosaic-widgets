@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:mosaic_core/mosaic_core.dart';
 import 'package:path/path.dart' as p;
 
@@ -478,6 +479,31 @@ extension View {
             self.background(style)
         }
     }
+
+    /// Per-corner rounded clip. UnevenRoundedRectangle is iOS 16.4+, so on
+    /// older systems this falls back to a uniform RoundedRectangle using the
+    /// largest of the four corner radii. Keeps the extension type-checking at
+    /// the 16.1 deployment target.
+    @ViewBuilder func mosaicCornerClip(
+        topLeft: CGFloat,
+        topRight: CGFloat,
+        bottomLeft: CGFloat,
+        bottomRight: CGFloat
+    ) -> some View {
+        if #available(iOS 16.4, *) {
+            self.clipShape(
+                UnevenRoundedRectangle(
+                    topLeadingRadius: topLeft,
+                    bottomLeadingRadius: bottomLeft,
+                    bottomTrailingRadius: bottomRight,
+                    topTrailingRadius: topRight
+                )
+            )
+        } else {
+            let maxRadius = max(max(topLeft, topRight), max(bottomLeft, bottomRight))
+            self.clipShape(RoundedRectangle(cornerRadius: maxRadius))
+        }
+    }
 }
 ''');
   }
@@ -706,6 +732,35 @@ struct ${def.name}Widget: Widget {
     return 'Color(hex: "$hex").opacity($opacity)';
   }
 
+  /// Maps a gradient angle in degrees to SwiftUI start/end `UnitPoint`s.
+  ///
+  /// Convention (matches the DSL): 0° = left→right, 90° = top→bottom. The unit
+  /// square has y growing downward, so the direction vector is
+  /// `(cos θ, sin θ)`. The line passes through the center (0.5, 0.5); the start
+  /// is half a unit back along the direction and the end half a unit forward.
+  /// Returns `[startExpr, endExpr]` as Swift `UnitPoint(x:y:)` literals.
+  List<String> _gradientPoints(double degrees) {
+    final rad = degrees * math.pi / 180.0;
+    final dx = math.cos(rad);
+    final dy = math.sin(rad);
+    final sx = _round(0.5 - dx / 2);
+    final sy = _round(0.5 - dy / 2);
+    final ex = _round(0.5 + dx / 2);
+    final ey = _round(0.5 + dy / 2);
+    return [
+      'UnitPoint(x: $sx, y: $sy)',
+      'UnitPoint(x: $ex, y: $ey)',
+    ];
+  }
+
+  /// Rounds a unit-point coordinate to avoid float noise (e.g. cos(90°) → 0).
+  String _round(double v) {
+    final r = (v * 1e6).roundToDouble() / 1e6;
+    // Normalize -0.0 to 0.0 for stable output.
+    final n = r == 0 ? 0.0 : r;
+    return n.toString();
+  }
+
   String nodeToSwiftUI(IRNode node) {
     final handler = _handlers[node.type];
     if (handler != null) {
@@ -896,8 +951,25 @@ class TextHandler extends IosNodeHandler {
     final opacity = style['opacity'] != null
         ? '.opacity(${style['opacity']})'
         : '';
+    // maxLines → .lineLimit(n); align (start|center|end) →
+    // .multilineTextAlignment(.leading|.center|.trailing).
+    final maxLines = style['maxLines'];
+    final lineLimit = maxLines != null ? '.lineLimit($maxLines)' : '';
+    final align = style['align'];
+    String alignMod = '';
+    switch (align) {
+      case 'start':
+        alignMod = '.multilineTextAlignment(.leading)';
+        break;
+      case 'center':
+        alignMod = '.multilineTextAlignment(.center)';
+        break;
+      case 'end':
+        alignMod = '.multilineTextAlignment(.trailing)';
+        break;
+    }
     // Use dynamicTypeSize to prevent text scaling with device accessibility settings
-    return '$textExpr$bold$color$size$opacity.dynamicTypeSize(.large)';
+    return '$textExpr$bold$color$size$opacity$lineLimit$alignMod.dynamicTypeSize(.large)';
   }
 
   /// Emits a `Text(...)` for a bound value formatted per MFormat, localized via
@@ -982,8 +1054,10 @@ class ContainerHandler extends IosNodeHandler {
             colorMaps.map((c) => context._colorToSwift(c)).join(', ');
         gradientExpr = 'Gradient(colors: [$colors])';
       }
+      final angle = (gradient['angle'] ?? 0).toDouble();
+      final pts = context._gradientPoints(angle);
       modifiers.add(
-        '.background(LinearGradient(gradient: $gradientExpr, startPoint: .topLeading, endPoint: .bottomTrailing))',
+        '.background(LinearGradient(gradient: $gradientExpr, startPoint: ${pts[0]}, endPoint: ${pts[1]}))',
       );
     } else if (background != null) {
       modifiers.add(
@@ -991,12 +1065,37 @@ class ContainerHandler extends IosNodeHandler {
       );
     }
 
-    // 4. Clip shape (corner radius) or explicit clip
-    if (radius > 0) {
+    // 4. Clip shape. Per-corner `corners` take precedence over scalar radius.
+    // Uneven corners use UnevenRoundedRectangle (iOS 16.4+), so the clip goes
+    // through the availability-gated `mosaicCornerClip` helper which falls back
+    // to a uniform RoundedRectangle (max corner) on <16.4.
+    final corners = node.data['corners'] as Map<String, dynamic>?;
+    if (corners != null) {
+      final tl = corners['topLeft'] ?? 0;
+      final tr = corners['topRight'] ?? 0;
+      final bl = corners['bottomLeft'] ?? 0;
+      final br = corners['bottomRight'] ?? 0;
+      modifiers.add('.mosaicCornerClip(topLeft: $tl, topRight: $tr, '
+          'bottomLeft: $bl, bottomRight: $br)');
+    } else if (radius > 0) {
       modifiers.add('.clipShape(RoundedRectangle(cornerRadius: $radius))');
     } else if (width != null || height != null) {
       // Ensure content doesn't overflow if explicit size is set
       modifiers.add('.clipped()');
+    }
+
+    // 4.5 Drop shadow. Applied after the clip so the shadow follows the
+    // clipped silhouette. color defaults to black when unspecified.
+    final shadow = node.data['shadow'] as Map<String, dynamic>?;
+    if (shadow != null) {
+      final shadowColor = shadow['color'] != null
+          ? context._colorToSwift(shadow['color'] as Map<String, dynamic>)
+          : 'Color.black';
+      final blur = shadow['blur'] ?? 8.0;
+      final dx = shadow['dx'] ?? 0.0;
+      final dy = shadow['dy'] ?? 2.0;
+      modifiers
+          .add('.shadow(color: $shadowColor, radius: $blur, x: $dx, y: $dy)');
     }
 
     // 5. Border using overlay (preserves rounded corners)

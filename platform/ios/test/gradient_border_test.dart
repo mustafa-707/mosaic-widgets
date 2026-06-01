@@ -19,9 +19,9 @@ void main() {
     final s = r.swiftForTestW();
     expect(s, contains('LinearGradient'));
     expect(s, contains('Gradient(colors:'));
-    // diagonal start/end points per spec
-    expect(s, contains('startPoint: .topLeading'));
-    expect(s, contains('endPoint: .bottomTrailing'));
+    // No angle key → default 0° → left→right (leading → trailing).
+    expect(s, contains('startPoint: UnitPoint(x: 0.0, y: 0.5)'));
+    expect(s, contains('endPoint: UnitPoint(x: 1.0, y: 0.5)'));
     // both colors present (red and blue, opacity honored)
     expect(s, contains('red: 1.0, green: 0.0, blue: 0.0'));
     expect(s, contains('red: 0.0, green: 0.0, blue: 1.0'));
