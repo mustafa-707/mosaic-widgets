@@ -119,3 +119,10 @@
 {"file":"platform/ios/test/container_shadow_corners_test.dart","action":"Write","timestamp":"2026-06-01T11:18:17Z","important":false}
 {"file":"platform/ios/test/gradient_angle_test.dart","action":"Write","timestamp":"2026-06-01T11:18:20Z","important":false}
 {"file":"platform/ios/test/gradient_border_test.dart","action":"Edit","timestamp":"2026-06-01T11:18:28Z","important":false}
+{"file":"platform/flutter/test/configurable_test.dart","action":"Write","timestamp":"2026-06-01T11:55:42Z","important":false}
+{"file":"platform/android/test/listview_test.dart","action":"Write","timestamp":"2026-06-01T11:56:01Z","important":false}
+{"file":"platform/cli/test/manifest_test.dart","action":"Edit","timestamp":"2026-06-01T11:56:13Z","important":false}
+{"file":"platform/core/test/ir_params_test.dart","action":"Write","timestamp":"2026-06-01T11:56:26Z","important":false}
+{"file":"platform/core/lib/src/models/ir.dart","action":"Edit","timestamp":"2026-06-01T11:56:40Z","important":false}
+{"file":"platform/cli/lib/src/commands/build_command.dart","action":"Edit","timestamp":"2026-06-01T11:58:45Z","important":false}
+{"file":"platform/android/README.md","action":"Edit","timestamp":"2026-06-01T12:04:01Z","important":false}
