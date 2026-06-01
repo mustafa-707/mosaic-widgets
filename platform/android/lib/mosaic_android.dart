@@ -34,6 +34,24 @@ String _mosaicSpacerView(bool isVertical, {String weight = '1'}) {
   return '<Space android:layout_width="$width" android:layout_height="$height" android:layout_weight="$weight" />';
 }
 
+/// Rewrites the cross-axis dimension of a rendered child element to
+/// `match_parent` to implement Flutter's `CrossAxisAlignment.stretch`. For a
+/// vertical column the cross axis is width; for a horizontal row it is height.
+/// Only the FIRST matching attribute is rewritten — that is the child's own
+/// root element, leaving any nested descendants untouched. Children that are
+/// pure comments (no element) are returned unchanged.
+String _applyCrossAxisStretch(String renderedChild, bool isVertical) {
+  final attr = isVertical ? 'android:layout_width' : 'android:layout_height';
+  final re = RegExp('$attr="[^"]*"');
+  if (!re.hasMatch(renderedChild)) return renderedChild;
+  var done = false;
+  return renderedChild.replaceFirstMapped(re, (m) {
+    if (done) return m.group(0)!;
+    done = true;
+    return '$attr="match_parent"';
+  });
+}
+
 /// Interleaves [renderedChildren] with weighted spacer views to approximate the
 /// given main-axis [alignment] (one of spaceBetween/spaceAround/spaceEvenly).
 /// Returns the children list unchanged for any other alignment. The returned
@@ -658,15 +676,19 @@ class ColumnHandler extends AndroidNodeHandler {
         .map((e) => IRNode.fromJson(e as Map<String, dynamic>))
         .toList();
     final mainAxis = node.data['mainAxisAlignment'] as String?;
+    final crossAxis = node.data['crossAxisAlignment'] as String?;
     final gravity = _mapGravity(
       mainAxis,
-      node.data['crossAxisAlignment'],
+      crossAxis,
     );
-    final rendered = children
+    var rendered = children
         .map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers,
             buttons,
             isInsideLinearLayout: true, isVertical: true))
         .toList();
+    if (crossAxis == 'stretch') {
+      rendered = rendered.map((c) => _applyCrossAxisStretch(c, true)).toList();
+    }
     final withSpacers = _injectMainAxisSpacers(rendered, mainAxis, true);
     return '''
 <LinearLayout
@@ -718,15 +740,19 @@ class RowHandler extends AndroidNodeHandler {
         .map((e) => IRNode.fromJson(e as Map<String, dynamic>))
         .toList();
     final mainAxis = node.data['mainAxisAlignment'] as String?;
+    final crossAxis = node.data['crossAxisAlignment'] as String?;
     final gravity = _mapGravity(
       mainAxis,
-      node.data['crossAxisAlignment'],
+      crossAxis,
     );
-    final rendered = children
+    var rendered = children
         .map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers,
             buttons,
             isInsideLinearLayout: true, isVertical: false))
         .toList();
+    if (crossAxis == 'stretch') {
+      rendered = rendered.map((c) => _applyCrossAxisStretch(c, false)).toList();
+    }
     final withSpacers = _injectMainAxisSpacers(rendered, mainAxis, false);
     return '''
 <LinearLayout
