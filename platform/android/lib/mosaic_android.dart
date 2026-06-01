@@ -242,6 +242,10 @@ class AndroidGenerator {
     _register(TimerHandler());
     _register(PositionedHandler());
     _register(CenterHandler());
+    _register(DividerHandler());
+    _register(IconHandler());
+    _register(GaugeHandler());
+    _register(BadgeHandler());
   }
 
   void _register(AndroidNodeHandler handler) {
@@ -1938,6 +1942,208 @@ class PositionedHandler extends AndroidNodeHandler {
     $margins>
     ${context.nodeToXml(child, usedBinds, visibilityKeys, timers, buttons)}
 </FrameLayout>''';
+  }
+}
+
+/// Renders an `HWDivider` as a plain `<View>` with a solid background color.
+/// A horizontal divider fills the available width and is [thickness]dp tall; a
+/// vertical divider is [thickness]dp wide and fills the available height.
+/// `indent` is applied as symmetric RTL-aware start/end margins.
+class DividerHandler extends AndroidNodeHandler {
+  @override
+  String get type => 'HWDivider';
+  @override
+  String handle(
+    IRNode node,
+    Map<String, String> usedBinds,
+    List<String> visibilityKeys,
+    Map<String, String> timers,
+    List<Map<String, dynamic>> buttons,
+    AndroidGenerator context, {
+    bool isInsideLinearLayout = false,
+    bool isVertical = true,
+  }) {
+    final thickness = (node.data['thickness'] ?? 1).toDouble();
+    final isVerticalDivider = node.data['vertical'] == true;
+    final indent = (node.data['indent'] ?? 0).toDouble();
+    final colorData = node.data['color'];
+    final color = colorData is Map
+        ? context.parseColor(colorData.cast<String, dynamic>())
+        : '#FFFFFF';
+
+    final width = isVerticalDivider ? '${thickness}dp' : 'match_parent';
+    final height = isVerticalDivider ? 'match_parent' : '${thickness}dp';
+
+    String marginAttr = '';
+    if (indent > 0) {
+      marginAttr =
+          ' android:layout_marginStart="${indent}dp" android:layout_marginEnd="${indent}dp"';
+    }
+
+    return '<View android:layout_width="$width" android:layout_height="$height" android:background="$color"$marginAttr />';
+  }
+}
+
+/// Renders an `HWIcon` as an `<ImageView>` referencing the Android drawable
+/// resource named by `androidDrawable`, tinted with `color` and sized to
+/// `size`dp. When `androidDrawable` is null (an iOS-only SF Symbol was given)
+/// the icon cannot be resolved on Android: emit a documented comment and a
+/// blank sized `<View>` placeholder rather than crashing or emitting a dangling
+/// `@drawable/null` reference.
+class IconHandler extends AndroidNodeHandler {
+  @override
+  String get type => 'HWIcon';
+  @override
+  String handle(
+    IRNode node,
+    Map<String, String> usedBinds,
+    List<String> visibilityKeys,
+    Map<String, String> timers,
+    List<Map<String, dynamic>> buttons,
+    AndroidGenerator context, {
+    bool isInsideLinearLayout = false,
+    bool isVertical = true,
+  }) {
+    final size = (node.data['size'] ?? 24).toDouble();
+    final drawable = node.data['androidDrawable'] as String?;
+    if (drawable == null || drawable.isEmpty) {
+      return '<!-- icon has no androidDrawable -->\n'
+          '<View android:layout_width="${size}dp" android:layout_height="${size}dp" />';
+    }
+    final res = sanitizeIdentifier(drawable).toLowerCase();
+    final colorData = node.data['color'];
+    String tintAttr = '';
+    if (colorData is Map) {
+      final color = context.parseColor(colorData.cast<String, dynamic>());
+      tintAttr = ' android:tint="$color"';
+    }
+    return '<ImageView android:src="@drawable/$res"$tintAttr android:layout_width="${size}dp" android:layout_height="${size}dp" />';
+  }
+}
+
+/// Renders an `HWGauge` (a circular ring/arc indicator on iOS) as a horizontal
+/// determinate `<ProgressBar>`. RemoteViews/AppWidgets cannot draw arbitrary
+/// arcs, so this is a DOCUMENTED best-effort approximation surfaced via a
+/// comment. `fillColor` maps to `progressTint`, `trackColor` to
+/// `backgroundTint`. A bound `value` reuses the exact same `progress` runtime
+/// bind path as `HWProgressBar` (id `hw_progress_<key>` + `setProgressBar`).
+class GaugeHandler extends AndroidNodeHandler {
+  @override
+  String get type => 'HWGauge';
+  @override
+  String handle(
+    IRNode node,
+    Map<String, String> usedBinds,
+    List<String> visibilityKeys,
+    Map<String, String> timers,
+    List<Map<String, dynamic>> buttons,
+    AndroidGenerator context, {
+    bool isInsideLinearLayout = false,
+    bool isVertical = true,
+  }) {
+    final value = node.data['value'];
+    final isBind = value is Map && value['__type'] == 'HWBind';
+    String idAttr = '';
+    String progressAttr = '';
+    if (isBind) {
+      final key = value['key'] as String;
+      usedBinds[key] = 'progress';
+      idAttr =
+          ' android:id="@+id/hw_progress_${AndroidGenerator.idForKey(key)}"';
+    } else if (value != null) {
+      progressAttr = ' android:progress="${(value as num).toInt()}"';
+    }
+    final max = (node.data['max'] ?? 100).toInt();
+
+    String tintAttr = '';
+    final fill = node.data['fillColor'];
+    if (fill is Map) {
+      tintAttr +=
+          ' android:progressTint="${context.parseColor(fill.cast<String, dynamic>())}"';
+    }
+    final track = node.data['trackColor'];
+    if (track is Map) {
+      tintAttr +=
+          ' android:backgroundTint="${context.parseColor(track.cast<String, dynamic>())}"';
+    }
+
+    return '<!-- gauge approximated as linear progress on Android (RemoteViews has no arc) -->\n'
+        '<ProgressBar$idAttr style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="$max"$progressAttr$tintAttr />';
+  }
+}
+
+/// Renders an `HWBadge` as a `<FrameLayout>` holding the child plus a small
+/// `<TextView>` (the count) pinned to the `top|end` corner. The count text view
+/// gets a generated rounded shape drawable as its background (registered via
+/// [AndroidGenerator.registerDrawable]). A bound `count` reuses the standard
+/// text bind path (id `hw_text_<key>` + `setTextViewText`).
+class BadgeHandler extends AndroidNodeHandler {
+  @override
+  String get type => 'HWBadge';
+  @override
+  String handle(
+    IRNode node,
+    Map<String, String> usedBinds,
+    List<String> visibilityKeys,
+    Map<String, String> timers,
+    List<Map<String, dynamic>> buttons,
+    AndroidGenerator context, {
+    bool isInsideLinearLayout = false,
+    bool isVertical = true,
+  }) {
+    final childJson = node.data['child'];
+    if (childJson == null) return '<!-- missing child -->';
+    final child = IRNode.fromJson(childJson as Map<String, dynamic>);
+
+    final count = node.data['count'];
+    final isBind = count is Map && count['__type'] == 'HWBind';
+    String countIdAttr = '';
+    String countText = '';
+    if (isBind) {
+      final key = count['key'] as String;
+      usedBinds[key] = 'text';
+      countIdAttr =
+          ' android:id="@+id/hw_text_${AndroidGenerator.idForKey(key)}"';
+    } else {
+      countText = count == null ? '' : count.toString();
+    }
+
+    // Rounded background for the badge bubble. A pill is achieved with a large
+    // corner radius; the color comes from the optional `color` field.
+    final colorData = node.data['color'];
+    final bgColor = colorData is Map
+        ? context.parseColor(colorData.cast<String, dynamic>())
+        : '#FF0000';
+    final shapeXml = '''<?xml version="1.0" encoding="utf-8"?>
+$xmlSentinel
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="$bgColor" />
+    <corners android:radius="100dp" />
+</shape>''';
+    final badgeName = 'hw_badge_${_badgeHash(shapeXml)}';
+    final bgRef = context.registerDrawable(badgeName, shapeXml);
+
+    return '''
+<FrameLayout
+    android:layout_width="wrap_content" android:layout_height="wrap_content">
+    ${context.nodeToXml(child, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: false)}
+    <TextView$countIdAttr
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:background="$bgRef"
+        android:paddingStart="4dp" android:paddingEnd="4dp"
+        android:text="${xmlEscape(countText)}"
+        android:textColor="#FFFFFF" android:textSize="10sp" />
+</FrameLayout>''';
+  }
+
+  String _badgeHash(String s) {
+    int h = 0;
+    for (final c in s.codeUnits) {
+      h = (h * 31 + c) & 0x7fffffff;
+    }
+    return h.toString();
   }
 }
 
