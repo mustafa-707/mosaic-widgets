@@ -619,6 +619,50 @@ class MInsets {
 
 enum MBoxFit { fill, contain, cover, fitWidth, fitHeight, none, scaleDown }
 
+/// The type of a user-editable widget [MParam].
+enum MParamType { text, number, toggle, choice }
+
+/// A user-editable parameter a widget declares for OS configuration.
+///
+/// When the user adds or edits the widget, the OS presents an editor for each
+/// declared parameter (iOS via an `AppIntentConfiguration` whose `AppIntent`
+/// exposes the parameters; Android via a configuration `Activity`). The value
+/// the user picks is exposed to the widget tree under the same bind namespace
+/// as live data: reference it with `MBind(key)`. A param [key] therefore
+/// shadows/feeds the bind key of the same name (resolved at render).
+class MParam {
+  /// Stable identifier; also the bind key the chosen value is exposed under.
+  final String key;
+
+  /// Human-readable label shown in the OS configuration UI.
+  final String label;
+
+  /// The kind of editor/control to present.
+  final MParamType type;
+
+  /// Optional initial value used until the user picks one.
+  final Object? defaultValue;
+
+  /// Allowed values for [MParamType.choice]; `null` for other types.
+  final List<String>? choices;
+
+  const MParam({
+    required this.key,
+    required this.label,
+    this.type = MParamType.text,
+    this.defaultValue,
+    this.choices,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'key': key,
+    'label': label,
+    'type': type.name,
+    'defaultValue': defaultValue,
+    'choices': choices,
+  };
+}
+
 /// The final definition of a widget.
 class MosaicDefinition {
   final String name;
@@ -629,6 +673,11 @@ class MosaicDefinition {
   final String? previewImage;
   final MResizeMode resizeMode;
 
+  /// User-editable parameters exposed via the OS configuration UI. Each
+  /// param's chosen value is available to [root] via `MBind(param.key)`.
+  /// Defaults to no params.
+  final List<MParam> params;
+
   const MosaicDefinition({
     required this.name,
     required this.root,
@@ -637,6 +686,7 @@ class MosaicDefinition {
     this.height = 2,
     this.previewImage,
     this.resizeMode = MResizeMode.none,
+    this.params = const [],
   });
 
   Map<String, dynamic> toJson() => {
@@ -647,6 +697,7 @@ class MosaicDefinition {
     'height': height,
     'previewImage': previewImage,
     'resizeMode': resizeMode.name,
+    'params': params.map((p) => p.toJson()).toList(),
   };
 }
 
