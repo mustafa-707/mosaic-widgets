@@ -49,6 +49,49 @@ class MainActivity : FlutterActivity() {
                         result.error("INVALID_ARGUMENTS", "Widget name is null", null)
                     }
                 }
+                "startActivity" -> {
+                    val type = call.argument<String>("activityType")
+                    @Suppress("UNCHECKED_CAST")
+                    val state = (call.argument<Map<String, Any?>>("state") ?: emptyMap())
+                        .mapValues { it.value?.toString() ?: "" }
+                    if (type != null) {
+                        val id = com.example.demo_app.mosaic_generated.MosaicLiveActivityManager.start(this, type, state)
+                        result.success(id)
+                    } else {
+                        result.error("INVALID_ARGUMENTS", "activityType is null", null)
+                    }
+                }
+                "updateActivity" -> {
+                    val id = call.argument<String>("id")
+                    @Suppress("UNCHECKED_CAST")
+                    val state = (call.argument<Map<String, Any?>>("state") ?: emptyMap())
+                        .mapValues { it.value?.toString() ?: "" }
+                    @Suppress("UNCHECKED_CAST")
+                    val alert = call.argument<Map<String, Any?>>("alert")
+                    val alertTitle = alert?.get("title")?.toString()
+                    val alertBody = alert?.get("body")?.toString()
+                    if (id != null) {
+                        com.example.demo_app.mosaic_generated.MosaicLiveActivityManager.update(this, id, state, alertTitle, alertBody)
+                        result.success(null)
+                    } else {
+                        result.error("INVALID_ARGUMENTS", "id is null", null)
+                    }
+                }
+                "endActivity" -> {
+                    val id = call.argument<String>("id")
+                    if (id != null) {
+                        com.example.demo_app.mosaic_generated.MosaicLiveActivityManager.end(this, id)
+                        result.success(null)
+                    } else {
+                        result.error("INVALID_ARGUMENTS", "id is null", null)
+                    }
+                }
+                "activitiesEnabled" -> {
+                    result.success(com.example.demo_app.mosaic_generated.MosaicLiveActivityManager.enabled(this))
+                }
+                "activeActivities" -> {
+                    result.success(com.example.demo_app.mosaic_generated.MosaicLiveActivityManager.active(this))
+                }
                 else -> {
                     result.notImplemented()
                 }
