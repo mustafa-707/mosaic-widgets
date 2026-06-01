@@ -1086,10 +1086,14 @@ class ColumnHandler extends IosNodeHandler {
     }
     // start is default (no spacers needed if alignment maps to leading/top)
 
-    final alignment = _mapAlignment(node.data['crossAxisAlignment']);
+    final cross = node.data['crossAxisAlignment'] as String?;
+    final alignment = _mapAlignment(cross);
+    final alignComment = cross == 'stretch'
+        ? ' // stretch approximated as center (SwiftUI parent cannot stretch children)'
+        : '';
     // Force spacing 0 because we handle distribution with Spacers
     return '''
-VStack(alignment: $alignment, spacing: 0) {
+VStack(alignment: $alignment, spacing: 0) {$alignComment
     ${childrenNodes.join('\n')}
 }''';
   }
@@ -1100,6 +1104,8 @@ VStack(alignment: $alignment, spacing: 0) {
         return '.leading';
       case 'end':
         return '.trailing';
+      case 'stretch':
+        return '.center';
       default:
         return '.center';
     }
@@ -1147,9 +1153,13 @@ class RowHandler extends IosNodeHandler {
       childrenNodes.insert(0, 'Spacer()');
     }
 
-    final alignment = _mapAlignment(node.data['crossAxisAlignment']);
+    final cross = node.data['crossAxisAlignment'] as String?;
+    final alignment = _mapAlignment(cross);
+    final alignComment = cross == 'stretch'
+        ? ' // stretch approximated as center (SwiftUI parent cannot stretch children)'
+        : '';
     return '''
-HStack(alignment: $alignment, spacing: 0) {
+HStack(alignment: $alignment, spacing: 0) {$alignComment
     ${childrenNodes.join('\n')}
 }''';
   }
@@ -1160,6 +1170,8 @@ HStack(alignment: $alignment, spacing: 0) {
         return '.top';
       case 'end':
         return '.bottom';
+      case 'stretch':
+        return '.center';
       default:
         return '.center'; // vertically centered
     }
@@ -1201,9 +1213,11 @@ class TextHandler extends IosNodeHandler {
         : '';
     // maxLines → .lineLimit(n); align (start|center|end) →
     // .multilineTextAlignment(.leading|.center|.trailing).
-    final maxLines = style['maxLines'];
+    // NOTE: maxLines and align are serialized as top-level fields on the node,
+    // NOT inside the style sub-map (see MText.toJson()).
+    final maxLines = node.data['maxLines'];
     final lineLimit = maxLines != null ? '.lineLimit($maxLines)' : '';
-    final align = style['align'];
+    final align = node.data['align'];
     String alignMod = '';
     switch (align) {
       case 'start':
