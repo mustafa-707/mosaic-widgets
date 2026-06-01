@@ -54,3 +54,16 @@ extension Color {
         })
     }
 }
+
+extension View {
+    /// iOS 16/17-compatible container background helper.
+    /// On iOS 17+ uses .containerBackground(for: .widget); on iOS 16 falls back
+    /// to .background(_:) so the widget extension compiles at both targets.
+    @ViewBuilder func mosaicContainerBackground<S: ShapeStyle>(_ style: S) -> some View {
+        if #available(iOS 17.0, *) {
+            self.containerBackground(style, for: .widget)
+        } else {
+            self.background(style)
+        }
+    }
+}

@@ -150,7 +150,7 @@ struct ProfileVPWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: ProfileVPProvider()) { entry in
             ProfileVPView(entry: entry)
-                .containerBackground(.clear, for: .widget)
+                .mosaicContainerBackground(.clear)
                 .widgetAccentable()
         }
         .configurationDisplayName("ProfileVP")
