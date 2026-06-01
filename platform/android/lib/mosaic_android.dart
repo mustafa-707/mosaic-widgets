@@ -23,6 +23,63 @@ const String xmlSentinel = '<!-- MOSAIC-GENERATED -->';
 /// Sentinel placed as the first line of generated Kotlin files.
 const String kotlinSentinel = '// MOSAIC-GENERATED — do not edit';
 
+/// Builds a single weighted `<Space>` spacer view for a LinearLayout. On a
+/// vertical layout the spacer grows on height (0dp + weight); on a horizontal
+/// layout it grows on width. Used to approximate Flutter's
+/// spaceBetween/spaceAround/spaceEvenly main-axis alignments, which Android's
+/// LinearLayout `gravity` cannot express directly.
+String _mosaicSpacerView(bool isVertical, {String weight = '1'}) {
+  final width = isVertical ? 'wrap_content' : '0dp';
+  final height = isVertical ? '0dp' : 'wrap_content';
+  return '<Space android:layout_width="$width" android:layout_height="$height" android:layout_weight="$weight" />';
+}
+
+/// Interleaves [renderedChildren] with weighted spacer views to approximate the
+/// given main-axis [alignment] (one of spaceBetween/spaceAround/spaceEvenly).
+/// Returns the children list unchanged for any other alignment. The returned
+/// list may be prefixed with an approximation comment for spaceAround, whose
+/// exact per-child symmetric spacing is not expressible with integer LinearLayout
+/// weights — it is approximated with half-weight end spacers.
+List<String> _injectMainAxisSpacers(
+  List<String> renderedChildren,
+  String? alignment,
+  bool isVertical,
+) {
+  if (renderedChildren.isEmpty) return renderedChildren;
+  switch (alignment) {
+    case 'spaceBetween':
+      final out = <String>[];
+      for (var i = 0; i < renderedChildren.length; i++) {
+        if (i > 0) out.add(_mosaicSpacerView(isVertical));
+        out.add(renderedChildren[i]);
+      }
+      return out;
+    case 'spaceEvenly':
+      final out = <String>[_mosaicSpacerView(isVertical)];
+      for (final c in renderedChildren) {
+        out.add(c);
+        out.add(_mosaicSpacerView(isVertical));
+      }
+      return out;
+    case 'spaceAround':
+      // Exact spaceAround would need half-weight gaps at the ends and
+      // full-weight gaps between. Android LinearLayout supports fractional
+      // weights, so approximate with weight 0.5 ends and weight 1 between.
+      final out = <String>[
+        '<!-- spaceAround approximated -->',
+        _mosaicSpacerView(isVertical, weight: '0.5'),
+      ];
+      for (var i = 0; i < renderedChildren.length; i++) {
+        if (i > 0) out.add(_mosaicSpacerView(isVertical));
+        out.add(renderedChildren[i]);
+      }
+      out.add(_mosaicSpacerView(isVertical, weight: '0.5'));
+      return out;
+    default:
+      return renderedChildren;
+  }
+}
+
 class AndroidGenerator {
   final MosaicConfig config;
   final List<IRDefinition> definitions;
@@ -600,17 +657,24 @@ class ColumnHandler extends AndroidNodeHandler {
     final children = ((node.data['children'] as List?) ?? const [])
         .map((e) => IRNode.fromJson(e as Map<String, dynamic>))
         .toList();
+    final mainAxis = node.data['mainAxisAlignment'] as String?;
     final gravity = _mapGravity(
-      node.data['mainAxisAlignment'],
+      mainAxis,
       node.data['crossAxisAlignment'],
     );
+    final rendered = children
+        .map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers,
+            buttons,
+            isInsideLinearLayout: true, isVertical: true))
+        .toList();
+    final withSpacers = _injectMainAxisSpacers(rendered, mainAxis, true);
     return '''
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="$gravity">
-    ${children.map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: true, isVertical: true)).join('\n')}
+    ${withSpacers.join('\n')}
 </LinearLayout>''';
   }
 
@@ -653,17 +717,24 @@ class RowHandler extends AndroidNodeHandler {
     final children = ((node.data['children'] as List?) ?? const [])
         .map((e) => IRNode.fromJson(e as Map<String, dynamic>))
         .toList();
+    final mainAxis = node.data['mainAxisAlignment'] as String?;
     final gravity = _mapGravity(
-      node.data['mainAxisAlignment'],
+      mainAxis,
       node.data['crossAxisAlignment'],
     );
+    final rendered = children
+        .map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers,
+            buttons,
+            isInsideLinearLayout: true, isVertical: false))
+        .toList();
+    final withSpacers = _injectMainAxisSpacers(rendered, mainAxis, false);
     return '''
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="$gravity">
-    ${children.map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: true, isVertical: false)).join('\n')}
+    ${withSpacers.join('\n')}
 </LinearLayout>''';
   }
 
