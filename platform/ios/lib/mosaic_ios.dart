@@ -203,6 +203,14 @@ extension Color {
             opacity: Double(a) / 255
         )
     }
+
+    /// Builds a color that resolves at render time to [light] or [dark] based on
+    /// the current interface style. Used for adaptive (dark-mode) MColors.
+    init(light: Color, dark: Color) {
+        self.init(UIColor { traits in
+            traits.userInterfaceStyle == .dark ? UIColor(dark) : UIColor(light)
+        })
+    }
 }
 ''');
   }
@@ -337,10 +345,37 @@ struct ${def.name}Widget: Widget {
     return resolved.map((f) => '.$f').join(', ');
   }
 
+  /// Turns a canonical color wire map into a Swift `Color` expression.
+  ///
+  /// Wire shapes (see project spec):
+  ///  - static/adaptive: `{hex, dark, opacity}` (dark may be null)
+  ///  - bind:            `{bind, opacity}` (no hex key)
+  ///
+  /// Detection: a non-null `bind` ⇒ runtime resolve from [bindSource];
+  /// otherwise use hex (+ dark when non-null ⇒ adaptive `Color(light:dark:)`).
   String _colorToSwift(Map<String, dynamic>? data) {
     if (data == null) return 'Color.clear';
-    final hex = data['hex'] as String;
     final opacity = (data['opacity'] ?? 1.0).toDouble();
+
+    // Bind form: resolve a hex string from entry/item data at render time.
+    final bindKey = data['bind'];
+    if (bindKey is String) {
+      final src = bindSource;
+      final base =
+          'Color(hex: ($src["${swiftEscape(bindKey)}"] as? String) ?? "#00000000")';
+      return opacity < 1.0 ? '$base.opacity($opacity)' : base;
+    }
+
+    final hex = data['hex'] as String;
+    final dark = data['dark'] as String?;
+
+    if (dark != null) {
+      // Adaptive: pick light/dark by interface style via the Color(light:dark:)
+      // helper emitted in HomeWidgetCore.swift.
+      final base =
+          'Color(light: Color(hex: "$hex"), dark: Color(hex: "$dark"))';
+      return opacity < 1.0 ? '$base.opacity($opacity)' : base;
+    }
 
     if (hex.startsWith('#') && hex.length == 7) {
       final r = int.parse(hex.substring(1, 3), radix: 16) / 255.0;
@@ -544,7 +579,8 @@ class ContainerHandler extends IosNodeHandler {
     if (childJson == null) return '// missing child';
     final child = IRNode.fromJson(childJson as Map<String, dynamic>);
     final radius = node.data['radius'] ?? 0;
-    final background = node.data['background']?['hex'];
+    // A background is present whether it carries a hex or a runtime bind key.
+    final background = node.data['background'];
     final gradient = node.data['gradient'];
     final border = node.data['border'];
     final padding = node.data['padding'] ?? {};

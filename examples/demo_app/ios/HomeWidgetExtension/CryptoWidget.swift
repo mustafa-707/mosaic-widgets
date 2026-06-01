@@ -96,9 +96,9 @@ HStack(alignment: .center, spacing: 0) {
     Text("LIVE: ").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 8.0)).dynamicTypeSize(.large)
 Group {
     if #available(iOS 16.0, *) {
-        Text(timerInterval: Date(timeIntervalSince1970: 1780298078.475)...Date.distantFuture, countsDown: false)
+        Text(timerInterval: Date(timeIntervalSince1970: 1780299052.082)...Date.distantFuture, countsDown: false)
     } else {
-        Text(Date(timeIntervalSince1970: 1780298078.475), style: .timer)
+        Text(Date(timeIntervalSince1970: 1780299052.082), style: .timer)
     }
 }.foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
 }

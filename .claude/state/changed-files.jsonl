@@ -63,3 +63,9 @@
 {"file":"platform/android/test/sentinel_test.dart","action":"Edit","timestamp":"2026-06-01T06:54:17Z","important":false}
 {"file":"platform/android/test/timer_countup_test.dart","action":"Edit","timestamp":"2026-06-01T07:10:07Z","important":false}
 {"file":"platform/android/test/visibility_replacement_test.dart","action":"Edit","timestamp":"2026-06-01T07:10:42Z","important":false}
+{"file":"docs/superpowers/specs/2026-06-01-adaptive-widgets-design.md","action":"Write","timestamp":"2026-06-01T07:26:21Z","important":false}
+{"file":"platform/flutter/lib/dsl.dart","action":"Edit","timestamp":"2026-06-01T07:27:18Z","important":false}
+{"file":"platform/flutter/test/dsl_test.dart","action":"Write","timestamp":"2026-06-01T07:27:32Z","important":false}
+{"file":"platform/ios/test/adaptive_color_test.dart","action":"Write","timestamp":"2026-06-01T07:29:46Z","important":false}
+{"file":"platform/ios/lib/mosaic_ios.dart","action":"Edit","timestamp":"2026-06-01T07:29:58Z","important":false}
+{"file":"platform/android/test/adaptive_color_test.dart","action":"Write","timestamp":"2026-06-01T07:30:06Z","important":false}

@@ -118,6 +118,44 @@ class AndroidGenerator {
     return '@drawable/$name';
   }
 
+  /// Adaptive color resources. Keyed by resource name (`mosaic_<hash>`), value
+  /// is a record of the light (`#AARRGGBB`) and dark (`#AARRGGBB`) hex strings.
+  /// Flushed to `res/values/mosaic_colors.xml` (light) and
+  /// `res/values-night/mosaic_colors.xml` (dark) in [generate]. Dedup by name
+  /// (callers derive the name from a content hash of light+dark).
+  final Map<String, ({String light, String dark})> _colors = {};
+
+  /// Registers an adaptive color with distinct [light] and [dark] `#AARRGGBB`
+  /// values and returns the resource reference (`@color/mosaic_<hash>`).
+  /// Identical light/dark pairs collapse to one resource.
+  String registerColor(String light, String dark) {
+    final name = 'mosaic_${_colorHash('$light|$dark')}';
+    _colors[name] = (light: light, dark: dark);
+    return '@color/$name';
+  }
+
+  /// Deterministic non-negative hash used to name color resources.
+  String _colorHash(String s) {
+    int h = 0;
+    for (final c in s.codeUnits) {
+      h = (h * 31 + c) & 0x7fffffff;
+    }
+    return h.toString();
+  }
+
+  /// Runtime color binds to resolve+apply in the provider. Each entry records
+  /// the layout view id, the SharedPreferences bind key, and the application
+  /// target ('text' → setTextColor, 'background' → setInt setBackgroundColor,
+  /// 'progress' → setInt setColorFilter on the tint). Populated by handlers
+  /// that encounter a bind-form color; flushed in [_generateKotlinProvider].
+  final List<({String viewId, String key, String target})> _colorBinds = [];
+
+  /// Registers a runtime color bind for [viewId] resolving prefs [key] applied
+  /// via [target] ('text' | 'background' | 'progress').
+  void registerColorBind(String viewId, String key, String target) {
+    _colorBinds.add((viewId: viewId, key: key, target: target));
+  }
+
   /// Static file-image URIs to wire up at update time, keyed by the view id
   /// suffix (used to build `R.id.hw_image_<suffix>`). Populated by
   /// [ImageHandler] for non-bound `HWFileImage` paths.
@@ -218,6 +256,7 @@ class AndroidGenerator {
       _staticImageUris.clear();
       _visibilityWithReplacement.clear();
       _timersCountUp.clear();
+      _colorBinds.clear();
 
       final layoutXml = _generateLayoutXml(
         def.root,
@@ -243,6 +282,7 @@ class AndroidGenerator {
     }
 
     await _writeDrawables(resDir);
+    await _writeColors(resDir);
 
     await _generateBridgeHelper(projectRoot);
     await _generateMosaicData(projectRoot);
@@ -441,16 +481,46 @@ object HomeWidgetBridgeHelper {
     return buffer.toString();
   }
 
-  String parseColor(Map<String, dynamic> colorData) {
-    String hex = (colorData['hex'] as String?) ?? '#FFFFFF';
+  /// True when [colorData] is the runtime bind form `{'bind': '<key>', ...}`
+  /// (non-null 'bind'). Such colors carry no static 'hex' — the real color is
+  /// resolved and applied by the provider at update time, and the static path
+  /// must emit a neutral placeholder.
+  bool isColorBind(Map colorData) => colorData['bind'] != null;
+
+  /// Applies [opacity] to a `#RRGGBB`/`#AARRGGBB` hex, returning `#AARRGGBB`.
+  String _applyOpacity(String hex, double opacity) {
     if (!hex.startsWith('#')) hex = '#$hex';
-    double opacity = (colorData['opacity'] ?? 1.0).toDouble();
-    if (opacity < 1.0) {
-      int alpha = (opacity * 255).toInt().clamp(0, 255);
-      String alphaHex = alpha.toRadixString(16).padLeft(2, '0').toUpperCase();
-      return '#$alphaHex${hex.substring(1)}';
+    // Strip any existing alpha to the 6-digit RGB.
+    String rgb = hex.substring(1);
+    if (rgb.length == 8) rgb = rgb.substring(2);
+    final alpha = (opacity * 255).round().clamp(0, 255);
+    final alphaHex = alpha.toRadixString(16).padLeft(2, '0').toUpperCase();
+    return '#$alphaHex$rgb';
+  }
+
+  /// Resolves a color wire map to an Android color token usable in res XML:
+  /// either an inline `#AARRGGBB` (static, no dark variant) or a
+  /// `@color/mosaic_<hash>` reference (adaptive: dark variant present).
+  ///
+  /// Tolerates ALL canonical forms:
+  /// - static/adaptive: `{'hex': '<light>', 'dark': '<dark|null>', 'opacity': d}`
+  /// - bind: `{'bind': '<key>', 'opacity': d}` (no 'hex') → returns a neutral
+  ///   transparent placeholder; the provider sets the real color at runtime.
+  String parseColor(Map<String, dynamic> colorData) {
+    // Bind form has no static color: emit a transparent placeholder. The
+    // provider's bind loop overrides this with the resolved color at update.
+    if (isColorBind(colorData)) return '#00000000';
+
+    final double opacity = (colorData['opacity'] ?? 1.0).toDouble();
+    final String hex = (colorData['hex'] as String?) ?? '#FFFFFF';
+    final light = _applyOpacity(hex, opacity);
+
+    final dark = colorData['dark'] as String?;
+    if (dark != null) {
+      // Adaptive: allocate a day/night color resource and reference it.
+      return registerColor(light, _applyOpacity(dark, opacity));
     }
-    return hex;
+    return light;
   }
 
   String nodeToXml(

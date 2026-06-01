@@ -45,4 +45,12 @@ extension Color {
             opacity: Double(a) / 255
         )
     }
+
+    /// Builds a color that resolves at render time to [light] or [dark] based on
+    /// the current interface style. Used for adaptive (dark-mode) MColors.
+    init(light: Color, dark: Color) {
+        self.init(UIColor { traits in
+            traits.userInterfaceStyle == .dark ? UIColor(dark) : UIColor(light)
+        })
+    }
 }

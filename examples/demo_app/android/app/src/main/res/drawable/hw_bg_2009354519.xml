@@ -2,6 +2,6 @@
 <!-- MOSAIC-GENERATED -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="#19FFFFFF" />
-    <corners android:radius="10.0dp" />
+    <solid android:color="#1AFFFFFF" />
+    <corners android:radius="50.0dp" />
 </shape>
