@@ -7,8 +7,14 @@ part 'config.g.dart';
 class MosaicConfig {
   final MosaicAppConfig app;
   final List<MosaicWidgetConfig> widgets;
+  @JsonKey(name: 'live_activities', defaultValue: <MosaicLiveActivityConfig>[])
+  final List<MosaicLiveActivityConfig> liveActivities;
 
-  MosaicConfig({required this.app, required this.widgets});
+  MosaicConfig({
+    required this.app,
+    required this.widgets,
+    this.liveActivities = const [],
+  });
 
   factory MosaicConfig.fromYaml(String yamlString) {
     final yaml = loadYaml(yamlString) as YamlMap;
@@ -76,6 +82,18 @@ class MosaicWidgetConfig {
   factory MosaicWidgetConfig.fromJson(Map<String, dynamic> json) =>
       _$MosaicWidgetConfigFromJson(json);
   Map<String, dynamic> toJson() => _$MosaicWidgetConfigToJson(this);
+}
+
+@JsonSerializable()
+class MosaicLiveActivityConfig {
+  final String name;
+  final String entry;
+
+  MosaicLiveActivityConfig({required this.name, required this.entry});
+
+  factory MosaicLiveActivityConfig.fromJson(Map<String, dynamic> j) =>
+      _$MosaicLiveActivityConfigFromJson(j);
+  Map<String, dynamic> toJson() => _$MosaicLiveActivityConfigToJson(this);
 }
 
 @JsonSerializable()
