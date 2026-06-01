@@ -465,8 +465,18 @@ class RowHandler extends IosNodeHandler {
         if (i < childrenNodes.length - 1) newChildren.add('Spacer()');
       }
       childrenNodes = newChildren;
-    } else if (mainAxis == 'spaceEvenly' || mainAxis == 'spaceAround') {
+    } else if (mainAxis == 'spaceEvenly') {
       final newChildren = <String>['Spacer()'];
+      for (var i = 0; i < childrenNodes.length; i++) {
+        newChildren.add(childrenNodes[i]);
+        newChildren.add('Spacer()');
+      }
+      childrenNodes = newChildren;
+    } else if (mainAxis == 'spaceAround') {
+      // spaceAround approximated as spaceEvenly: SwiftUI Spacers are equal, so
+      // the half-size leading/trailing gaps of Flutter's spaceAround can't be
+      // expressed exactly here. Comment kept for visibility (Column does too).
+      final newChildren = <String>['Spacer() // spaceAround approximated as spaceEvenly'];
       for (var i = 0; i < childrenNodes.length; i++) {
         newChildren.add(childrenNodes[i]);
         newChildren.add('Spacer()');
