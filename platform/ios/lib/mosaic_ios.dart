@@ -446,12 +446,26 @@ class ContainerHandler extends IosNodeHandler {
 
     // 3. Background
     if (gradient != null && gradient['__type'] == 'HWLinearGradient') {
-      final colors = (gradient['colors'] as List)
-          .map((c) => context._colorToSwift(
-              (c as Map).cast<String, dynamic>()))
-          .join(', ');
+      final colorMaps = (gradient['colors'] as List)
+          .map((c) => (c as Map).cast<String, dynamic>())
+          .toList();
+      final stops = gradient['stops'] as List?;
+      final String gradientExpr;
+      if (stops != null && stops.length == colorMaps.length) {
+        // SwiftUI supports arbitrary stops via Gradient.Stop.
+        final stopExprs = <String>[];
+        for (var i = 0; i < colorMaps.length; i++) {
+          stopExprs.add(
+              '.init(color: ${context._colorToSwift(colorMaps[i])}, location: ${stops[i]})');
+        }
+        gradientExpr = 'Gradient(stops: [${stopExprs.join(', ')}])';
+      } else {
+        final colors =
+            colorMaps.map((c) => context._colorToSwift(c)).join(', ');
+        gradientExpr = 'Gradient(colors: [$colors])';
+      }
       modifiers.add(
-        '.background(LinearGradient(gradient: Gradient(colors: [$colors]), startPoint: .topLeading, endPoint: .bottomTrailing))',
+        '.background(LinearGradient(gradient: $gradientExpr, startPoint: .topLeading, endPoint: .bottomTrailing))',
       );
     } else if (background != null) {
       modifiers.add(
