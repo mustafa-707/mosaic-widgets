@@ -894,11 +894,13 @@ class ContainerHandler extends AndroidNodeHandler {
       // Real gradient: write a <shape><gradient> drawable and reference it.
       final colors = (gradient['colors'] as List).cast<Map>();
       if (colors.isNotEmpty) {
+        final hasStops = (gradient['stops'] as List?)?.isNotEmpty ?? false;
         final xml = _gradientDrawableXml(
           context,
           colors,
           radius,
           border,
+          hasStops: hasStops,
         );
         final name = 'hw_gradient_${_stableHash(xml)}';
         final ref = context.registerDrawable(name, xml);
@@ -962,8 +964,9 @@ class ContainerHandler extends AndroidNodeHandler {
     AndroidGenerator context,
     List<Map> colors,
     double radius,
-    Object? border,
-  ) {
+    Object? border, {
+    bool hasStops = false,
+  }) {
     final parsed = colors
         .map((c) => context.parseColor(c.cast<String, dynamic>()))
         .toList();
@@ -980,8 +983,15 @@ class ContainerHandler extends AndroidNodeHandler {
         ? '\n    <corners android:radius="${radius}dp" />'
         : '';
     final stroke = _strokeTag(context, border);
+    // Android <shape><gradient> only expresses start/center/end positions, so
+    // arbitrary N-stop gradients are approximated. Surface the limitation as a
+    // comment (after the XML declaration so AAPT still accepts the file)
+    // instead of dropping the stops silently.
+    final stopsComment = hasStops
+        ? '\n<!-- gradient stops approximated: Android shape gradients support up to 3 positions -->'
+        : '';
     return '''<?xml version="1.0" encoding="utf-8"?>
-$xmlSentinel
+$xmlSentinel$stopsComment
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
 $gradientTag$corners$stroke
