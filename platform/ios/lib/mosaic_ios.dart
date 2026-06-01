@@ -379,8 +379,16 @@ struct MosaicCallbackIntent: AppIntent {
   }
 
   String _generateWidgetBundle() {
+    // Configurable widgets (params.isNotEmpty) are iOS-17 AppIntentConfiguration
+    // widgets, so their struct is @available(iOS 17.0, *) and must be registered
+    // under an `if #available(iOS 17.0, *)` gate. Non-configurable widgets stay
+    // available on iOS 16 and register unconditionally.
     final lines = <String>[
-      ...definitions.map((def) => '        ${def.name}Widget()'),
+      ...definitions.map((def) => def.params.isNotEmpty
+          ? '''        if #available(iOS 17.0, *) {
+            ${def.name}Widget()
+        }'''
+          : '        ${def.name}Widget()'),
     ];
 
     // Live Activities are iOS 16.1+ Widgets; register each under an
@@ -509,6 +517,12 @@ extension View {
   }
 
   String _generateSwiftUiWidget(IRDefinition def) {
+    // A definition carrying user-configurable params is emitted as an iOS 17+
+    // AppIntentConfiguration widget; otherwise it stays a StaticConfiguration
+    // widget compatible with iOS 14/16.
+    if (def.params.isNotEmpty) {
+      return _generateConfigurableWidget(def);
+    }
     final usedKeys = collectBindKeys(def.root).toList()..sort();
     final keyList =
         usedKeys.map((k) => '"${swiftEscape(k)}"').join(', ');
@@ -600,6 +614,213 @@ struct ${def.name}Widget: Widget {
         }
         .configurationDisplayName("${def.name}")
         .description("This is an auto-generated home widget.")
+        .supportedFamilies(families)
+        .contentMarginsDisabled()
+    }
+}
+''';
+  }
+
+  /// Maps a param `type` to the Swift property type used inside the generated
+  /// `WidgetConfigurationIntent`. `choice` is modelled as a plain `String`
+  /// (the chosen value); the available choices are surfaced as a doc comment.
+  static String _paramSwiftType(String type) {
+    switch (type) {
+      case 'number':
+        return 'Double';
+      case 'toggle':
+        return 'Bool';
+      case 'text':
+      case 'choice':
+      default:
+        return 'String';
+    }
+  }
+
+  /// Renders the Swift literal for a param's default value, coerced to the
+  /// Swift type chosen by [_paramSwiftType].
+  static String _paramDefaultLiteral(String type, Object? defaultValue) {
+    switch (type) {
+      case 'number':
+        final n = defaultValue is num ? defaultValue : 0;
+        return '${n.toDouble()}';
+      case 'toggle':
+        return defaultValue == true ? 'true' : 'false';
+      case 'text':
+      case 'choice':
+      default:
+        final s = defaultValue == null ? '' : '$defaultValue';
+        return '"${swiftEscape(s)}"';
+    }
+  }
+
+  /// Swift expression that stringifies a configured param value so it can be
+  /// stored in the `[String: Any]` entry-data dict using the same
+  /// string-valued convention as App-Group-loaded data.
+  static String _stringifyParam(String type, String varName) {
+    switch (type) {
+      case 'number':
+        // Drop a trailing `.0` for whole numbers so bound text reads cleanly.
+        return 'configuration.$varName == configuration.$varName.rounded() '
+            '? String(Int(configuration.$varName)) '
+            ': String(configuration.$varName)';
+      case 'toggle':
+        return 'configuration.$varName ? "true" : "false"';
+      case 'text':
+      case 'choice':
+      default:
+        return 'configuration.$varName';
+    }
+  }
+
+  /// Generates an iOS 17+ configurable widget for a definition carrying
+  /// `params`. Produces, all gated `@available(iOS 17.0, *)`:
+  ///  - a `<Name>ConfigIntent: WidgetConfigurationIntent` with one `@Parameter`
+  ///    per param,
+  ///  - a `<Name>Provider: AppIntentTimelineProvider` whose
+  ///    `timeline(for:in:)` copies each configured value into `entry.data`
+  ///    under the param `key` (stringified), so the existing `MBind` resolution
+  ///    (`entry.data[key]`) shows the chosen value, and
+  ///  - an `AppIntentConfiguration`-based `<Name>Widget`.
+  ///
+  /// The whole struct family is `@available(iOS 17.0, *)` because
+  /// `AppIntentConfiguration`/`AppIntentTimelineProvider`/
+  /// `WidgetConfigurationIntent` are iOS-17 APIs; the WidgetBundle registers it
+  /// under `if #available(iOS 17.0, *)`.
+  String _generateConfigurableWidget(IRDefinition def) {
+    final usedKeys = collectBindKeys(def.root).toList()..sort();
+    final keyList = usedKeys.map((k) => '"${swiftEscape(k)}"').join(', ');
+    final params = def.params;
+
+    final paramDecls = params.map((pm) {
+      final key = pm['key'] as String;
+      final type = pm['type'] as String;
+      final label = (pm['label'] as String?) ?? key;
+      final swiftType = _paramSwiftType(type);
+      final def0 = _paramDefaultLiteral(type, pm['defaultValue']);
+      final choices = (pm['choices'] as List?)?.cast<Object?>() ?? const [];
+      final choiceDoc = (type == 'choice' && choices.isNotEmpty)
+          ? '    // choices: ${choices.map((c) => '"${swiftEscape('$c')}"').join(', ')}\n'
+          : '';
+      return '$choiceDoc'
+          '    @Parameter(title: "${swiftEscape(label)}", default: $def0)\n'
+          '    var $key: $swiftType';
+    }).join('\n\n');
+
+    final copyLines = params.map((pm) {
+      final key = pm['key'] as String;
+      final type = pm['type'] as String;
+      final varName = key;
+      return '        data["${swiftEscape(key)}"] = ${_stringifyParam(type, varName)}';
+    }).join('\n');
+
+    final timelinePolicy = def.updateInterval != null
+        ? '''
+        let nextUpdate = Calendar.current.date(byAdding: .second, value: ${def.updateInterval! ~/ 1000}, to: Date())!
+        return Timeline(entries: [entry], policy: .after(nextUpdate))'''
+        : '''
+        return Timeline(entries: [entry], policy: .atEnd)''';
+
+    return '''$kGeneratedSentinel
+import SwiftUI
+import WidgetKit
+import AppIntents
+
+struct ${def.name}Entry: TimelineEntry {
+    let date: Date
+    let data: [String: Any]
+}
+
+// iOS 17+ user-configurable parameters surfaced in the widget's edit sheet.
+// The chosen values are copied into the timeline entry's `data` dict by the
+// provider so the widget tree's existing bind resolution (entry.data[key])
+// renders them.
+@available(iOS 17.0, *)
+struct ${def.name}ConfigIntent: WidgetConfigurationIntent {
+    static var title: LocalizedStringResource = "${swiftEscape(def.name)}"
+    static var description = IntentDescription("Configure this widget.")
+
+$paramDecls
+
+    init() {}
+}
+
+@available(iOS 17.0, *)
+struct ${def.name}Provider: AppIntentTimelineProvider {
+    func placeholder(in context: Context) -> ${def.name}Entry {
+        ${def.name}Entry(date: Date(), data: [:])
+    }
+
+    func snapshot(for configuration: ${def.name}ConfigIntent, in context: Context) async -> ${def.name}Entry {
+        ${def.name}Entry(date: Date(), data: mergedData(configuration))
+    }
+
+    func timeline(for configuration: ${def.name}ConfigIntent, in context: Context) async -> Timeline<${def.name}Entry> {
+        let entry = ${def.name}Entry(date: Date(), data: mergedData(configuration))
+$timelinePolicy
+    }
+
+    // The App Group container path, used to resolve relative image file paths.
+    private static let appGroup = "${config.app.iosAppGroup}"
+
+    // Loads App-Group-backed data, then overlays the configured param values
+    // (stringified) under their param keys so binds resolve to the user's
+    // choices.
+    private func mergedData(_ configuration: ${def.name}ConfigIntent) -> [String: Any] {
+        var data = loadData()
+$copyLines
+        return data
+    }
+
+    private func loadData() -> [String: Any] {
+        var data: [String: Any] = [:]
+        guard let defaults = UserDefaults(suiteName: ${def.name}Provider.appGroup) else {
+            return ["btc_price": "GRP ERR", "battery_level": "ERR", "news_title": "App Group Config Error"]
+        }
+        for k in [$keyList] {
+            if let v = defaults.object(forKey: k) {
+                data[k] = v
+            }
+        }
+        return data
+    }
+}
+
+@available(iOS 17.0, *)
+struct ${def.name}View: View {
+    var entry: ${def.name}Entry
+
+    var body: some View {
+        GeometryReader { geometry in
+            ${nodeToSwiftUI(def.root)}
+            .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+        .widgetURL(URL(string: loadGlobalUrl()))
+    }
+
+    private func loadGlobalUrl() -> String {
+        return entry.data["global_url"] as? String ?? ""
+    }
+}
+
+// NOTE: width=${def.width}, height=${def.height}, previewImage and resizeMode=${def.resizeMode}
+// are advisory on iOS; WidgetKit sizes by family.
+@available(iOS 17.0, *)
+struct ${def.name}Widget: Widget {
+    let kind: String = "${def.name}"
+
+    private var families: [WidgetFamily] {
+        ${_supportedFamiliesProperty(def)}
+    }
+
+    var body: some WidgetConfiguration {
+        AppIntentConfiguration(kind: kind, intent: ${def.name}ConfigIntent.self, provider: ${def.name}Provider()) { entry in
+            ${def.name}View(entry: entry)
+                .mosaicContainerBackground(.clear)
+                .widgetAccentable()
+        }
+        .configurationDisplayName("${def.name}")
+        .description("This is an auto-generated configurable widget.")
         .supportedFamilies(families)
         .contentMarginsDisabled()
     }
