@@ -70,6 +70,35 @@ void main() {
     expect(s, contains('.formatted(date:'));
   });
 
+  test('date format divides epoch millis by 1000 (millis→seconds)', () async {
+    final r = await runIos([
+      irDef({
+        '__type': 'HWText',
+        'text': bind('when'),
+        'style': <String, dynamic>{},
+        'format': 'date',
+      })
+    ]);
+    final s = r.swiftForTestW();
+    expect(s, contains('/ 1000'),
+        reason: 'iOS must divide epoch-ms by 1000.0 to match Android');
+  });
+
+  test('relativeTime format divides epoch millis by 1000 (millis→seconds)',
+      () async {
+    final r = await runIos([
+      irDef({
+        '__type': 'HWText',
+        'text': bind('when'),
+        'style': <String, dynamic>{},
+        'format': 'relativeTime',
+      })
+    ]);
+    final s = r.swiftForTestW();
+    expect(s, contains('/ 1000'),
+        reason: 'iOS must divide epoch-ms by 1000.0 to match Android');
+  });
+
   test('format ignored on static (non-bind) text', () async {
     final r = await runIos([
       irDef({

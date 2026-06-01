@@ -898,8 +898,10 @@ class TextHandler extends IosNodeHandler {
 
   /// Emits a `Text(...)` for a bound value formatted per MFormat, localized via
   /// `Locale.current`. decimal/currency/percent parse the bound value as a
-  /// Double; date/relativeTime read it as epoch seconds (Double). The
-  /// `.formatted` style APIs used here are iOS15+.
+  /// Double; date/relativeTime read it as epoch milliseconds (Double) and
+  /// divide by 1000.0 to obtain epoch seconds — matching Flutter's
+  /// `millisecondsSinceEpoch` convention used on Android. The `.formatted`
+  /// style APIs used here are iOS15+.
   String _formattedText(String format, String key, String src) {
     // Parse a Double from the bound entry value (NSNumber or String).
     final dbl =
@@ -912,9 +914,9 @@ class TextHandler extends IosNodeHandler {
       case 'percent':
         return 'Text($dbl.formatted(.percent))';
       case 'date':
-        return 'Text((Date(timeIntervalSince1970: $dbl)).formatted(date: .abbreviated, time: .omitted))';
+        return 'Text((Date(timeIntervalSince1970: $dbl / 1000.0)).formatted(date: .abbreviated, time: .omitted))';
       case 'relativeTime':
-        return 'Text(Date(timeIntervalSince1970: $dbl), style: .relative)';
+        return 'Text(Date(timeIntervalSince1970: $dbl / 1000.0), style: .relative)';
       default:
         // Unknown format: fall back to the plain interpolated string.
         return 'Text("\\($src["$key"] as? String ?? String(describing: $src["$key"] ?? "--"))")';
