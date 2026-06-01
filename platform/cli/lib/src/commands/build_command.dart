@@ -29,6 +29,43 @@ String receiverTag(String androidPackage, String widgetName) {
         </receiver>''';
 }
 
+/// Builds the `<service>` AndroidManifest entry for the shared Mosaic
+/// RemoteViewsService that backs every HWListView. A collection RemoteViews
+/// service MUST declare `android:permission="android.permission.BIND_REMOTEVIEWS"`
+/// (and be exported) or the system refuses to bind it and the list renders
+/// empty. Mirrors [receiverTag]: the class name is the generator's fixed
+/// `MosaicListService` under `mosaic_generated`.
+String listServiceTag(String androidPackage) {
+  final serviceName = '$androidPackage.mosaic_generated.MosaicListService';
+  return '''
+        <service
+            android:name="$serviceName"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />''';
+}
+
+/// True when any [definitions] node tree contains an `HWListView`, gating
+/// declaration of the [listServiceTag] in the manifest.
+bool definitionsUseListView(List<IRDefinition> definitions) {
+  bool walk(IRNode node) {
+    if (node.type == 'HWListView') return true;
+    for (final value in node.data.values) {
+      if (value is Map && value['__type'] is String) {
+        if (walk(IRNode.fromJson(value.cast<String, dynamic>()))) return true;
+      } else if (value is List) {
+        for (final e in value) {
+          if (e is Map && e['__type'] is String) {
+            if (walk(IRNode.fromJson(e.cast<String, dynamic>()))) return true;
+          }
+        }
+      }
+    }
+    return false;
+  }
+
+  return definitions.any((d) => walk(d.root));
+}
+
 /// Builds the deep-link `<intent-filter>` for MainActivity. The [scheme] is
 /// [xmlEscape]d so a value containing XML metacharacters (e.g. `&`) cannot
 /// corrupt the manifest.
@@ -195,6 +232,20 @@ class BuildCommand extends Command {
           );
           print('Added receiver for ${def.name} to AndroidManifest.xml');
         }
+      }
+    }
+
+    // Declare the shared RemoteViews collection service when any widget uses a
+    // list. It needs BIND_REMOTEVIEWS or the system will not bind it.
+    if (definitionsUseListView(definitions)) {
+      final serviceName = '$androidPackage.mosaic_generated.MosaicListService';
+      if (!content.contains(serviceName) &&
+          content.contains('</application>')) {
+        content = content.replaceFirst(
+          '</application>',
+          '${listServiceTag(androidPackage)}\n    </application>',
+        );
+        print('Added MosaicListService to AndroidManifest.xml');
       }
     }
 

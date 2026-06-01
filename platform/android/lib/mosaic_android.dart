@@ -201,6 +201,123 @@ class AndroidGenerator {
     _timersCountUp.add(id);
   }
 
+  /// HWListView collection views discovered while rendering the CURRENT
+  /// definition's layout. Each entry records the bound list [key], the
+  /// sanitized resource id ([idKey]), the generated per-row item layout
+  /// resource name ([itemLayout]) and the ORDERED set of item-template bind
+  /// fields ([fields]) that map to `hw_item_<field>` TextViews in that layout.
+  /// Populated by [ListViewHandler]; consumed by [_generateKotlinProvider]
+  /// (to wire `setRemoteAdapter`) and flushed/cleared per definition.
+  final List<
+      ({
+        String key,
+        String idKey,
+        String itemLayout,
+        List<({String field, String kind})> fields,
+      })> _listViews = [];
+
+  /// True while a node tree is being rendered as a list ITEM TEMPLATE rather
+  /// than a widget layout. In this mode bound `HWText`/`HWImage` nodes emit a
+  /// stable `hw_item_<field>` id (and the field is collected via
+  /// [collectItemField]) instead of registering a global SharedPreferences
+  /// bind — each row's values are set by the RemoteViewsFactory.
+  bool _inItemTemplate = false;
+  bool get inItemTemplate => _inItemTemplate;
+
+  /// Ordered item-template bind fields collected during the current
+  /// item-template render. Each is `(field, kind)` where kind is 'text' or
+  /// 'image'. Order is preserved so the factory maps fields to view ids
+  /// deterministically.
+  final List<({String field, String kind})> _itemTemplateFields = [];
+
+  /// Records that the current item template binds [field] of [kind]
+  /// ('text'|'image') → the view id `hw_item_<idForKey(field)>`. De-duplicated
+  /// by field, order preserved.
+  void collectItemField(String field, {String kind = 'text'}) {
+    if (_itemTemplateFields.any((f) => f.field == field)) return;
+    _itemTemplateFields.add((field: field, kind: kind));
+  }
+
+  /// Renders [itemTemplate] as a standalone per-row item layout in
+  /// item-template mode, registers the discovered list under [key], and
+  /// returns the item layout resource name. The generated layout is written by
+  /// [generate] from [_pendingItemLayouts].
+  String registerListView(String key, IRNode itemTemplate) {
+    final idKey = idForKey(key);
+    final itemLayout = 'hw_listitem_${_currentSafeName}_$idKey';
+
+    // Render the item template tree in item-template mode so bound fields map
+    // to hw_item_<field> view ids instead of global binds. Use throwaway
+    // accumulators — item rows are populated by the factory, not the provider.
+    final savedInItem = _inItemTemplate;
+    final savedFields =
+        List<({String field, String kind})>.from(_itemTemplateFields);
+    _inItemTemplate = true;
+    _itemTemplateFields.clear();
+    final throwBinds = <String, String>{};
+    final throwVis = <String>[];
+    final throwTimers = <String, String>{};
+    final throwButtons = <Map<String, dynamic>>[];
+    String body;
+    List<({String field, String kind})> fields;
+    try {
+      body = nodeToXml(
+        itemTemplate,
+        throwBinds,
+        throwVis,
+        throwTimers,
+        throwButtons,
+        isRoot: true,
+      );
+      fields = List<({String field, String kind})>.from(_itemTemplateFields);
+    } finally {
+      _inItemTemplate = savedInItem;
+      _itemTemplateFields
+        ..clear()
+        ..addAll(savedFields);
+    }
+
+    final xml = StringBuffer()
+      ..writeln('<?xml version="1.0" encoding="utf-8"?>')
+      ..writeln(xmlSentinel)
+      ..write(body);
+    _pendingItemLayouts[itemLayout] = xml.toString();
+
+    final descriptor = (
+      key: key,
+      idKey: idKey,
+      itemLayout: itemLayout,
+      fields: fields,
+    );
+    _listViews.add(descriptor);
+    _allListViews.add(descriptor);
+    return idKey;
+  }
+
+  /// Per-row item layout XML keyed by resource name, flushed to res/layout in
+  /// [generate]. Filled by [registerListView].
+  final Map<String, String> _pendingItemLayouts = {};
+
+  /// Sanitized lowercase name of the definition currently being generated.
+  /// Used to namespace per-row item layout resource files.
+  String _currentSafeName = '';
+
+  /// True once any definition has declared at least one HWListView, gating
+  /// generation of the shared `MosaicListService.kt`.
+  bool _anyListView = false;
+
+  /// Every list discovered across ALL definitions, keyed by [idKey] (which is
+  /// unique because the item layout name embeds the widget name). The shared
+  /// RemoteViewsService dispatches on the `hw_list_key` intent extra to select
+  /// the matching item layout + fields at runtime.
+  final List<
+      ({
+        String key,
+        String idKey,
+        String itemLayout,
+        List<({String field, String kind})> fields,
+      })> _allListViews = [];
+
   /// Registers a static file image URI for [viewSuffix] and returns the
   /// matching view id suffix so the handler can emit the layout id.
   void registerStaticImageUri(String viewSuffix, String uri) {
@@ -268,6 +385,9 @@ class AndroidGenerator {
     if (!layoutDir.existsSync()) layoutDir.createSync(recursive: true);
     if (!xmlDir.existsSync()) xmlDir.createSync(recursive: true);
 
+    _anyListView = false;
+    _allListViews.clear();
+
     for (final def in definitions) {
       final safe = _safeName(def.name);
       final layoutName = 'hw_${safe.toLowerCase()}';
@@ -282,6 +402,9 @@ class AndroidGenerator {
       _timersCountUp.clear();
       _colorBinds.clear();
       _textFormats.clear();
+      _listViews.clear();
+      _pendingItemLayouts.clear();
+      _currentSafeName = safe.toLowerCase();
 
       final layoutXml = _generateLayoutXml(
         def.root,
@@ -291,6 +414,12 @@ class AndroidGenerator {
         buttons,
       );
       await layoutFile.writeAsString(layoutXml);
+
+      // Flush any per-row item layouts discovered while rendering HWListViews.
+      for (final entry in _pendingItemLayouts.entries) {
+        await File(p.join(layoutDir.path, '${entry.key}.xml'))
+            .writeAsString(entry.value);
+      }
 
       final infoFile = File(p.join(xmlDir.path, '${layoutName}_info.xml'));
       await infoFile.writeAsString(_generateInfoXml(def));
@@ -304,7 +433,14 @@ class AndroidGenerator {
         timers,
         buttons,
       );
+
+      // The shared RemoteViewsService is regenerated whenever ANY definition
+      // contains at least one list. It is keyed by the list key passed via the
+      // launch intent, so a single service serves every list/widget.
+      if (_listViews.isNotEmpty) _anyListView = true;
     }
+
+    if (_anyListView) await _generateListService(projectRoot);
 
     await _generateLiveActivityLayouts(layoutDir);
     await _generateLiveActivityManager(projectRoot);
@@ -551,6 +687,133 @@ $layoutCases
 
     /// Best-effort list of currently-posted live-activity ids.
     fun active(context: Context): List<String> = activeIds.toList()
+}
+''');
+  }
+
+  /// Generates `MosaicListService.kt` — a single [RemoteViewsService] whose
+  /// factory serves EVERY HWListView in the app. The launching widget passes
+  /// the bound list key via the `hw_list_key` intent extra; the factory selects
+  /// the matching per-row item layout and the field→view-id mapping from a
+  /// generated table, reads the JSON rows via `MosaicData.resolveList`, and for
+  /// each row inflates the item layout and sets each `hw_item_<field>` TextView
+  /// from the row map.
+  Future<void> _generateListService(String projectRoot) async {
+    final packagePath = config.app.androidPackage.replaceAll('.', '/');
+    final kotlinDir = Directory(
+      p.join(
+        projectRoot,
+        'android',
+        'app',
+        'src',
+        'main',
+        'kotlin',
+        packagePath,
+        'mosaic_generated',
+      ),
+    );
+    if (!kotlinDir.existsSync()) kotlinDir.createSync(recursive: true);
+
+    // when(key) -> R.layout.<itemLayout>
+    final layoutCases = _allListViews
+        .map((lv) =>
+            '            "${kotlinEscape(lv.key)}" -> R.layout.${lv.itemLayout}')
+        .join('\n');
+
+    // when(key) -> list of Triple(field, viewId, kind) so the factory knows
+    // whether to set text or an image Uri per row.
+    final fieldCases = _allListViews.map((lv) {
+      final triples = lv.fields
+          .map((f) =>
+              'Triple("${kotlinEscape(f.field)}", R.id.hw_item_${idForKey(f.field)}, "${f.kind}")')
+          .join(', ');
+      return '            "${kotlinEscape(lv.key)}" -> listOf($triples)';
+    }).join('\n');
+
+    final file = File(p.join(kotlinDir.path, 'MosaicListService.kt'));
+    await file.writeAsString('''$kotlinSentinel
+package ${config.app.androidPackage}.mosaic_generated
+
+import android.content.Context
+import android.content.Intent
+import android.widget.RemoteViews
+import android.widget.RemoteViewsService
+import ${config.app.androidPackage}.R
+
+/// Shared RemoteViewsService backing every Mosaic HWListView. The widget
+/// provider attaches this service as the ListView's remote adapter and passes
+/// the bound list key in the "hw_list_key" extra. One service instance serves
+/// all lists; the factory dispatches on the key to pick the per-row item
+/// layout and the field -> view-id mapping.
+class MosaicListService : RemoteViewsService() {
+    override fun onGetViewFactory(intent: Intent): RemoteViewsFactory {
+        val key = intent.getStringExtra("hw_list_key") ?: ""
+        return MosaicListFactory(applicationContext, key)
+    }
+
+    companion object {
+        /// Resolves the generated per-row item layout for a list [key].
+        fun itemLayoutFor(key: String): Int {
+            return when (key) {
+$layoutCases
+                else -> 0
+            }
+        }
+
+        /// Resolves the ordered (field, viewId, kind) triples the item layout
+        /// binds for list [key]. Each field is set per row from the row map;
+        /// kind is "text" (setTextViewText) or "image" (setImageViewUri).
+        fun fieldsFor(key: String): List<Triple<String, Int, String>> {
+            return when (key) {
+$fieldCases
+                else -> emptyList()
+            }
+        }
+    }
+}
+
+class MosaicListFactory(
+    private val context: Context,
+    private val key: String,
+) : RemoteViewsService.RemoteViewsFactory {
+    private var rows: List<Map<String, String>> = emptyList()
+
+    override fun onCreate() {}
+
+    override fun onDataSetChanged() {
+        rows = MosaicData.resolveList(context, key)
+    }
+
+    override fun onDestroy() {
+        rows = emptyList()
+    }
+
+    override fun getCount(): Int = rows.size
+
+    override fun getViewAt(position: Int): RemoteViews {
+        val layout = MosaicListService.itemLayoutFor(key)
+        val views = RemoteViews(context.packageName, layout)
+        if (position in rows.indices) {
+            val row = rows[position]
+            for ((field, viewId, kind) in MosaicListService.fieldsFor(key)) {
+                val value = row[field] ?: ""
+                if (kind == "image") {
+                    views.setImageViewUri(viewId, android.net.Uri.parse(value))
+                } else {
+                    views.setTextViewText(viewId, value)
+                }
+            }
+        }
+        return views
+    }
+
+    override fun getLoadingView(): RemoteViews? = null
+
+    override fun getViewTypeCount(): Int = 1
+
+    override fun getItemId(position: Int): Long = position.toLong()
+
+    override fun hasStableIds(): Boolean = true
 }
 ''');
   }
@@ -1034,6 +1297,25 @@ $xmlSentinel
         })
         .join('\n        ');
 
+    // RemoteViews collection wiring: for each HWListView in this definition,
+    // build an Intent at the shared MosaicListService carrying the list key,
+    // attach it as the ListView's remote adapter, and notify the data set so
+    // the factory re-reads MosaicData.resolveList. A unique data Uri per
+    // (widget, list) prevents Android from collapsing distinct intents.
+    final listAdapterLogic = _listViews
+        .map((lv) {
+          final lit = kotlinEscape(lv.key);
+          return '''
+        val listIntent_${lv.idKey} = android.content.Intent(context, MosaicListService::class.java).apply {
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            putExtra("hw_list_key", "$lit")
+            data = android.net.Uri.parse("mosaic://list/" + appWidgetId + "/$lit")
+        }
+        views.setRemoteAdapter(R.id.hw_list_${lv.idKey}, listIntent_${lv.idKey})
+        appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.hw_list_${lv.idKey})''';
+        })
+        .join('\n        ');
+
     final buttonLogic = buttons
         .asMap()
         .entries
@@ -1124,6 +1406,7 @@ class $className : AppWidgetProvider() {
         $visibilityLogic
         $staticImageLogic
         $colorBindLogic
+        $listAdapterLogic
         $buttonLogic
 
         appWidgetManager.updateAppWidget(appWidgetId, views)
@@ -1279,7 +1562,14 @@ class TextHandler extends AndroidNodeHandler {
     final isBind = text is Map && text['__type'] == 'HWBind';
     String idAttr = '';
     String textValue = '';
-    if (isBind) {
+    if (isBind && context.inItemTemplate) {
+      // Inside a list item template the bound field is set PER ROW by the
+      // RemoteViewsFactory, not by the provider, so use a stable per-field id
+      // and collect the field rather than registering a global bind.
+      final key = text['key'] as String;
+      context.collectItemField(key);
+      idAttr = 'android:id="@+id/hw_item_${AndroidGenerator.idForKey(key)}"';
+    } else if (isBind) {
       final key = text['key'] as String;
       usedBinds[key] = 'text';
       idAttr = 'android:id="@+id/hw_text_${AndroidGenerator.idForKey(key)}"';
@@ -1818,10 +2108,18 @@ class ImageHandler extends AndroidNodeHandler {
     } else if (type == 'HWFileImage') {
       final path = source['path'];
       if (path is Map && path['__type'] == 'HWBind') {
-        // Dynamic file image: resolved at update time via the provider.
         final key = path['key'] as String;
-        usedBinds[key] = 'image';
-        idAttr = 'android:id="@+id/hw_image_${AndroidGenerator.idForKey(key)}"';
+        if (context.inItemTemplate) {
+          // Per-row image: set by the factory via hw_item_<field>.
+          context.collectItemField(key, kind: 'image');
+          idAttr =
+              'android:id="@+id/hw_item_${AndroidGenerator.idForKey(key)}"';
+        } else {
+          // Dynamic file image: resolved at update time via the provider.
+          usedBinds[key] = 'image';
+          idAttr =
+              'android:id="@+id/hw_image_${AndroidGenerator.idForKey(key)}"';
+        }
       } else if (path is String && path.isNotEmpty) {
         // Static file image: wire a fixed Uri in the provider.
         final suffix = sanitizeIdentifier(path).toLowerCase();
@@ -1926,14 +2224,25 @@ class ListViewHandler extends AndroidNodeHandler {
     bool isInsideLinearLayout = false,
     bool isVertical = true,
   }) {
-    // A correct collection view requires a RemoteViewsService + factory wired
-    // through setRemoteAdapter AND the service registered in AndroidManifest.
-    // This generator does not manage the manifest, so a partial implementation
-    // would silently render nothing at runtime. Fail loudly at gen time instead
-    // of emitting an invisible 0x0 stub.
-    throw UnsupportedError(
-      'HWListView Android support is not yet implemented — remove it or use a Column for now.',
+    // Real Android collection view: emit a ListView whose adapter is wired in
+    // the provider via setRemoteAdapter to the shared MosaicListService. The
+    // item template is rendered into a per-row item layout, and each bound
+    // field maps to a hw_item_<field> view set per row by the factory.
+    final bindMap = node.data['bind'] as Map?;
+    if (bindMap == null) return '<!-- missing bind -->';
+    final key = bindMap['key'] as String;
+    final itemJson = node.data['itemTemplate'];
+    if (itemJson == null) return '<!-- missing itemTemplate -->';
+    final itemTemplate = IRNode.fromJson(
+      (itemJson as Map).cast<String, dynamic>(),
     );
+
+    final idKey = context.registerListView(key, itemTemplate);
+
+    final width = isInsideLinearLayout && !isVertical ? '0dp' : 'match_parent';
+    final weightAttr =
+        isInsideLinearLayout && !isVertical ? ' android:layout_weight="1"' : '';
+    return '<ListView android:id="@+id/hw_list_$idKey" android:layout_width="$width" android:layout_height="match_parent"$weightAttr />';
   }
 }
 

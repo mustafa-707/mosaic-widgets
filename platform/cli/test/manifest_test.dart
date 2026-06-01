@@ -27,6 +27,20 @@ void main() {
     });
   });
 
+  group('listServiceTag', () {
+    test('declares the RemoteViews service with BIND_REMOTEVIEWS permission',
+        () {
+      final tag = listServiceTag('com.acme.app');
+      expect(
+        tag,
+        contains(
+          'android:name="com.acme.app.mosaic_generated.MosaicListService"',
+        ),
+      );
+      expect(tag, contains('android.permission.BIND_REMOTEVIEWS'));
+    });
+  });
+
   group('deepLinkFilter', () {
     test('escapes a scheme containing &', () {
       final filter = deepLinkFilter('my&scheme');

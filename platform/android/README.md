@@ -46,10 +46,19 @@ For each widget registered in `mosaic.yaml`, `mosaic_android` emits:
 
 ## Supported DSL features
 
-All core layout and widget nodes are supported. Current limitation:
+All core layout and widget nodes are supported.
 
-- **`MListView`** is not yet implemented on Android; the build throws a clear error.
-  Use `MColumn` to enumerate items in the meantime.
+- **`MListView`** renders a real Android collection via `RemoteViewsService` /
+  `RemoteViewsFactory`. The generator emits a `<ListView>` in the widget layout,
+  a per-row item layout (`hw_listitem_<widget>_<key>.xml`) rendered from the
+  `itemTemplate`, and a shared `MosaicListService.kt` whose factory reads
+  `MosaicData.resolveList(context, "<key>")` and sets each per-row bound field
+  (`hw_item_<field>`) from the row map. The provider wires the adapter with
+  `setRemoteAdapter` + `notifyAppWidgetViewDataChanged`. The `mosaic_cli build`
+  manifest automation declares the service with
+  `android:permission="android.permission.BIND_REMOTEVIEWS"`. Item templates of
+  Text/Image/Row/Column are the supported priority; deeply nested or unsupported
+  item nodes are rendered best-effort.
 
 For all supported DSL nodes and attributes see the
 [DSL Reference](https://github.com/your-org/mosaic/blob/main/DOCS/DSL_REFERENCE.md).
