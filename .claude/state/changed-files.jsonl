@@ -126,3 +126,7 @@
 {"file":"platform/core/lib/src/models/ir.dart","action":"Edit","timestamp":"2026-06-01T11:56:40Z","important":false}
 {"file":"platform/cli/lib/src/commands/build_command.dart","action":"Edit","timestamp":"2026-06-01T11:58:45Z","important":false}
 {"file":"platform/android/README.md","action":"Edit","timestamp":"2026-06-01T12:04:01Z","important":false}
+{"file":"platform/ios/test/support/fixtures.dart","action":"Edit","timestamp":"2026-06-01T12:07:03Z","important":false}
+{"file":"platform/android/test/configurable_android_test.dart","action":"Write","timestamp":"2026-06-01T12:07:12Z","important":false}
+{"file":"platform/ios/test/configurable_ios_test.dart","action":"Write","timestamp":"2026-06-01T12:07:20Z","important":false}
+{"file":"examples/demo_app/lib/platform/widgets/crypto.widget.dart","action":"Edit","timestamp":"2026-06-01T12:10:24Z","important":false}
