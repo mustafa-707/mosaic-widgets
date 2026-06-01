@@ -646,13 +646,36 @@ class ImageHandler extends IosNodeHandler {
       return '// Unsupported Image Source';
     }
 
-    String modifiers = '.resizable()';
-    if (fit == 'cover' || fit == 'fill') {
-      modifiers += '.aspectRatio(contentMode: .fill)';
-    } else if (fit == 'contain') {
-      modifiers += '.aspectRatio(contentMode: .fit)';
-    } else {
-      // Default to fill/stretch behavior or retain resizable
+    // Map all 7 MBoxFit values onto SwiftUI image modifiers.
+    String modifiers;
+    switch (fit) {
+      case 'cover':
+        modifiers = '.resizable().aspectRatio(contentMode: .fill)';
+        break;
+      case 'contain':
+        modifiers = '.resizable().aspectRatio(contentMode: .fit)';
+        break;
+      case 'fill':
+        // Stretch to fill the frame on both axes — no aspectRatio.
+        modifiers = '.resizable()';
+        break;
+      case 'fitWidth':
+        modifiers =
+            '.resizable().aspectRatio(contentMode: .fit).frame(maxWidth: .infinity)';
+        break;
+      case 'fitHeight':
+        modifiers =
+            '.resizable().aspectRatio(contentMode: .fit).frame(maxHeight: .infinity)';
+        break;
+      case 'none':
+        // Intrinsic size — do not make the image resizable.
+        modifiers = '';
+        break;
+      case 'scaleDown':
+        modifiers = '.resizable().aspectRatio(contentMode: .fit)';
+        break;
+      default:
+        modifiers = '.resizable().aspectRatio(contentMode: .fit)';
     }
 
     return '$imageCode$modifiers';
