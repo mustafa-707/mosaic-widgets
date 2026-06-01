@@ -491,3 +491,58 @@ class MosaicDefinition {
 }
 
 enum MResizeMode { none, horizontal, vertical, both }
+
+/// The canonical definition of a Live Activity (iOS) / ongoing notification.
+class MosaicLiveActivity {
+  final String name;
+  final MNode lockScreen;
+  final MDynamicIsland dynamicIsland;
+  const MosaicLiveActivity({
+    required this.name,
+    required this.lockScreen,
+    required this.dynamicIsland,
+  });
+  Map<String, dynamic> toJson() => {
+    '__type': 'HWLiveActivity',
+    'name': name,
+    'lockScreen': lockScreen.toJson(),
+    'dynamicIsland': dynamicIsland.toJson(),
+  };
+}
+
+/// Dynamic Island presentation regions.
+class MDynamicIsland {
+  final MNode compactLeading;
+  final MNode compactTrailing;
+  final MNode minimal;
+  final MExpanded expanded;
+  const MDynamicIsland({
+    required this.compactLeading,
+    required this.compactTrailing,
+    required this.minimal,
+    required this.expanded,
+  });
+  Map<String, dynamic> toJson() => {
+    '__type': 'HWDynamicIsland',
+    'compactLeading': compactLeading.toJson(),
+    'compactTrailing': compactTrailing.toJson(),
+    'minimal': minimal.toJson(),
+    'expanded': expanded.toJson(),
+  };
+}
+
+/// The expanded Dynamic Island layout slots.
+class MExpanded {
+  final MNode? leading;
+  final MNode? trailing;
+  final MNode? center;
+  final MNode? bottom;
+  const MExpanded({this.leading, this.trailing, this.center, this.bottom});
+  Map<String, dynamic> toJson() => {
+    '__type': 'HWExpanded',
+    'leading': leading?.toJson(),
+    'trailing': trailing?.toJson(),
+    'center': center?.toJson(),
+    'bottom': bottom?.toJson(),
+  };
+}
