@@ -26,3 +26,7 @@ widgets:
       sizes: [medium]
     ios:
       families: [systemMedium, accessoryRectangular]
+
+live_activities:
+  - name: OrderTracker
+    entry: lib/platform/live_activities/order_tracker.live.dart
