@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import WidgetKit
+import ActivityKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -57,6 +58,72 @@ import WidgetKit
       } else if call.method == "refreshAll" {
         self.refreshAllWidgets()
         result(nil)
+
+      } else if call.method == "startActivity" {
+        // Live Activity lifecycle is iOS 16.1+. MosaicActivityController is
+        // generated into the widget extension target (gated @available(iOS 16.1)).
+        if #available(iOS 16.1, *) {
+          guard let args = call.arguments as? [String: Any],
+                let type = args["type"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENTS", message: "type is required", details: nil))
+            return
+          }
+          let data = (args["data"] as? [String: String]) ?? [:]
+          result(MosaicActivityController.start(type: type, data: data))
+        } else {
+          result(FlutterError(code: "UNAVAILABLE", message: "Live Activities require iOS 16.1+", details: nil))
+        }
+
+      } else if call.method == "updateActivity" {
+        if #available(iOS 16.1, *) {
+          guard let args = call.arguments as? [String: Any],
+                let id = args["id"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENTS", message: "id is required", details: nil))
+            return
+          }
+          let data = (args["data"] as? [String: String]) ?? [:]
+          MosaicActivityController.update(
+            id: id,
+            data: data,
+            alertTitle: args["alertTitle"] as? String,
+            alertBody: args["alertBody"] as? String
+          )
+          result(nil)
+        } else {
+          result(FlutterError(code: "UNAVAILABLE", message: "Live Activities require iOS 16.1+", details: nil))
+        }
+
+      } else if call.method == "endActivity" {
+        if #available(iOS 16.1, *) {
+          guard let args = call.arguments as? [String: Any],
+                let id = args["id"] as? String else {
+            result(FlutterError(code: "INVALID_ARGUMENTS", message: "id is required", details: nil))
+            return
+          }
+          MosaicActivityController.end(
+            id: id,
+            data: args["data"] as? [String: String],
+            policy: (args["policy"] as? String) ?? "default"
+          )
+          result(nil)
+        } else {
+          result(FlutterError(code: "UNAVAILABLE", message: "Live Activities require iOS 16.1+", details: nil))
+        }
+
+      } else if call.method == "activitiesEnabled" {
+        if #available(iOS 16.1, *) {
+          result(MosaicActivityController.enabled())
+        } else {
+          result(false)
+        }
+
+      } else if call.method == "activeActivities" {
+        if #available(iOS 16.1, *) {
+          result(MosaicActivityController.active())
+        } else {
+          result([String]())
+        }
+
       } else {
         result(FlutterMethodNotImplemented)
       }

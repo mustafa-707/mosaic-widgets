@@ -111,6 +111,115 @@ struct MosaicActivityAttributes: ActivityAttributes {
       final file = File(p.join(iosDir.path, '${name}LiveActivity.swift'));
       await file.writeAsString(_generateLiveActivity(la));
     }
+
+    // Lifecycle controller the host app's AppDelegate routes channel methods
+    // to. Emitted once for the whole bundle.
+    final controllerFile =
+        File(p.join(iosDir.path, 'MosaicActivityController.swift'));
+    await controllerFile.writeAsString(_generateActivityController());
+  }
+
+  /// Emits `MosaicActivityController.swift`: a static facade over the
+  /// ActivityKit lifecycle the host app drives from its method-channel handler.
+  ///
+  /// ActivityKit constraints that shaped this code:
+  ///  - `Activity.request`, `Activity.activities`, `Activity.update/end`,
+  ///    `ActivityAuthorizationInfo`, and `AlertConfiguration` are iOS 16.1+, so
+  ///    the whole type is `@available(iOS 16.1, *)`.
+  ///  - `update`/`end` are `async`, so the channel-facing entry points wrap the
+  ///    awaits in a detached `Task` and return synchronously — the channel call
+  ///    is fire-and-forget from Swift's side.
+  ///  - `Activity` lookups iterate `Activity<MosaicActivityAttributes>.activities`
+  ///    to find the matching `id`.
+  ///  - `Info.plist` must contain `NSSupportsLiveActivities = true` (see note).
+  String _generateActivityController() {
+    return '''$kGeneratedSentinel
+import ActivityKit
+import Foundation
+
+// IMPORTANT: For Live Activities to start, the HOST APP's Info.plist must set:
+//     <key>NSSupportsLiveActivities</key><true/>
+// Without it, `ActivityAuthorizationInfo().areActivitiesEnabled` is false and
+// `Activity.request(...)` throws.
+
+@available(iOS 16.1, *)
+enum MosaicActivityController {
+    /// Requests a new Live Activity and returns its id (nil on failure).
+    ///
+    /// Uses the iOS 16.1 `request(attributes:contentState:)` overload (the
+    /// `content:`/`ActivityContent` form is 16.2+).
+    static func start(type: String, data: [String: String]) -> String? {
+        let attributes = MosaicActivityAttributes(activityType: type)
+        let state = MosaicActivityAttributes.ContentState(data: data)
+        do {
+            let activity = try Activity.request(
+                attributes: attributes,
+                contentState: state
+            )
+            return activity.id
+        } catch {
+            NSLog("MosaicActivityController.start failed: \\(error)")
+            return nil
+        }
+    }
+
+    /// Updates the activity with [id], optionally surfacing an alert.
+    ///
+    /// Uses the iOS 16.1 `update(using:alertConfiguration:)` overload.
+    static func update(
+        id: String,
+        data: [String: String],
+        alertTitle: String? = nil,
+        alertBody: String? = nil
+    ) {
+        guard let activity = Activity<MosaicActivityAttributes>.activities
+            .first(where: { \$0.id == id }) else { return }
+        let state = MosaicActivityAttributes.ContentState(data: data)
+        var alert: AlertConfiguration? = nil
+        if let title = alertTitle, let body = alertBody {
+            alert = AlertConfiguration(
+                title: LocalizedStringResource(stringLiteral: title),
+                body: LocalizedStringResource(stringLiteral: body),
+                sound: .default
+            )
+        }
+        Task {
+            await activity.update(using: state, alertConfiguration: alert)
+        }
+    }
+
+    /// Ends the activity with [id]. [policy] maps to a dismissal policy
+    /// ("immediate" → .immediate, anything else → .default).
+    ///
+    /// Uses the iOS 16.1 `end(using:dismissalPolicy:)` overload.
+    static func end(
+        id: String,
+        data: [String: String]? = nil,
+        policy: String = "default"
+    ) {
+        guard let activity = Activity<MosaicActivityAttributes>.activities
+            .first(where: { \$0.id == id }) else { return }
+        let dismissal: ActivityUIDismissalPolicy =
+            policy == "immediate" ? .immediate : .default
+        let finalState = data.map {
+            MosaicActivityAttributes.ContentState(data: \$0)
+        }
+        Task {
+            await activity.end(using: finalState, dismissalPolicy: dismissal)
+        }
+    }
+
+    /// Whether the user has Live Activities enabled for this app.
+    static func enabled() -> Bool {
+        return ActivityAuthorizationInfo().areActivitiesEnabled
+    }
+
+    /// The ids of all currently active activities for this attributes type.
+    static func active() -> [String] {
+        return Activity<MosaicActivityAttributes>.activities.map { \$0.id }
+    }
+}
+''';
   }
 
   /// Renders a node tree (HWText, HWContainer, …) for a Live Activity view,
@@ -265,9 +374,20 @@ struct MosaicCallbackIntent: AppIntent {
   }
 
   String _generateWidgetBundle() {
-    final widgets = definitions
-        .map((def) => '        ${def.name}Widget()')
-        .join('\n');
+    final lines = <String>[
+      ...definitions.map((def) => '        ${def.name}Widget()'),
+    ];
+
+    // Live Activities are iOS 16.1+ Widgets; register each under an
+    // availability gate so the bundle still builds when targeting older iOS.
+    // `@WidgetBundleBuilder` supports `if #available` blocks.
+    for (final la in liveActivities) {
+      final name = la['name'] as String;
+      lines.add('''        if #available(iOS 16.1, *) {
+            ${name}LiveActivity()
+        }''');
+    }
+
     return '''$kGeneratedSentinel
 import SwiftUI
 import WidgetKit
@@ -275,7 +395,7 @@ import WidgetKit
 @main
 struct HomeWidgetBundle: WidgetBundle {
     var body: some Widget {
-$widgets
+${lines.join('\n')}
     }
 }
 ''';

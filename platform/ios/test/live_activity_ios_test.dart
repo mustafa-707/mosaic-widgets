@@ -121,4 +121,60 @@ void main() {
       expect(swift, contains('EmptyView()'));
     });
   });
+
+  group('ActivityKit controller + bundle registration', () {
+    test('emits MosaicActivityController.swift with lifecycle funcs',
+        () async {
+      final res = await runIos(
+        const [],
+        liveActivities: [orderTrackerActivity()],
+      );
+
+      expect(
+        res.exists('ios/HomeWidgetExtension/MosaicActivityController.swift'),
+        isTrue,
+      );
+
+      final swift = readFile(res.file(
+          'ios/HomeWidgetExtension/MosaicActivityController.swift'));
+
+      expect(swift.split('\n').first, contains('MOSAIC-GENERATED'));
+      expect(swift, contains('@available(iOS 16.1, *)'));
+      expect(swift, contains('import ActivityKit'));
+
+      // Lifecycle entry points the AppDelegate routes to.
+      expect(swift, contains('func start('));
+      expect(swift, contains('func update('));
+      expect(swift, contains('func end('));
+      expect(swift, contains('func enabled() -> Bool'));
+      expect(swift, contains('func active() -> [String]'));
+
+      // ActivityKit primitives.
+      expect(swift, contains('Activity.request('));
+      expect(swift, contains('MosaicActivityAttributes(activityType:'));
+      expect(swift, contains('Activity<MosaicActivityAttributes>.activities'));
+      expect(swift, contains('ActivityAuthorizationInfo().areActivitiesEnabled'));
+      expect(swift, contains('AlertConfiguration'));
+    });
+
+    test('bundle registers live activities under an iOS 16.1 gate', () async {
+      final res = await runIos(
+        const [],
+        liveActivities: [orderTrackerActivity()],
+      );
+
+      final bundle = readFile(
+          res.file('ios/HomeWidgetExtension/HomeWidgetBundle.swift'));
+      expect(bundle, contains('if #available(iOS 16.1, *)'));
+      expect(bundle, contains('OrderTrackerLiveActivity()'));
+    });
+
+    test('no controller emitted when there are no live activities', () async {
+      final res = await runIos(const [], liveActivities: const []);
+      expect(
+        res.exists('ios/HomeWidgetExtension/MosaicActivityController.swift'),
+        isFalse,
+      );
+    });
+  });
 }
