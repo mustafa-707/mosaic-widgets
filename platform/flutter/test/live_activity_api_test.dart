@@ -62,6 +62,52 @@ void main() {
       final id = await MosaicLiveActivities.start('T', {});
       expect(id, 'test-id-42');
     });
+
+    test('does not request push by default (push:false)', () async {
+      await MosaicLiveActivities.start('T', {});
+      final args = log.first.arguments as Map;
+      expect(args['push'], false);
+    });
+
+    test('sends push:true when push is requested', () async {
+      await MosaicLiveActivities.start('T', {}, push: true);
+      final args = log.first.arguments as Map;
+      expect(args['push'], true);
+    });
+  });
+
+  group('MosaicLiveActivities.onPushToken', () {
+    tearDown(() {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null);
+    });
+
+    test('emits MosaicPushToken on incoming liveActivityPushToken call',
+        () async {
+      final received = <MosaicPushToken>[];
+      final sub = MosaicLiveActivities.onPushToken.listen(received.add);
+      addTearDown(sub.cancel);
+
+      // Simulate the native side delivering a push token over the channel.
+      await TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .handlePlatformMessage(
+        channel.name,
+        const StandardMethodCodec().encodeMethodCall(
+          const MethodCall('liveActivityPushToken', {
+            'id': 'act-1',
+            'token': 'deadbeef',
+          }),
+        ),
+        (_) {},
+      );
+
+      // Allow the broadcast stream to deliver.
+      await Future<void>.delayed(Duration.zero);
+
+      expect(received, hasLength(1));
+      expect(received.first.id, 'act-1');
+      expect(received.first.token, 'deadbeef');
+    });
   });
 
   group('MosaicLiveActivities.update', () {

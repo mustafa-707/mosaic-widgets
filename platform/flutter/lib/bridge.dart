@@ -22,6 +22,27 @@ class MActivityAlert {
   Map<String, dynamic> toJson() => {'title': title, 'body': body};
 }
 
+/// A per-activity APNs push token surfaced from iOS ActivityKit.
+///
+/// When a Live Activity is started with `push: true`, iOS issues (and may
+/// later rotate) a push token for that specific activity. The token is
+/// delivered to Flutter as a lowercase hex string; forward it to your server
+/// so the server can push updates / end the activity via APNs. See
+/// `docs/LIVE_ACTIVITIES.md` → "Push updates".
+class MosaicPushToken {
+  /// The activity id this token belongs to (matches the id returned by
+  /// [MosaicLiveActivities.start]).
+  final String id;
+
+  /// The APNs push token for the activity, hex-encoded.
+  final String token;
+
+  const MosaicPushToken({required this.id, required this.token});
+
+  @override
+  String toString() => 'MosaicPushToken(id: $id, token: $token)';
+}
+
 /// Flutter-side API for the iOS Live Activities lifecycle.
 ///
 /// All methods communicate with the native side over the shared
@@ -29,17 +50,52 @@ class MActivityAlert {
 class MosaicLiveActivities {
   static const MethodChannel _channel = MethodChannel('mosaic_bridge');
 
+  static final StreamController<MosaicPushToken> _onPushTokenController =
+      StreamController<MosaicPushToken>.broadcast();
+
+  /// Broadcast stream of per-activity APNs push tokens.
+  ///
+  /// Emits whenever iOS issues or rotates the push token for an activity that
+  /// was started with `push: true`. The incoming native call is
+  /// `liveActivityPushToken` with `{id, token}` (token = hex string), routed
+  /// through the shared `mosaic_bridge` handler owned by [MosaicBridge].
+  ///
+  /// Forward each token to your server so it can push updates via APNs (the
+  /// server / APNs side is the app's responsibility).
+  static Stream<MosaicPushToken> get onPushToken {
+    MosaicBridge._ensureInitialized();
+    return _onPushTokenController.stream;
+  }
+
+  /// Dispatches an incoming `liveActivityPushToken` channel call onto
+  /// [onPushToken]. Called from [MosaicBridge]'s shared method-call handler so
+  /// we never double-set a handler on the `mosaic_bridge` channel.
+  static void _dispatchPushToken(Map? args) {
+    final id = args?['id'] as String?;
+    final token = args?['token'] as String?;
+    if (id != null && token != null) {
+      _onPushTokenController.add(MosaicPushToken(id: id, token: token));
+    }
+  }
+
   /// Starts a Live Activity of [activityType] with [initialState].
   ///
   /// Returns the activity id assigned by the OS, or `null` when Live
   /// Activities are not available on the current device / OS version.
+  ///
+  /// Set [push] to `true` to request remote push updates: iOS will issue a
+  /// per-activity APNs push token delivered via [onPushToken]. Register that
+  /// token with your server so the server can push updates / end the activity
+  /// through APNs. Has no effect on Android (updates are local-only there).
   static Future<String?> start(
     String activityType,
-    Map<String, String> initialState,
-  ) async {
+    Map<String, String> initialState, {
+    bool push = false,
+  }) async {
     return await _channel.invokeMethod<String>('startActivity', {
       'activityType': activityType,
       'state': initialState,
+      'push': push,
     });
   }
 
@@ -119,6 +175,11 @@ class MosaicBridge {
         if (callbackName != null && _backgroundCallback != null) {
           await _backgroundCallback!(callbackName);
         }
+      } else if (call.method == 'liveActivityPushToken') {
+        // Per-activity APNs push token from iOS ActivityKit. The shared
+        // 'mosaic_bridge' handler is owned here, so we forward to
+        // MosaicLiveActivities rather than setting a second handler.
+        MosaicLiveActivities._dispatchPushToken(call.arguments as Map?);
       }
     });
   }
