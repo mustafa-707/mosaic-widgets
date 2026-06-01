@@ -72,6 +72,127 @@ class IosGenerator {
 
     await generateCore(projectRoot);
     await generateIntents(projectRoot);
+    await generateLiveActivities(projectRoot);
+  }
+
+  /// Emits the ActivityKit Live Activity sources for every entry in
+  /// [liveActivities]. Produces:
+  ///  - a single shared `MosaicActivityAttributes.swift` (the
+  ///    [ActivityAttributes] type whose `ContentState.data` carries the bound
+  ///    string values), and
+  ///  - one `<Name>LiveActivity.swift` per activity wrapping an
+  ///    `ActivityConfiguration` + `DynamicIsland`.
+  ///
+  /// Availability: every emitted type is gated on `@available(iOS 16.1, *)`
+  /// because ActivityKit's `ActivityConfiguration`/`DynamicIsland`/`Widget`
+  /// `body: some WidgetConfiguration` Live Activity APIs are iOS 16.1+. Nothing
+  /// is written when there are no live activities.
+  Future<void> generateLiveActivities(String projectRoot) async {
+    if (liveActivities.isEmpty) return;
+
+    final iosDir = Directory(p.join(projectRoot, 'ios', 'HomeWidgetExtension'));
+    if (!iosDir.existsSync()) iosDir.createSync(recursive: true);
+
+    // Shared attributes — emitted exactly once for all activities.
+    final attrsFile =
+        File(p.join(iosDir.path, 'MosaicActivityAttributes.swift'));
+    await attrsFile.writeAsString('''$kGeneratedSentinel
+import ActivityKit
+
+@available(iOS 16.1, *)
+struct MosaicActivityAttributes: ActivityAttributes {
+  public struct ContentState: Codable, Hashable { var data: [String: String] }
+  var activityType: String
+}
+''');
+
+    for (final la in liveActivities) {
+      final name = la['name'] as String;
+      final file = File(p.join(iosDir.path, '${name}LiveActivity.swift'));
+      await file.writeAsString(_generateLiveActivity(la));
+    }
+  }
+
+  /// Renders a node tree (HWText, HWContainer, …) for a Live Activity view,
+  /// resolving binds against the activity's `context.state.data` instead of the
+  /// timeline `entry.data`. Saves/restores [bindSource] like the ListView
+  /// item-scope pattern so generation outside the activity is unaffected. When
+  /// [json] is null (an absent optional region) an `EmptyView()` is emitted.
+  String _renderActivityNode(Map<String, dynamic>? json) {
+    if (json == null) return 'EmptyView()';
+    final previous = bindSource;
+    bindSource = 'context.state.data';
+    try {
+      return nodeToSwiftUI(IRNode.fromJson(json));
+    } finally {
+      bindSource = previous;
+    }
+  }
+
+  /// Emits a `<Name>LiveActivity.swift` Widget wrapping an
+  /// `ActivityConfiguration` (lock-screen / banner view) and a `DynamicIsland`
+  /// with its four expanded regions plus compact-leading/trailing and minimal
+  /// presentations. All node trees render with binds resolved against
+  /// `context.state.data`.
+  String _generateLiveActivity(Map<String, dynamic> la) {
+    final name = la['name'] as String;
+    final lockScreen =
+        _renderActivityNode(la['lockScreen'] as Map<String, dynamic>?);
+
+    final island = (la['dynamicIsland'] as Map<String, dynamic>?) ?? const {};
+    final expanded = (island['expanded'] as Map<String, dynamic>?) ?? const {};
+
+    final expLeading =
+        _renderActivityNode(expanded['leading'] as Map<String, dynamic>?);
+    final expTrailing =
+        _renderActivityNode(expanded['trailing'] as Map<String, dynamic>?);
+    final expCenter =
+        _renderActivityNode(expanded['center'] as Map<String, dynamic>?);
+    final expBottom =
+        _renderActivityNode(expanded['bottom'] as Map<String, dynamic>?);
+
+    final compactLeading =
+        _renderActivityNode(island['compactLeading'] as Map<String, dynamic>?);
+    final compactTrailing =
+        _renderActivityNode(island['compactTrailing'] as Map<String, dynamic>?);
+    final minimal =
+        _renderActivityNode(island['minimal'] as Map<String, dynamic>?);
+
+    return '''$kGeneratedSentinel
+import ActivityKit
+import WidgetKit
+import SwiftUI
+
+@available(iOS 16.1, *)
+struct ${name}LiveActivity: Widget {
+  var body: some WidgetConfiguration {
+    ActivityConfiguration(for: MosaicActivityAttributes.self) { context in
+      $lockScreen
+    } dynamicIsland: { context in
+      DynamicIsland {
+        DynamicIslandExpandedRegion(.leading) {
+          $expLeading
+        }
+        DynamicIslandExpandedRegion(.trailing) {
+          $expTrailing
+        }
+        DynamicIslandExpandedRegion(.center) {
+          $expCenter
+        }
+        DynamicIslandExpandedRegion(.bottom) {
+          $expBottom
+        }
+      } compactLeading: {
+        $compactLeading
+      } compactTrailing: {
+        $compactTrailing
+      } minimal: {
+        $minimal
+      }
+    }
+  }
+}
+''';
   }
 
   /// Generates the shared AppIntents file used by iOS 17+ interactive buttons.
