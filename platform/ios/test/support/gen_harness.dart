@@ -33,6 +33,7 @@ Future<GenResult> runIos(
   List<IRDefinition> defs, {
   MosaicConfig? config,
   bool skipConfigWidget = false,
+  List<Map<String, dynamic>> liveActivities = const [],
 }) async {
   final dir = await Directory.systemTemp.createTemp('hw_ios_test_');
 
@@ -44,7 +45,10 @@ Future<GenResult> runIos(
   // When skipConfigWidget == true, use a non-matching widget name so the
   // generator's firstWhere lookup (config.widgets.firstWhere((w) => w.name == def.name))
   // throws a StateError — this exercises the missing-entry error path.
-  final widgetName = skipConfigWidget ? '__none__' : defs.first.name;
+  // For live-activity-only runs (no widget defs) there is no name to derive.
+  final widgetName = skipConfigWidget
+      ? '__none__'
+      : (defs.isNotEmpty ? defs.first.name : '__none__');
 
   final cfg = config ??
       MosaicConfig.fromJson({
@@ -68,7 +72,11 @@ Future<GenResult> runIos(
         ],
       });
 
-  await IosGenerator(config: cfg, definitions: defs).generate(dir.path);
+  await IosGenerator(
+    config: cfg,
+    definitions: defs,
+    liveActivities: liveActivities,
+  ).generate(dir.path);
 
   return GenResult(dir);
 }

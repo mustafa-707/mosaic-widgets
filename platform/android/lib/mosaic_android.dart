@@ -302,11 +302,59 @@ class AndroidGenerator {
       );
     }
 
+    await _generateLiveActivityLayouts(layoutDir);
+
     await _writeDrawables(resDir);
     await _writeColors(resDir);
 
     await _generateBridgeHelper(projectRoot);
     await _generateMosaicData(projectRoot);
+  }
+
+  /// Generates one custom notification layout per live activity from its
+  /// `lockScreen` node tree, written to `res/layout/hw_la_<name>.xml`.
+  ///
+  /// Android has no Dynamic Island or lock-screen Live Activity; a live
+  /// activity is mapped to an ongoing notification whose content is a
+  /// RemoteViews built from this layout. The `lockScreen` tree is rendered with
+  /// the SAME node handlers used for app-widget layouts, so binds resolve at
+  /// runtime through the shared `MosaicData` "widget_data" store. The
+  /// `dynamicIsland` payload is intentionally ignored on Android.
+  Future<void> _generateLiveActivityLayouts(Directory layoutDir) async {
+    if (liveActivities.isEmpty) return;
+    if (!layoutDir.existsSync()) layoutDir.createSync(recursive: true);
+
+    for (final la in liveActivities) {
+      final name = (la['name'] as String?) ?? 'live_activity';
+      final lockScreen = la['lockScreen'];
+      if (lockScreen == null) continue;
+
+      final layoutName = 'hw_la_${_safeName(name).toLowerCase()}';
+      final layoutFile = File(p.join(layoutDir.path, '$layoutName.xml'));
+
+      // Reset per-layout accumulators (same lifecycle as widget layouts). The
+      // ongoing-notification RemoteViews is built by the manager (Unit 2); only
+      // the layout XML is needed here, so the collected metadata is local.
+      final usedBinds = <String, String>{};
+      final visibilityKeys = <String>[];
+      final timers = <String, String>{};
+      final buttons = <Map<String, dynamic>>[];
+      _staticImageUris.clear();
+      _visibilityWithReplacement.clear();
+      _timersCountUp.clear();
+      _colorBinds.clear();
+      _textFormats.clear();
+
+      final node = IRNode.fromJson((lockScreen as Map).cast<String, dynamic>());
+      final layoutXml = _generateLayoutXml(
+        node,
+        usedBinds,
+        visibilityKeys,
+        timers,
+        buttons,
+      );
+      await layoutFile.writeAsString(layoutXml);
+    }
   }
 
   Future<void> _writeDrawables(Directory resDir) async {

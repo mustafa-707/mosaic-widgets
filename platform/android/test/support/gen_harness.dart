@@ -75,3 +75,36 @@ Future<GenResult> runAndroid(
 
   return GenResult(dir);
 }
+
+/// Runs the Android generator with [liveActivities] (and optional [defs]) and
+/// returns the generated temp project. Mirrors [runAndroid] but exercises the
+/// Live Activity -> ongoing-notification path.
+Future<GenResult> runAndroidLiveActivity(
+  List<Map<String, dynamic>> liveActivities, {
+  List<IRDefinition> defs = const [],
+  MosaicConfig? config,
+}) async {
+  final dir = await Directory.systemTemp.createTemp('hw_android_la_test_');
+
+  await Directory(
+    p.join(dir.path, 'android', 'app', 'src', 'main', 'res'),
+  ).create(recursive: true);
+
+  final cfg = config ??
+      MosaicConfig.fromJson({
+        'app': {
+          'bundle_id': 'com.acme.app',
+          'android_package': 'com.acme.app',
+          'ios_app_group': 'group.com.acme.app.widgets',
+        },
+        'widgets': [],
+      });
+
+  await AndroidGenerator(
+    config: cfg,
+    definitions: defs,
+    liveActivities: liveActivities,
+  ).generate(dir.path);
+
+  return GenResult(dir);
+}
