@@ -1214,32 +1214,41 @@ class VisibilityHandler extends AndroidNodeHandler {
               ? 'match_parent'
               : 'wrap_content');
 
-    final childView = '''
+    final replacementJson = node.data['replacement'];
+    if (replacementJson == null) {
+      // No replacement: keep legacy single-view GONE behavior. The slot
+      // dimensions/weight live directly on the toggled view.
+      return '''
 <FrameLayout
     android:id="@+id/hw_visibility_$visId"
     android:layout_width="$width" android:layout_height="$height"$weightAttr>
     ${context.nodeToXml(child, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: isInsideLinearLayout, isVertical: isVertical)}
 </FrameLayout>''';
-
-    final replacementJson = node.data['replacement'];
-    if (replacementJson == null) {
-      // No replacement: keep legacy single-view GONE behavior.
-      return childView;
     }
 
-    // Render the replacement subtree alongside the child; the provider toggles
-    // the two inversely so exactly one is visible at runtime.
+    // Replacement present: wrap BOTH toggled views inside a SINGLE container so
+    // the handler returns exactly ONE layout element occupying one slot. The
+    // slot dimensions/weight live on the wrapper (so main-axis spacers align and
+    // cross-axis stretch rewrites the wrapper's dimension once); the two inner
+    // views are wrap_content and toggled inversely by the provider via their
+    // ids, which remain discoverable for setViewVisibility.
     context.registerVisibilityReplacement(key);
     final replacement =
         IRNode.fromJson(replacementJson as Map<String, dynamic>);
-    final replacementView = '''
+    return '''
 <FrameLayout
-    android:id="@+id/hw_visibility_${visId}_alt"
     android:layout_width="$width" android:layout_height="$height"$weightAttr>
-    ${context.nodeToXml(replacement, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: isInsideLinearLayout, isVertical: isVertical)}
+    <FrameLayout
+        android:id="@+id/hw_visibility_$visId"
+        android:layout_width="wrap_content" android:layout_height="wrap_content">
+        ${context.nodeToXml(child, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: false)}
+    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/hw_visibility_${visId}_alt"
+        android:layout_width="wrap_content" android:layout_height="wrap_content">
+        ${context.nodeToXml(replacement, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: false)}
+    </FrameLayout>
 </FrameLayout>''';
-
-    return '$childView\n$replacementView';
   }
 }
 

@@ -62,3 +62,4 @@
 {"file":"platform/android/lib/mosaic_android.dart","action":"Edit","timestamp":"2026-06-01T06:53:53Z","important":false}
 {"file":"platform/android/test/sentinel_test.dart","action":"Edit","timestamp":"2026-06-01T06:54:17Z","important":false}
 {"file":"platform/android/test/timer_countup_test.dart","action":"Edit","timestamp":"2026-06-01T07:10:07Z","important":false}
+{"file":"platform/android/test/visibility_replacement_test.dart","action":"Edit","timestamp":"2026-06-01T07:10:42Z","important":false}
