@@ -1,32 +1,20 @@
-# Mosaic
+# mosaic
 
-**One DSL. Live native tiles. iOS + Android.**
+[![StandWithPalestine](https://raw.githubusercontent.com/TheBSD/StandWithPalestine/main/badges/StandWithPalestine.svg)](https://github.com/TheBSD/StandWithPalestine/blob/main/docs/README.md) [![Pub Package](https://img.shields.io/pub/v/mosaic.svg)](https://pub.dev/packages/mosaic)
 
-A powerful, DSL-based framework for building native iOS and Android home widgets using Flutter-like syntax.
+One DSL, native home-screen widgets on **both** platforms. Write a widget once in Flutter-style Dart and Mosaic generates native **SwiftUI/WidgetKit** (iOS) and **RemoteViews/Kotlin** (Android) — plus **Live Activities, Dynamic Island, and Lock Screen** widgets. Push live data from your app; the OS renders the tile.
 
-## 🚀 Features
+- ✅ Single Dart DSL → real native widgets (no platform code to hand-write)
+- ✅ Live runtime data binding (`MBind`) — text, images, progress, visibility, timers, colors
+- ✅ Live Activities + **Dynamic Island** (iOS), ongoing-notification fallback (Android)
+- ✅ Lock Screen **accessory** widgets (iOS 16+)
+- ✅ Adaptive light/dark + runtime colors, locale-aware formatting (`MFormat`), auto **RTL**
+- ✅ Interactive buttons (iOS 17 AppIntents), deep links, background callbacks, refresh
+- ✅ **Configurable** widgets — user-editable params via the OS config UI
+- ✅ Rich UI: gradients, borders, shadows, per-corner radius, gauges, icons, dividers, badges, lists
+- ✅ CLI-driven codegen + automatic manifest/Info.plist wiring
 
-- **Single DSL for Both Platforms**: Write once in Dart, generate native Swift (iOS) and XML/Kotlin (Android).
-- **Native Performance**: Widgets are rendered using standard platform components (`RemoteViews` on Android, `SwiftUI` on iOS).
-- **Interactive**: Support for buttons, deep linking, and background refreshes.
-- **Live Runtime Data Binding**: Bind text, image file paths, progress values, visibility, and timer targets at runtime with `MBind`. Push values from your app via `MosaicBridge` and `refresh`/`refreshAll`.
-- **Rich UI**: Real linear gradients and borders, Stacks, Columns, Rows, Images (asset + file sources), and more.
-- **Adaptive Widgets**: OS light/dark theming and runtime-bound colors (`MColor.hex(dark:)`, `MColor.bind`), locale-aware value formatting (`MFormat`), automatic RTL mirroring, and iOS lock-screen accessory widgets.
-- **Live Activities & Dynamic Island**: Declare a `MosaicLiveActivity` (lock-screen banner + Dynamic Island) and drive it from Flutter with `MosaicLiveActivities.start/update/end`. Full iOS ActivityKit support; Android falls back to an ongoing notification.
-- **Asset Sync**: Automatically syncs images from your Flutter project to native drawable/xcassets folders.
-
-## 🏗️ Architecture
-
-- `mosaic_core`: The Intermediate Representation (IR), config parsing, and basic widget runner.
-- `mosaic`: The Flutter DSL and `MosaicBridge` used to communicate with native code.
-- `mosaic_android`: Generator for Android AppWidget code.
-- `mosaic_ios`: Generator for iOS WidgetKit code.
-- `mosaic_cli`: CLI tool to orchestrate code generation and automated configuration.
-
-## 🛠️ Getting Started
-
-### 1. Add Dependencies
-Add the following to your `pubspec.yaml`:
+## Install
 
 ```yaml
 dependencies:
@@ -40,188 +28,171 @@ dev_dependencies:
     path: path/to/mosaic/platform/cli
 ```
 
-### 2. Initialize
-Create a `mosaic.yaml` in your project root (or run `dart run mosaic_cli init`):
+> Monorepo packages: `mosaic` (DSL + bridge), `mosaic_core` (IR/config/runner), `mosaic_android` & `mosaic_ios` (generators), `mosaic_cli` (tooling).
+
+## Quick start
+
+**1. Define a widget** — definition files import the **pure-Dart DSL** (`package:mosaic/dsl.dart`) so the build runner can execute them:
+
+```dart
+import 'package:mosaic/dsl.dart';
+
+MosaicDefinition buildNewsWidget() => MosaicDefinition(
+  name: 'NewsWidget',
+  width: 4, height: 1,
+  root: MContainer(
+    background: const MColor.hex('#111827', dark: '#000000'),
+    radius: 16,
+    child: MPadding(const MInsets.all(12),
+      MText(MBind('news_title'),
+        style: const MTextStyle(color: MColor.hex('#FFFFFF'), bold: true))),
+  ),
+);
+```
+
+**2. Register it** in `mosaic.yaml`:
 
 ```yaml
 app:
   bundle_id: com.example.myapp
   android_package: com.example.myapp
   ios_app_group: group.com.example.myapp.widgets
-  deep_link_scheme: mosaic # optional, defaults to "mosaic"
-
 widgets:
-  - name: MyNewsWidget
-    entry: lib/widgets/news.widget.dart
-    android:
-      min_sdk: 21
-      sizes: [medium]
-    ios:
-      families: [systemMedium]
+  - name: NewsWidget
+    entry: lib/home_widgets/news.widget.dart
+    android: { min_sdk: 21, sizes: [medium] }
+    ios: { families: [systemMedium] }
 ```
 
-### 3. Create a Widget
-In `lib/widgets/news.widget.dart`. Widget definition files import the **pure-Dart DSL** (`package:mosaic/dsl.dart`) so the build runner can execute them under `dart run`:
+**3. Generate native code:**
 
-```dart
-import 'package:mosaic/dsl.dart';
-
-MosaicDefinition buildNewsWidget() {
-  return MosaicDefinition(
-    name: "NewsWidget",
-    width: 4,
-    height: 1,
-    root: MContainer(
-      background: MColor.hex("#FFFFFF"),
-      radius: 16,
-      child: MText(
-        MBind("news_title"),
-        style: const MTextStyle(color: MColor.hex("#0F172A"), bold: true),
-      ),
-    ),
-  );
-}
-```
-
-### 4. Build
-Run the build command to generate native code:
 ```bash
 dart run mosaic_cli build
 ```
 
-Other CLI commands:
-```bash
-dart run mosaic_cli init            # create mosaic.yaml
-dart run mosaic_cli add widget <Name>  # scaffold a new widget
-dart run mosaic_cli build           # generate native code
-dart run mosaic_cli doctor          # diagnose configuration
-dart run mosaic_cli clean           # remove generated artifacts
-```
-
-### 5. Connect Your App
-App code that uses the bridge imports the **full barrel** (`package:mosaic/mosaic.dart` = DSL + `MosaicBridge`):
+**4. Push data from your app** — app code imports the full barrel (`package:mosaic/mosaic.dart`):
 
 ```dart
 import 'package:mosaic/mosaic.dart';
 
 await MosaicBridge.setAppGroupId('group.com.example.myapp.widgets');
-await MosaicBridge.saveString('news_title', 'Hello widgets!');
+await MosaicBridge.saveString('news_title', 'Markets rally');
 await MosaicBridge.refreshAll();
 ```
 
----
+That's it — no per-platform widget code.
 
-## 🎨 Theming (Adaptive Colors & Formatting)
-
-Colors adapt to the OS light/dark appearance and can be pushed at runtime, and bound values can be formatted with the device locale. Layouts also auto-mirror in RTL locales.
+### Theming (adaptive + runtime colors, formatting)
 
 ```dart
-import 'package:mosaic/dsl.dart';
-
-MosaicDefinition buildCryptoWidget() {
-  return MosaicDefinition(
-    name: "CryptoWidget",
-    width: 2,
-    height: 2,
-    root: MColumn([
-      // Light/dark adaptive color (white in light mode, soft grey in dark).
-      const MText(
-        "BTC/USD",
-        style: MTextStyle(color: MColor.hex("#FFFFFF", dark: "#E5E7EB"), bold: true),
-      ),
-      // Locale-aware currency formatting of a bound numeric value.
-      MText(MBind("btc_price"), format: MFormat.currency),
-      // Runtime-bound color: the app pushes an "accent" hex string.
-      const MContainer(background: MColor.bind("accent"), child: MSpacer()),
-    ]),
-  );
-}
+// White in light mode, soft grey in dark — the OS switches automatically.
+const MText('BTC/USD', style: MTextStyle(color: MColor.hex('#FFFFFF', dark: '#E5E7EB')))
+// Locale-aware currency formatting of a bound numeric value.
+MText(MBind('btc_price'), format: MFormat.currency)
+// Runtime-bound color the app pushes as a hex string.
+const MContainer(background: MColor.bind('accent'), child: MSpacer())
 ```
 
-## 🔒 Lock Screen (iOS Accessory Widgets)
+Layouts auto-mirror in RTL locales. `MFormat`: `decimal · currency · percent · date · relativeTime`.
 
-Add an accessory family to a widget in `mosaic.yaml` to render it on the iOS 16+ Lock Screen. On accessory widgets the OS tints content (custom colors are largely ignored), and Mosaic emits `.widgetAccentable()`. Android skips accessory families (no general user Lock Screen widgets).
+### Lock Screen (iOS accessory widgets)
 
 ```yaml
-widgets:
-  - name: CryptoWidget
-    entry: lib/widgets/crypto.widget.dart
-    ios:
-      families: [systemMedium, accessoryRectangular]  # also accessoryCircular, accessoryInline
+ios: { families: [systemMedium, accessoryRectangular] } # also accessoryCircular, accessoryInline
 ```
 
-## 🔴 Live Activities & Dynamic Island
-
-Declare a Live Activity in a `*.live.dart` entry (pure-Dart DSL), register it in `mosaic.yaml`, then drive its lifecycle from your app.
+### Live Activities & Dynamic Island
 
 ```dart
-// lib/live_activities/order_tracker.live.dart
-import 'package:mosaic/dsl.dart';
-
-MosaicLiveActivity buildOrderTracker() {
-  return MosaicLiveActivity(
-    name: 'OrderTracker',
-    lockScreen: MText(MBind('status')),
-    dynamicIsland: MDynamicIsland(
-      compactLeading: const MText('🛵'),
-      compactTrailing: MText(MBind('eta')),
-      minimal: const MText('🛵'),
-      expanded: MExpanded(
-        center: MText(MBind('status')),
-        bottom: MProgressBar(value: MBind('progress')),
-      ),
+// lib/live_activities/order_tracker.live.dart  (import package:mosaic/dsl.dart)
+MosaicLiveActivity buildOrderTracker() => MosaicLiveActivity(
+  name: 'OrderTracker',
+  lockScreen: MText(MBind('status')),
+  dynamicIsland: MDynamicIsland(
+    compactLeading: const MText('🛵'),
+    compactTrailing: MText(MBind('eta')),
+    minimal: const MText('🛵'),
+    expanded: MExpanded(
+      center: MText(MBind('status')),
+      bottom: MProgressBar(value: MBind('progress')),
     ),
-  );
-}
-```
-
-```yaml
-live_activities:
-  - name: OrderTracker
-    entry: lib/live_activities/order_tracker.live.dart
+  ),
+);
 ```
 
 ```dart
-// App code drives the lifecycle (full barrel import).
-import 'package:mosaic/mosaic.dart';
-
-final id = await MosaicLiveActivities.start('OrderTracker', {
-  'status': 'Preparing', 'progress': '0.1', 'eta': '25 min',
-});
-await MosaicLiveActivities.update(id!, {'status': 'On the way', 'progress': '0.6', 'eta': '8 min'},
+// Drive the lifecycle from your app (package:mosaic/mosaic.dart).
+final id = await MosaicLiveActivities.start('OrderTracker',
+    {'status': 'Preparing', 'progress': '10', 'eta': '25 min'});
+await MosaicLiveActivities.update(id!, {'status': 'On the way', 'progress': '60', 'eta': '8 min'},
     alert: const MActivityAlert(title: 'Order update', body: 'Your courier is nearby'));
 await MosaicLiveActivities.end(id, policy: MEndPolicy.afterDefault);
 ```
 
-See the [Live Activities Guide](DOCS/LIVE_ACTIVITIES.md) for the full walkthrough.
+Register under `live_activities:` in `mosaic.yaml`. iOS needs `NSSupportsLiveActivities=true`. Full walkthrough: [Live Activities Guide](DOCS/LIVE_ACTIVITIES.md).
 
----
+### Configurable widgets
 
-## 📱 Platform Setup
-
-Follow these guides for platform-specific configuration:
-
-- [Android Setup Guide](DOCS/ANDROID_SETUP.md)
-- [iOS Setup Guide](DOCS/IOS_SETUP.md)
-
-## 📖 DSL Documentation
-
-See the [DSL Reference](DOCS/DSL_REFERENCE.md) for a full list of supported components and attributes, including adaptive colors, `MFormat`, accessory families, and the Live Activity components. For the focused Live Activity lifecycle guide, see the [Live Activities Guide](DOCS/LIVE_ACTIVITIES.md).
-
-## 🤖 AI / Agent Support
-
-Mosaic ships a self-contained agent skill so AI coding assistants build widgets with the **real**
-API instead of guessing (Mosaic is newer than most model training data).
-
-- **Skill:** [`skills/mosaic-widgets/SKILL.md`](skills/mosaic-widgets/SKILL.md) — the canonical API + workflow + gotchas, sufficient on its own.
-- **LLM index:** [`llms.txt`](llms.txt) — points an LLM at the key docs.
-- **Contributor/agent guide:** [`AGENTS.md`](AGENTS.md) — repo layout, build/test, and the native verification gate for working **on** Mosaic.
-
-**Install the skill** (Claude Code): copy it into your skills directory so any project can use it —
-
-```bash
-cp -r skills/mosaic-widgets ~/.claude/skills/
+```dart
+params: const [
+  MParam(key: 'city', label: 'City', type: MParamType.choice,
+         defaultValue: 'London', choices: ['London', 'Paris', 'Tokyo']),
+],
 ```
 
-Then an assistant will load it whenever it sees a `mosaic.yaml`, a `package:mosaic` import, or a
-`*.widget.dart` / `*.live.dart` file.
+The chosen value is available anywhere via `MBind('city')`. iOS → AppIntentConfiguration (17+); Android → a configuration Activity.
+
+### Interactivity
+
+```dart
+MButton(action: const MRefreshAction(), child: const MText('Refresh'))
+MButton(action: const MActionCallback('sync'), child: const MText('Sync'))   // → registerBackgroundCallback
+MButton(action: const MLaunchUrlAction('myapp://open'), child: const MText('Open'))
+```
+
+## CLI
+
+| Command | What it does |
+|---|---|
+| `dart run mosaic_cli init` | Create `mosaic.yaml` + `lib/home_widgets/` |
+| `dart run mosaic_cli add widget <Name>` | Scaffold a new widget definition |
+| `dart run mosaic_cli build` | Generate native code + wire manifest/Info.plist |
+| `dart run mosaic_cli doctor` | Diagnose project configuration |
+| `dart run mosaic_cli clean` | Remove generated artifacts |
+
+## Components
+
+Layout: `MContainer` · `MColumn` · `MRow` · `MStack` · `MPositioned` · `MCenter` · `MPadding` · `MSpacer` · `MDivider`
+Content: `MText` · `MImage` · `MIcon` · `MProgressBar` · `MGauge` · `MBadge` · `MTimer` · `MButton` · `MVisibility` · `MListView`
+Style: `MColor` · `MTextStyle` · `MInsets` · `MLinearGradient` · `MBorder` · `MRadius` · `MShadow` · `MFormat`
+
+Full attributes in the [DSL Reference](DOCS/DSL_REFERENCE.md).
+
+## Platform support
+
+| | iOS | Android |
+|---|---|---|
+| Home-screen widgets | ✅ WidgetKit (14+) | ✅ AppWidget |
+| Lock Screen / accessory | ✅ (16+) | — (no user lock-screen widgets) |
+| Live Activities | ✅ ActivityKit (16.1+) | ⚠️ ongoing-notification fallback |
+| Dynamic Island | ✅ | — |
+| Interactive buttons | ✅ AppIntent (17+) / deep-link (14–16) | ✅ |
+| Configurable widgets | ✅ (17+) | ✅ config Activity |
+
+## 🤖 AI / Agent support
+
+Mosaic ships a self-contained agent skill so AI assistants build with the **real** API (Mosaic is newer than most model training data):
+
+- **Skill:** [`skills/mosaic-widgets/SKILL.md`](skills/mosaic-widgets/SKILL.md) — install with `cp -r skills/mosaic-widgets ~/.claude/skills/`
+- **LLM index:** [`llms.txt`](llms.txt) · **Contributor guide:** [`AGENTS.md`](AGENTS.md)
+
+## Docs
+
+- [DSL Reference](DOCS/DSL_REFERENCE.md) · [iOS Setup](DOCS/IOS_SETUP.md) · [Android Setup](DOCS/ANDROID_SETUP.md)
+- [Live Activities Guide](DOCS/LIVE_ACTIVITIES.md) · [Roadmap](docs/ROADMAP.md) · [Publishing](docs/PUBLISHING.md)
+
+## Support
+
+If Mosaic helped you, consider supporting the author:
+
+[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/guidelines/download-assets-sm-1.svg)](https://buymeacoffee.com/is10vmust)
