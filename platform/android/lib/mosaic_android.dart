@@ -329,8 +329,10 @@ object HomeWidgetBridgeHelper {
     List<Map<String, dynamic>> buttons,
   ) {
     final buffer = StringBuffer();
-    buffer.writeln(xmlSentinel);
+    // The XML declaration MUST be the very first bytes of the file or AAPT
+    // rejects it ("processing instruction target matching xml is not allowed").
     buffer.writeln('<?xml version="1.0" encoding="utf-8"?>');
+    buffer.writeln(xmlSentinel);
     // Root element should always be match_parent to fill the widget cell
     buffer.write(
       nodeToXml(node, usedBinds, visibilityKeys, timers, buttons, isRoot: true),
@@ -400,8 +402,8 @@ object HomeWidgetBridgeHelper {
     final period = def.updateInterval == null
         ? 0
         : (def.updateInterval! < 1800000 ? 1800000 : def.updateInterval!);
-    return '''$xmlSentinel
-<?xml version="1.0" encoding="utf-8"?>
+    return '''<?xml version="1.0" encoding="utf-8"?>
+$xmlSentinel
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="${minWidth}dp"
     android:minHeight="${minHeight}dp"
@@ -837,8 +839,8 @@ class ContainerHandler extends AndroidNodeHandler {
         ? '\n    <corners android:radius="${radius}dp" />'
         : '';
     final stroke = _strokeTag(context, border);
-    return '''$xmlSentinel
-<?xml version="1.0" encoding="utf-8"?>
+    return '''<?xml version="1.0" encoding="utf-8"?>
+$xmlSentinel
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
 $gradientTag$corners$stroke
@@ -860,8 +862,8 @@ $gradientTag$corners$stroke
         ? '\n    <corners android:radius="${radius}dp" />'
         : '';
     final stroke = _strokeTag(context, border);
-    return '''$xmlSentinel
-<?xml version="1.0" encoding="utf-8"?>
+    return '''<?xml version="1.0" encoding="utf-8"?>
+$xmlSentinel
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">$solid$stroke$corners
 </shape>''';
