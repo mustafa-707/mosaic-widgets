@@ -1260,7 +1260,14 @@ class ProgressBarHandler extends AndroidNodeHandler {
       progressAttr = ' android:progress="$progress"';
     }
     final max = (node.data['max'] ?? 100).toInt();
-    return '<ProgressBar $idAttr style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="$max"$progressAttr />';
+    // android:progressTint requires API 21+ (the configured min_sdk).
+    final colorData = node.data['color'];
+    String tintAttr = '';
+    if (colorData is Map) {
+      final color = context.parseColor(colorData.cast<String, dynamic>());
+      tintAttr = ' android:progressTint="$color"';
+    }
+    return '<ProgressBar $idAttr style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="$max"$progressAttr$tintAttr />';
   }
 }
 
