@@ -16,6 +16,11 @@ MosaicConfig _$MosaicConfigFromJson(Map<String, dynamic> json) => MosaicConfig(
                   MosaicLiveActivityConfig.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      controls: (json['controls'] as List<dynamic>?)
+              ?.map((e) =>
+                  MosaicControlConfig.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
 
 Map<String, dynamic> _$MosaicConfigToJson(MosaicConfig instance) =>
@@ -23,6 +28,7 @@ Map<String, dynamic> _$MosaicConfigToJson(MosaicConfig instance) =>
       'app': instance.app,
       'widgets': instance.widgets,
       'live_activities': instance.liveActivities,
+      'controls': instance.controls,
     };
 
 MosaicAppConfig _$MosaicAppConfigFromJson(Map<String, dynamic> json) =>
@@ -67,6 +73,19 @@ MosaicLiveActivityConfig _$MosaicLiveActivityConfigFromJson(
 
 Map<String, dynamic> _$MosaicLiveActivityConfigToJson(
         MosaicLiveActivityConfig instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'entry': instance.entry,
+    };
+
+MosaicControlConfig _$MosaicControlConfigFromJson(Map<String, dynamic> json) =>
+    MosaicControlConfig(
+      name: json['name'] as String,
+      entry: json['entry'] as String,
+    );
+
+Map<String, dynamic> _$MosaicControlConfigToJson(
+        MosaicControlConfig instance) =>
     <String, dynamic>{
       'name': instance.name,
       'entry': instance.entry,

@@ -23,12 +23,21 @@ class MosaicConfig {
   @JsonKey(name: 'live_activities', defaultValue: <MosaicLiveActivityConfig>[])
   final List<MosaicLiveActivityConfig> liveActivities;
 
+  /// Control definitions declared in this project.
+  ///
+  /// Maps to the `controls` key in YAML/JSON. Each entry declares a Control
+  /// Center / Lock Screen control (iOS 18+) or Quick Settings tile (Android).
+  /// Defaults to an empty list when the key is absent.
+  @JsonKey(name: 'controls', defaultValue: <MosaicControlConfig>[])
+  final List<MosaicControlConfig> controls;
+
   /// Creates a [MosaicConfig] with the given [app] settings, [widgets], and
-  /// optional [liveActivities].
+  /// optional [liveActivities] and [controls].
   MosaicConfig({
     required this.app,
     required this.widgets,
     this.liveActivities = const [],
+    this.controls = const [],
   });
 
   /// Parses a [MosaicConfig] from a YAML string (e.g. the contents of
@@ -157,6 +166,32 @@ class MosaicLiveActivityConfig {
 
   /// Serializes this config to a JSON map.
   Map<String, dynamic> toJson() => _$MosaicLiveActivityConfigToJson(this);
+}
+
+/// Configuration for a single Mosaic Control.
+///
+/// Controls appear in iOS Control Center / Lock Screen / Action Button
+/// (iOS 18+) and as Android Quick Settings tiles. They are declared under the
+/// `controls` key in `mosaic.yaml`.
+@JsonSerializable()
+class MosaicControlConfig {
+  /// The control's logical name, used to derive the builder function name
+  /// (`build<Name>`) and to identify it in generated code.
+  final String name;
+
+  /// Path to the Dart entry file that exports the builder function for this
+  /// control. May be absolute or relative to the project root.
+  final String entry;
+
+  /// Creates a [MosaicControlConfig].
+  MosaicControlConfig({required this.name, required this.entry});
+
+  /// Deserializes a [MosaicControlConfig] from a JSON map.
+  factory MosaicControlConfig.fromJson(Map<String, dynamic> j) =>
+      _$MosaicControlConfigFromJson(j);
+
+  /// Serializes this config to a JSON map.
+  Map<String, dynamic> toJson() => _$MosaicControlConfigToJson(this);
 }
 
 /// Android-specific configuration for a Mosaic home-screen widget.
