@@ -14,3 +14,5 @@
 {"type":"skill","name":"using-superpowers","digest":"{\"skill\":\"superpowers:using-superpowers\"}","timestamp":"2026-06-02T06:42:34Z"}
 {"type":"skill","name":"test-driven-development","digest":"{\"skill\":\"superpowers:test-driven-development\"}","timestamp":"2026-06-02T06:42:38Z"}
 {"type":"skill","name":"harness-work","digest":"{\"skill\":\"claude-code-harness:harness-work\"}","timestamp":"2026-06-02T06:42:45Z"}
+{"type":"skill","name":"using-superpowers","digest":"{\"skill\":\"superpowers:using-superpowers\"}","timestamp":"2026-06-02T08:15:42Z"}
+{"type":"skill","name":"test-driven-development","digest":"{\"skill\":\"superpowers:test-driven-development\"}","timestamp":"2026-06-02T08:15:45Z"}
