@@ -157,6 +157,36 @@ void main() {
       expect(swift, contains('AlertConfiguration'));
     });
 
+    test('adopts iOS 16.2+ ActivityContent APIs with a 16.1 fallback',
+        () async {
+      final res = await runIos(
+        const [],
+        liveActivities: [orderTrackerActivity()],
+      );
+
+      final swift = readFile(res.file(
+          'ios/HomeWidgetExtension/MosaicActivityController.swift'));
+
+      // Non-deprecated 16.2+ form: ActivityContent(state:staleDate:).
+      expect(swift, contains('ActivityContent(state:'));
+      expect(swift, contains('staleDate: nil'));
+
+      // The modern calls are gated behind an iOS 16.2 availability guard.
+      expect(swift, contains('if #available(iOS 16.2, *)'));
+
+      // The request path uses the non-deprecated content: overload.
+      expect(swift, contains('content: ActivityContent(state:'));
+      // update/end modern paths take an ActivityContent positionally (the
+      // arg may be wrapped onto its own line by formatting).
+      expect(swift, contains('activity.update(\n'));
+      expect(swift, contains('await activity.end(content, dismissalPolicy:'));
+
+      // The legacy 16.1 fallback overloads are still present.
+      expect(swift, contains('contentState:'));
+      expect(swift, contains('update(using:'));
+      expect(swift, contains('end(using:'));
+    });
+
     test('start supports push tokens (pushType + pushTokenUpdates)', () async {
       final res = await runIos(
         const [],

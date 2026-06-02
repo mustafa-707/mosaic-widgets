@@ -162,8 +162,12 @@ enum MosaicActivityController {
 
     /// Requests a new Live Activity and returns its id (nil on failure).
     ///
-    /// Uses the iOS 16.1 `request(attributes:contentState:pushType:)` overload
-    /// (the `content:`/`ActivityContent` form is 16.2+).
+    /// On iOS 16.2+ uses the non-deprecated
+    /// `request(attributes:content:pushType:)` overload with an
+    /// `ActivityContent(state:staleDate:)`. On iOS 16.1 it falls back to the
+    /// deprecated-in-16.2 `request(attributes:contentState:pushType:)` overload,
+    /// isolated in `legacyStart` so the deprecation warning is confined to the
+    /// explicitly version-gated legacy path.
     ///
     /// When [push] is true the activity is requested with `pushType: .token`,
     /// and a detached Task observes `activity.pushTokenUpdates` — each emitted
@@ -174,11 +178,17 @@ enum MosaicActivityController {
         let attributes = MosaicActivityAttributes(activityType: type)
         let state = MosaicActivityAttributes.ContentState(data: data)
         do {
-            let activity = try Activity.request(
-                attributes: attributes,
-                contentState: state,
-                pushType: push ? .token : nil
-            )
+            let activity: Activity<MosaicActivityAttributes>
+            if #available(iOS 16.2, *) {
+                activity = try Activity.request(
+                    attributes: attributes,
+                    content: ActivityContent(state: state, staleDate: nil),
+                    pushType: push ? .token : nil
+                )
+            } else {
+                activity = try legacyStart(
+                    attributes: attributes, state: state, push: push)
+            }
             if push {
                 let id = activity.id
                 Task.detached {
@@ -197,7 +207,10 @@ enum MosaicActivityController {
 
     /// Updates the activity with [id], optionally surfacing an alert.
     ///
-    /// Uses the iOS 16.1 `update(using:alertConfiguration:)` overload.
+    /// On iOS 16.2+ uses the non-deprecated
+    /// `update(_:alertConfiguration:)` overload taking an `ActivityContent`.
+    /// On iOS 16.1 it delegates to `legacyUpdate`, isolating the deprecated
+    /// `update(using:alertConfiguration:)` overload behind the version gate.
     static func update(
         id: String,
         data: [String: String],
@@ -216,14 +229,23 @@ enum MosaicActivityController {
             )
         }
         Task {
-            await activity.update(using: state, alertConfiguration: alert)
+            if #available(iOS 16.2, *) {
+                await activity.update(
+                    ActivityContent(state: state, staleDate: nil),
+                    alertConfiguration: alert)
+            } else {
+                await legacyUpdate(activity, state: state, alert: alert)
+            }
         }
     }
 
     /// Ends the activity with [id]. [policy] maps to a dismissal policy
     /// ("immediate" → .immediate, anything else → .default).
     ///
-    /// Uses the iOS 16.1 `end(using:dismissalPolicy:)` overload.
+    /// On iOS 16.2+ uses the non-deprecated `end(_:dismissalPolicy:)` overload
+    /// taking an `ActivityContent`. On iOS 16.1 it delegates to `legacyEnd`,
+    /// isolating the deprecated `end(using:dismissalPolicy:)` overload behind
+    /// the version gate.
     static func end(
         id: String,
         data: [String: String]? = nil,
@@ -237,8 +259,58 @@ enum MosaicActivityController {
             MosaicActivityAttributes.ContentState(data: \$0)
         }
         Task {
-            await activity.end(using: finalState, dismissalPolicy: dismissal)
+            if #available(iOS 16.2, *) {
+                let content = finalState.map {
+                    ActivityContent(state: \$0, staleDate: nil)
+                }
+                await activity.end(content, dismissalPolicy: dismissal)
+            } else {
+                await legacyEnd(
+                    activity, state: finalState, dismissal: dismissal)
+            }
         }
+    }
+
+    // MARK: - iOS 16.1 legacy fallbacks
+    //
+    // These wrap the overloads that are deprecated as of iOS 16.2. They are the
+    // ONLY place the deprecated symbols appear and are reachable solely through
+    // the `else` of an `#available(iOS 16.2, *)` check, so on iOS 16.2+ devices
+    // (every shipping device) they are never executed. Any deprecation warning
+    // from the SDK is therefore confined to this clearly-marked legacy path.
+
+    @available(iOS 16.1, *)
+    @available(*, deprecated, message: "iOS 16.1 fallback; unused on 16.2+")
+    private static func legacyStart(
+        attributes: MosaicActivityAttributes,
+        state: MosaicActivityAttributes.ContentState,
+        push: Bool
+    ) throws -> Activity<MosaicActivityAttributes> {
+        return try Activity.request(
+            attributes: attributes,
+            contentState: state,
+            pushType: push ? .token : nil
+        )
+    }
+
+    @available(iOS 16.1, *)
+    @available(*, deprecated, message: "iOS 16.1 fallback; unused on 16.2+")
+    private static func legacyUpdate(
+        _ activity: Activity<MosaicActivityAttributes>,
+        state: MosaicActivityAttributes.ContentState,
+        alert: AlertConfiguration?
+    ) async {
+        await activity.update(using: state, alertConfiguration: alert)
+    }
+
+    @available(iOS 16.1, *)
+    @available(*, deprecated, message: "iOS 16.1 fallback; unused on 16.2+")
+    private static func legacyEnd(
+        _ activity: Activity<MosaicActivityAttributes>,
+        state: MosaicActivityAttributes.ContentState?,
+        dismissal: ActivityUIDismissalPolicy
+    ) async {
+        await activity.end(using: state, dismissalPolicy: dismissal)
     }
 
     /// Whether the user has Live Activities enabled for this app.
