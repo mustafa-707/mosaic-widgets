@@ -64,6 +64,21 @@ class WidgetRunner {
       laCalls.add("liveActivities.add($alias.$funcName());");
     }
 
+    final ctlCalls = <String>[];
+    for (final ctl in config.controls) {
+      final absoluteEntry = p.isAbsolute(ctl.entry)
+          ? ctl.entry
+          : p.join(projectRoot, ctl.entry);
+
+      final importPath = p.absolute(absoluteEntry);
+      final alias = 'ctl${config.controls.indexOf(ctl)}';
+      imports.add("import 'file://$importPath' as $alias;");
+
+      // Convention: build[ControlName]
+      final funcName = 'build${ctl.name}';
+      ctlCalls.add("controls.add($alias.$funcName());");
+    }
+
     return '''
 import 'dart:convert';
 import 'package:mosaic/dsl.dart';
@@ -74,22 +89,26 @@ void main() {
   ${calls.join('\n')}
   final liveActivities = <MosaicLiveActivity>[];
   ${laCalls.join('\n')}
+  final controls = <MControl>[];
+  ${ctlCalls.join('\n')}
 
   final payload = {
     'widgets': definitions.map((e) => e.toJson()).toList(),
     'liveActivities': liveActivities.map((e) => e.toJson()).toList(),
+    'controls': controls.map((e) => e.toJson()).toList(),
   };
   print('<<<MOSAIC_IR>>>' + jsonEncode(payload) + '<<<END_MOSAIC_IR>>>');
 }
 ''';
   }
 
-  /// Runs the generated runner script ONCE and returns both the widget IR
-  /// and the live-activity IR parsed from its output.
+  /// Runs the generated runner script ONCE and returns the widget IR,
+  /// live-activity IR, and control IR parsed from its output.
   Future<
       ({
         List<Map<String, dynamic>> widgets,
-        List<Map<String, dynamic>> liveActivities
+        List<Map<String, dynamic>> liveActivities,
+        List<Map<String, dynamic>> controls,
       })> runAll() async {
     final tempDir = Directory(p.join(projectRoot, '.dart_tool', 'hw_gen'));
     if (!tempDir.existsSync()) {
@@ -116,6 +135,7 @@ void main() {
     return (
       widgets: parseIrOutput(output),
       liveActivities: parseLiveActivities(output),
+      controls: parseControls(output),
     );
   }
 
@@ -168,5 +188,19 @@ void main() {
     }
     return List<Map<String, dynamic>>.from(
         decoded['liveActivities'] as List? ?? const []);
+  }
+
+  /// Extracts the control IR maps from a runner script's [stdout].
+  ///
+  /// Returns an empty list when the payload uses the legacy bare-list format
+  /// or when the `controls` key is absent (both predate control support).
+  static List<Map<String, dynamic>> parseControls(String stdout) {
+    final decoded = _decodePayload(stdout);
+    if (decoded is! Map) {
+      // Legacy bare-list form has no controls.
+      return const [];
+    }
+    return List<Map<String, dynamic>>.from(
+        decoded['controls'] as List? ?? const []);
   }
 }

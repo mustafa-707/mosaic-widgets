@@ -46,4 +46,24 @@ void main() {
     expect(() => WidgetRunner.parseIrOutput('no markers here'),
         throwsA(isA<Exception>()));
   });
+
+  test('parseControls returns controls from the object form', () {
+    const out =
+        '<<<MOSAIC_IR>>>{"widgets":[{"name":"A"}],"liveActivities":[],"controls":[{"__type":"HWControl","name":"Torch"}]}<<<END_MOSAIC_IR>>>';
+    final parsed = WidgetRunner.parseControls(out);
+    expect(parsed, [
+      {'__type': 'HWControl', 'name': 'Torch'}
+    ]);
+  });
+
+  test('parseControls returns [] for the legacy bare-list form', () {
+    const out = '<<<MOSAIC_IR>>>[{"name":"A"}]<<<END_MOSAIC_IR>>>';
+    expect(WidgetRunner.parseControls(out), isEmpty);
+  });
+
+  test('parseControls returns [] when controls key is absent', () {
+    const out =
+        '<<<MOSAIC_IR>>>{"widgets":[{"name":"A"}],"liveActivities":[]}<<<END_MOSAIC_IR>>>';
+    expect(WidgetRunner.parseControls(out), isEmpty);
+  });
 }
