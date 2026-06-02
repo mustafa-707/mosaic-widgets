@@ -335,15 +335,31 @@ class MBadge extends MNode {
   };
 }
 
+/// Alignment for a [MStack] layer.
+enum MStackAlignment {
+  topLeading,
+  top,
+  topTrailing,
+  leading,
+  center,
+  trailing,
+  bottomLeading,
+  bottom,
+  bottomTrailing,
+}
+
 /// Stack layout (overlaps children).
 class MStack extends MNode {
   final List<MNode> children;
-  const MStack(this.children);
+  final MStackAlignment alignment;
+
+  const MStack(this.children, {this.alignment = MStackAlignment.topLeading});
 
   @override
   Map<String, dynamic> toJson() => {
     '__type': 'HWStack',
     'children': children.map((e) => e.toJson()).toList(),
+    'alignment': alignment.name,
   };
 }
 

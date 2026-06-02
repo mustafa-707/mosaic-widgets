@@ -221,6 +221,43 @@ void main() {
     });
   });
 
+  group('MStack alignment', () {
+    test('default alignment is topLeading', () {
+      final json = MStack([const MText('x')]).toJson();
+      expect(json['__type'], 'HWStack');
+      expect(json['alignment'], 'topLeading');
+    });
+
+    test('explicit center alignment', () {
+      final json = MStack(
+        [const MText('x')],
+        alignment: MStackAlignment.center,
+      ).toJson();
+      expect(json['alignment'], 'center');
+    });
+
+    test('all nine alignment names round-trip', () {
+      const expected = [
+        'topLeading', 'top', 'topTrailing',
+        'leading', 'center', 'trailing',
+        'bottomLeading', 'bottom', 'bottomTrailing',
+      ];
+      for (final value in MStackAlignment.values) {
+        final json = MStack([], alignment: value).toJson();
+        expect(expected.contains(json['alignment']), isTrue,
+            reason: 'unexpected name: ${json['alignment']}');
+      }
+      expect(MStackAlignment.values.length, expected.length);
+    });
+
+    test('wire __type stays HWStack', () {
+      expect(
+        MStack([], alignment: MStackAlignment.bottomTrailing).toJson()['__type'],
+        'HWStack',
+      );
+    });
+  });
+
   group('MLinearGradient angle', () {
     test('explicit angle', () {
       final json = const MLinearGradient(
