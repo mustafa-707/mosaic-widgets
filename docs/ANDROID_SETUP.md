@@ -89,11 +89,52 @@ Copy this wiring into your own `MainActivity.kt`, adjusting the `mosaic_generate
 - **RTL**: layouts use `start`/`end` gravity and padding so they mirror automatically. Ensure your manifest's `<application>` has `android:supportsRtl="true"` (the CLI doctor warns if it is `false`).
 - **Formatting**: `MFormat` on bound `MText` values is applied with the device locale via `NumberFormat` / `DateFormat` / `DateUtils` when the provider updates.
 
-## 5. Live Activities (Ongoing Notification Fallback)
+## 5. Control Widgets (Quick Settings Tiles)
 
-Android has no true Live Activity, so Mosaic maps a `MosaicLiveActivity` to a **best-effort ongoing notification** built from the activity's `lockScreen` tree using `RemoteViews`. The Dynamic Island is **not applicable** on Android (those regions are ignored).
+Control widgets appear in the Android Quick Settings panel. Users add them manually from the Quick Settings edit screen.
 
-- The CLI generates a `MosaicLiveActivityManager` (under your `mosaic_generated` package) that posts an ongoing notification on `start`, rebuilds the `RemoteViews` and re-notifies on `update` (an alert becomes a heads-up notification), and cancels it on `end`. Bind data is passed through the update path so changes are immediate.
+### What `mosaic_cli build` generates
+
+For each entry under `controls:` in `mosaic.yaml` the CLI:
+
+1. Emits `<Name>TileService.kt` under your `mosaic_generated` package — a `TileService` subclass that reads/writes the `widget_data` SharedPreferences store and broadcasts `MOSAIC_CALLBACK` intents (same path as widget button callbacks).
+2. **Auto-inserts** a `<service>` declaration into `AndroidManifest.xml` with `android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"` and the `QS_TILE` intent-filter. No manual manifest editing is needed.
+
+No `MainActivity.kt` changes are required for controls — callbacks arrive via the existing `MOSAIC_CALLBACK` broadcast receiver already set up for widget buttons (Section 3).
+
+### Defining a control
+
+```dart
+// lib/platform/controls/torch.control.dart
+import 'package:mosaic/dsl.dart';
+
+MControl buildTorch() => const MControl(
+  name: 'Torch',
+  kind: MControlKind.toggle,
+  label: 'Flashlight',
+  androidIcon: 'ic_torch',
+  valueKey: 'torch_on',
+  action: MActionCallback('toggle_torch'),
+);
+```
+
+```yaml
+# mosaic.yaml
+controls:
+  - name: Torch
+    entry: lib/platform/controls/torch.control.dart
+```
+
+QS tiles require API 24+. The generated `TileService` reads the on/off state from `widget_data` SharedPreferences under `valueKey` and updates `STATE_ACTIVE` / `STATE_INACTIVE` accordingly.
+
+## 6. Live Activities (Ongoing Notification Fallback)
+
+Android has no true Live Activity, so Mosaic maps a `MosaicLiveActivity` to a promoted ongoing notification. The Dynamic Island is **not applicable** on Android (those regions are ignored).
+
+**Android 16 / API 36+ (Live Updates):** on API 36+ the generated `MosaicLiveActivityManager` builds the notification with `Notification.ProgressStyle` + the promoted-ongoing flag, which Android 16 surfaces as a "Live Update" in the status bar chip and on the lock screen. The `progress` key in the activity data map (integer string, 0–100) drives the progress bar; if absent, an indeterminate style is used.
+
+**Pre-API 36 fallback:** a custom-`RemoteViews` ongoing notification is built from the activity's `lockScreen` tree (same as before).
+
 - Requires the `POST_NOTIFICATIONS` runtime permission on **API 33+**; your app should request it before starting an activity.
 - `MainActivity.kt` routes the lifecycle method-channel calls (`startActivity`, `updateActivity`, `endActivity`, `activitiesEnabled`, `activeActivities`) to the generated `MosaicLiveActivityManager`:
 
@@ -127,7 +168,7 @@ Android has no true Live Activity, so Mosaic maps a `MosaicLiveActivity` to a **
 
 See the [Live Activities Guide](LIVE_ACTIVITIES.md) for the full walkthrough.
 
-## 6. Deep Linking
+## 7. Deep Linking
 
 The CLI automatically adds a deep-link intent filter to your `MainActivity` in `AndroidManifest.xml`. The scheme comes from `deep_link_scheme` under `app:` in `mosaic.yaml` and **defaults to `mosaic`** (so links look like `mosaic://...`). Handle these links in Flutter:
 
@@ -139,7 +180,7 @@ MosaicBridge.onDeepLink.listen((url) {
 });
 ```
 
-## 7. Manual Verification
+## 8. Manual Verification
 
 If widgets do not appear in the widget picker:
 1.  Check `AndroidManifest.xml` to ensure the `<receiver>` tags were added correctly inside the `<application>` tag.

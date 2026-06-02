@@ -29,8 +29,9 @@ MosaicDefinition buildNews() => MosaicDefinition(
 
 - ✅ One Dart DSL → native iOS + Android widgets (no Swift/Kotlin to hand-write)
 - ✅ Live data binding (`MBind`) — text, images, progress, visibility, timers, colors
-- ✅ **Live Activities + Dynamic Island** (iOS); ongoing-notification fallback (Android)
+- ✅ **Live Activities + Dynamic Island** (iOS); **Android 16 Live Updates** (`Notification.ProgressStyle`, API 36+) with ongoing-notification fallback
 - ✅ **Lock Screen** accessory widgets (iOS 16+)
+- ✅ **Control Widgets** — iOS 18 Control Center / Lock Screen controls + Android Quick Settings tiles
 - ✅ **Configurable** widgets — user-editable params via the OS config UI
 - ✅ Adaptive light/dark + runtime colors, locale formatting (`MFormat`), auto RTL
 - ✅ Interactive buttons (iOS 17 AppIntents), deep links, refresh, background callbacks
@@ -80,8 +81,9 @@ dev_dependencies:
 |---|---|---|
 | Home-screen widgets | ✅ WidgetKit (14+) | ✅ AppWidget |
 | Lock Screen widgets | ✅ (16+) | — |
-| Live Activities | ✅ ActivityKit (16.1+) | ⚠️ ongoing notification |
+| Live Activities | ✅ ActivityKit (16.1+) | ⚠️ ongoing notification (Live Updates on Android 16 / API 36+) |
 | Dynamic Island | ✅ | — |
+| Controls | ✅ Control Center (18+) | ✅ Quick Settings tile (API 24+, user-added) |
 | Interactive buttons | ✅ AppIntent (17+) / deep-link | ✅ |
 | Configurable widgets | ✅ (17+) | ✅ |
 

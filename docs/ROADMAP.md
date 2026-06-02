@@ -14,8 +14,9 @@ Status legend: ✅ shipped · 🔨 planned-this-program · 🔭 future.
 - Content: Text (+ bindings), Image (asset/file/bind, fit modes), ProgressBar, Timer, Button, Visibility(+replacement), ListView (iOS real; Android pending)
 - Styling: gradients, borders, radius, adaptive (light/dark) + runtime-bind colors, text styles
 - Interactivity: deep links, background callbacks, refresh; **iOS-17 AppIntent buttons**
-- Live Activities + **Dynamic Island** (compact/minimal/expanded); Android ongoing-notification fallback
+- Live Activities + **Dynamic Island** (compact/minimal/expanded); **Android 16 Live Updates** (`Notification.ProgressStyle` + promoted-ongoing, API 36+) with ongoing-notification fallback on pre-36
 - Lock-screen accessory widgets (iOS 16+)
+- **Control Widgets** — iOS 18 Control Center / Lock Screen (`ControlWidgetToggle` / `ControlWidgetButton`, gated iOS 18+); Android Quick Settings tiles (`TileService`, API 24+, user-added; `<service>` auto-registered by `mosaic_cli build`)
 - Locale: RTL auto-mirroring + `MFormat` (currency/decimal/percent/date/relativeTime)
 - Runtime data binding from the app via `MosaicBridge`
 
@@ -64,7 +65,7 @@ Small, broadly-useful additions; each lands on both platforms with golden tests.
 
 ### Tier 4 — Reach & polish (🔭 future)
 - **Accessibility** — `semanticLabel` per node → iOS `.accessibilityLabel`, Android `contentDescription`.
-- **iOS Control Widgets** (iOS 18 Control Center) and **watchOS complications**.
+- **watchOS complications**.
 - **Android Material You** dynamic color (`@android:color/system_accent1_*`), themed-icon.
 - **Multiple widget sizes / galleries**, **preview gallery snapshots**, **per-widget intents catalog**.
 - **String tables** (compile-time localization) — deferred from locale work.
@@ -87,6 +88,6 @@ Each item ships behind the existing quality gate: unit/golden tests + `flutter b
 
 ## 5. Known gaps / honest notes
 - **Android ListView** currently throws by design — Tier 2 item #3 fixes it.
-- **Android live activity** is an ongoing-notification approximation; Dynamic Island has no Android equivalent.
+- **Android live activity** uses `Notification.ProgressStyle` + promoted-ongoing on API 36+ (Android 16 Live Updates) and an ongoing-notification approximation on pre-36. Dynamic Island has no Android equivalent.
 - **On-device runtime** (widgets actually rendering on a home screen / Dynamic Island / lock screen) requires adding generated files to the Xcode Widget Extension target and running on device — compilation is proven in CI-style checks; live render is a manual gate.
 - **Repo URL** in pubspecs is a placeholder pending the real GitHub URL.

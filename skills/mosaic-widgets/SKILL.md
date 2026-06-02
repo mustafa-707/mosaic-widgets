@@ -149,7 +149,40 @@ live_activities:
 | `MGauge` arc on Android | Android approximates it as a linear ProgressBar (RemoteViews has no arc) |
 | Container shadow on Android | Ignored (RemoteViews has no drop shadow) |
 
+## Control Widgets (iOS 18 Control Center / Android Quick Settings)
+
+Control widgets are separate from home-screen widgets. They live in `*.control.dart` files (import `package:mosaic/dsl.dart`, no Flutter), export `MControl build<Name>()`, and are registered under `controls:` in `mosaic.yaml`.
+
+```dart
+import 'package:mosaic/dsl.dart';
+
+MControl buildTorch() => const MControl(
+  name: 'Torch',
+  kind: MControlKind.toggle,   // or MControlKind.button
+  label: 'Flashlight',
+  sfSymbol: 'flashlight.on.fill',   // iOS SF Symbol
+  androidIcon: 'ic_torch',          // Android drawable (optional)
+  valueKey: 'torch_on',             // toggles only — shared-store bool key
+  action: MActionCallback('toggle_torch'),
+);
+```
+
+`mosaic.yaml` registration (parallel to `widgets:` and `live_activities:`):
+```yaml
+controls:
+  - name: Torch
+    entry: lib/platform/controls/torch.control.dart
+```
+
+**`MControl` constructor** — all named args: `name` (String, required), `kind` (MControlKind, required), `label` (String, required), `sfSymbol` (String?), `androidIcon` (String?), `valueKey` (String?, toggles), `action` (MAction, required). `MActionCallback`, `MLaunchUrlAction`, and `MRefreshAction` are all valid actions.
+
+**iOS behaviour (iOS 18+):** `mosaic_cli build` emits a `<Name>Control.swift` (`ControlWidgetToggle` / `ControlWidgetButton`) into `ios/HomeWidgetExtension/`, gated `@available(iOS 18.0, *)`. The toggle reads its current state from the App Group `UserDefaults` bool at `valueKey`; tapping writes the new value back and fires the action. A shared `MosaicControlIntents.swift` (also emitted) provides the `SetValueIntent`. Controls are registered in `HomeWidgetBundle.swift` under an iOS 18 gate. Controls are part of the same Widget Extension used for home-screen widgets — no additional Xcode target is required.
+
+**Android behaviour (API 24+, user-added):** A `<Name>TileService.kt` (`TileService` subclass) is emitted under `mosaic_generated`. For toggles `onStartListening` reads `widget_data` SharedPreferences under `valueKey` and sets `STATE_ACTIVE`/`STATE_INACTIVE`; `onClick` flips the bool and broadcasts a `MOSAIC_CALLBACK` intent (same path as widget buttons). For buttons `onClick` fires the callback directly. The `<service>` tag (with `BIND_QUICK_SETTINGS_TILE` permission and the QS tile intent-filter) is **auto-added to `AndroidManifest.xml`** by `mosaic_cli build`. QS tiles are user-added from the Quick Settings edit panel.
+
 ## Platform notes
-- Widget definitions and live activities are **pure data** — no Flutter widgets, no `setState`, no runtime logic; all dynamism comes from `MBind` + the data the app pushes.
-- iOS deployment: configurable widgets and AppIntent buttons need iOS 17+; Live Activities/Dynamic Island/accessory widgets need iOS 16+/16.1+. Non-configurable home widgets work on iOS 14+.
+- Widget definitions, live activities, and control widgets are **pure data** — no Flutter widgets, no `setState`, no runtime logic; all dynamism comes from `MBind` + the data the app pushes.
+- iOS deployment: configurable widgets and AppIntent buttons need iOS 17+; Live Activities/Dynamic Island/accessory widgets need iOS 16+/16.1+; Control widgets need iOS 18+. Non-configurable home widgets work on iOS 14+.
+- Android live activities use **Android 16 Live Updates** (`Notification.ProgressStyle` + promoted-ongoing) on API 36+; the custom-RemoteViews ongoing notification is the pre-36 fallback.
+- iOS ActivityKit code uses the non-deprecated iOS 16.2+ `ActivityContent` APIs with a 16.1 fallback.
 - Deeper docs in the repo: `DOCS/DSL_REFERENCE.md`, `DOCS/IOS_SETUP.md`, `DOCS/ANDROID_SETUP.md`, `DOCS/LIVE_ACTIVITIES.md`, `docs/ROADMAP.md`.

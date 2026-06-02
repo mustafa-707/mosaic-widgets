@@ -210,7 +210,49 @@ case "activeActivities":
 
 See the [Live Activities Guide](LIVE_ACTIVITIES.md) for defining the activity and driving it from Flutter.
 
-## 9. Troubleshooting
+## 9. Control Widgets (iOS 18+)
+
+Control widgets appear in Control Center and on the Lock Screen. They share the same Widget Extension target — no new Xcode target is required.
+
+### What `mosaic_cli build` generates
+
+For each entry under `controls:` in `mosaic.yaml` the CLI emits into `ios/HomeWidgetExtension/`:
+
+- `<Name>Control.swift` — a `ControlWidgetToggle` or `ControlWidgetButton`, gated `@available(iOS 18.0, *)`.
+- `MosaicControlIntents.swift` (shared) — the `SetValueIntent` that writes the App Group bool and calls `ControlCenter.shared.reloadControls(ofKind:)`.
+
+Both files are registered in `HomeWidgetBundle.swift` under an iOS 18 availability gate. Add all generated `.swift` files to your Widget Extension target (same step as Section 3).
+
+### Info.plist / capabilities
+
+No additional Info.plist key is required for controls (unlike Live Activities). The App Group capability set up in Section 2 is sufficient — the toggle state is read from and written to `UserDefaults(suiteName:)` under the `valueKey` you declared.
+
+### Defining a control
+
+```dart
+// lib/platform/controls/torch.control.dart
+import 'package:mosaic/dsl.dart';
+
+MControl buildTorch() => const MControl(
+  name: 'Torch',
+  kind: MControlKind.toggle,
+  label: 'Flashlight',
+  sfSymbol: 'flashlight.on.fill',
+  valueKey: 'torch_on',
+  action: MActionCallback('toggle_torch'),
+);
+```
+
+```yaml
+# mosaic.yaml
+controls:
+  - name: Torch
+    entry: lib/platform/controls/torch.control.dart
+```
+
+The `action` callback is forwarded to Flutter via the existing `mosaic_bridge` deep-link / callback path (no additional AppDelegate wiring is needed).
+
+## 10. Troubleshooting
 
 ### 🔴 Error: "Cycle inside Runner; building could produce unreliable results"
 

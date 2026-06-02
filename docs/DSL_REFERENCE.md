@@ -184,3 +184,63 @@ MosaicLiveActivity buildOrderTracker() {
 ```
 
 The Flutter lifecycle API (`MosaicLiveActivities.start/update/end`, imported from `package:mosaic/mosaic.dart`) is documented in the [Live Activities Guide](LIVE_ACTIVITIES.md).
+
+> **Android 16 Live Updates:** on API 36+ the ongoing notification is upgraded to a `Notification.ProgressStyle` promoted-ongoing notification (Android 16 "Live Update"). The `progress` key in the data map (integer 0–100) drives the progress bar. The custom-RemoteViews ongoing notification remains the pre-36 fallback.
+
+---
+
+## Control Widgets
+
+Control widgets surface in iOS Control Center / Lock Screen (iOS 18+) and Android Quick Settings (API 24+). They are defined separately from home-screen widgets.
+
+### File layout
+
+Create a `*.control.dart` file that imports `package:mosaic/dsl.dart` and exports a top-level `MControl build<Name>()` function. Register it under `controls:` in `mosaic.yaml`:
+
+```yaml
+controls:
+  - name: Torch
+    entry: lib/platform/controls/torch.control.dart
+```
+
+### MControl
+
+```dart
+import 'package:mosaic/dsl.dart';
+
+MControl buildTorch() => const MControl(
+  name: 'Torch',
+  kind: MControlKind.toggle,
+  label: 'Flashlight',
+  sfSymbol: 'flashlight.on.fill',
+  androidIcon: 'ic_torch',
+  valueKey: 'torch_on',
+  action: MActionCallback('toggle_torch'),
+);
+```
+
+Constructor (all named):
+
+| Parameter | Type | Required | Notes |
+|---|---|---|---|
+| `name` | `String` | yes | Must match the `mosaic.yaml` entry and the `build<Name>()` suffix. |
+| `kind` | `MControlKind` | yes | `MControlKind.toggle` or `MControlKind.button`. |
+| `label` | `String` | yes | Label shown beneath the control. |
+| `sfSymbol` | `String?` | no | iOS SF Symbol name. |
+| `androidIcon` | `String?` | no | Android drawable resource name. |
+| `valueKey` | `String?` | no | Toggles only: the App Group / `widget_data` bool key for the on/off state. |
+| `action` | `MAction` | yes | `MActionCallback`, `MLaunchUrlAction`, or `MRefreshAction`. |
+
+### MControlKind
+
+```dart
+enum MControlKind { toggle, button }
+```
+
+- **toggle** — stateful control; state is read from and written to the shared store under `valueKey`. Emits `ControlWidgetToggle` (iOS) / a `TileService` that tracks `STATE_ACTIVE`/`STATE_INACTIVE` (Android).
+- **button** — stateless control; fires its action on tap. Emits `ControlWidgetButton` (iOS) / a `TileService` `onClick` handler (Android).
+
+### Platform notes
+
+- **iOS (18+):** `mosaic_cli build` emits `<Name>Control.swift` into `ios/HomeWidgetExtension/`, gated `@available(iOS 18.0, *)`. Toggle state is read from the App Group `UserDefaults` bool at `valueKey`. Controls share the existing Widget Extension — no new Xcode target is needed.
+- **Android (API 24+):** `mosaic_cli build` emits `<Name>TileService.kt` under `mosaic_generated` and auto-inserts the `<service>` declaration (with `BIND_QUICK_SETTINGS_TILE` permission) into `AndroidManifest.xml`. QS tiles are user-added from the Quick Settings edit panel.
