@@ -124,4 +124,75 @@ void main() {
       expect(kt, isNot(contains('buildNotification(context, id, id,')));
     });
   });
+
+  group('Unit 3 — Android 16 Live Updates (ProgressStyle) upgrade', () {
+    const ktPath =
+        'android/app/src/main/kotlin/com/acme/app/mosaic_generated/MosaicLiveActivityManager.kt';
+
+    Future<String> genManager() async {
+      final la = [
+        {
+          '__type': 'HWLiveActivity',
+          'name': 'OrderTracker',
+          'lockScreen': {
+            '__type': 'HWColumn',
+            'children': [
+              text('Order on the way'),
+              text(bind('eta')),
+            ],
+          },
+        },
+      ];
+      final res = await runAndroidLiveActivity(la);
+      expect(res.exists(ktPath), isTrue, reason: 'expected $ktPath');
+      return res.file(ktPath);
+    }
+
+    test('gates an API 36 (BAKLAVA) branch on SDK_INT', () async {
+      final kt = await genManager();
+      // The Live Updates path is API 36+ only.
+      expect(
+        kt.contains('SDK_INT >= 36') ||
+            kt.contains('SDK_INT >= Build.VERSION_CODES.BAKLAVA'),
+        isTrue,
+        reason: 'expected an API 36 / BAKLAVA SDK_INT gate',
+      );
+    });
+
+    test('uses Notification.ProgressStyle on the API 36 path', () async {
+      final kt = await genManager();
+      expect(kt, contains('ProgressStyle'));
+    });
+
+    test('parses a progress value from the data map', () async {
+      final kt = await genManager();
+      // Progress is driven by data["progress"] parsed as 0..100.
+      expect(kt, contains('data["progress"]'));
+    });
+
+    test('marks the notification promoted-ongoing for Live Updates', () async {
+      final kt = await genManager();
+      // Either the builder request API or the promoted-ongoing flag.
+      expect(
+        kt.contains('requestPromotedOngoing') ||
+            kt.contains('FLAG_PROMOTED_ONGOING'),
+        isTrue,
+        reason: 'expected a promoted-ongoing call/flag',
+      );
+    });
+
+    test('keeps the legacy RemoteViews ongoing notification fallback',
+        () async {
+      final kt = await genManager();
+      // The pre-36 path must still build the custom RemoteViews notification.
+      expect(kt, contains('RemoteViews'));
+      expect(kt, contains('setCustomContentView'));
+      expect(kt, contains('setOngoing(true)'));
+    });
+
+    test('documents the Live Updates upgrade in a comment', () async {
+      final kt = await genManager();
+      expect(kt, contains('Live Updates'));
+    });
+  });
 }

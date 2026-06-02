@@ -7,7 +7,9 @@ plugins {
 
 android {
     namespace = "com.example.demo_app"
-    compileSdk = flutter.compileSdkVersion
+    // Pinned to API 36 so Android 16 Live Updates symbols
+    // (Notification.ProgressStyle, FLAG_PROMOTED_ONGOING) resolve.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -41,4 +43,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // Generated widget config activities use androidx.appcompat.widget.SwitchCompat.
+    implementation("androidx.appcompat:appcompat:1.7.0")
 }

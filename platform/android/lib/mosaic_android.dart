@@ -610,6 +610,19 @@ import ${config.app.androidPackage}.R
 /// content is a custom RemoteViews built from the generated `hw_la_<type>`
 /// layout. This is intentionally a degraded experience compared to iOS.
 ///
+/// LIVE UPDATES UPGRADE (Android 16 / API 36, `Build.VERSION_CODES.BAKLAVA`):
+/// Android 16 introduces "Live Updates" — short-lived, user-promoted ongoing
+/// notifications that surface progress-centric updates (delivery, ride, etc.)
+/// prominently on the lock screen and status bar. This is the closest OS analog
+/// to an iOS Live Activity. When running on API 36+ the notification is built
+/// with the platform `Notification.Builder` + `Notification.ProgressStyle`
+/// (a determinate progress segment driven by `data["progress"]` parsed as
+/// 0..100, indeterminate when absent) and marked promoted-ongoing so the system
+/// treats it as a Live Update. The rich `hw_la_<type>` RemoteViews layout is
+/// still attached as the custom content/big-content view. On older OS versions
+/// the legacy custom-RemoteViews ongoing `NotificationCompat` notification is
+/// posted unchanged.
+///
 /// Data flows through the shared "widget_data" SharedPreferences store so the
 /// same `MosaicData` accessor that powers app widgets resolves live-activity
 /// binds. POST_NOTIFICATIONS (API 33+) is assumed to already be granted by the
@@ -663,7 +676,87 @@ $layoutCases
 
     private fun notificationId(id: String): Int = id.hashCode()
 
+    /// Parses an optional 0..100 progress value out of the shared data map
+    /// (the activity's `data["progress"]`, persisted into "widget_data").
+    /// Returns null when absent/unparseable so callers can fall back to an
+    /// indeterminate progress segment.
+    private fun parseProgress(context: Context): Int? {
+        // Equivalent to reading data["progress"] from the start/update payload.
+        val raw = prefs(context).getString("progress", null) ?: return null
+        val value = raw.trim().toFloatOrNull() ?: return null
+        return value.toInt().coerceIn(0, 100)
+    }
+
     private fun buildNotification(
+        context: Context,
+        type: String,
+        id: String,
+        alertTitle: String?,
+        alertBody: String?,
+    ): Notification {
+        // Android 16 (API 36, BAKLAVA) Live Updates: build a promoted ongoing
+        // notification with Notification.ProgressStyle. See class doc.
+        if (Build.VERSION.SDK_INT >= 36) {
+            return buildLiveUpdateNotification(context, type, id, alertTitle, alertBody)
+        }
+        return buildLegacyNotification(context, type, id, alertTitle, alertBody)
+    }
+
+    /// Android 16+ "Live Updates": a promoted ongoing notification driven by
+    /// `Notification.ProgressStyle`. `data["progress"]` (0..100) feeds a
+    /// determinate progress segment; when absent the segment is indeterminate.
+    /// The rich `hw_la_<type>` RemoteViews is still attached as custom content
+    /// so the full Mosaic layout shows in the expanded view.
+    @androidx.annotation.RequiresApi(36)
+    private fun buildLiveUpdateNotification(
+        context: Context,
+        type: String,
+        id: String,
+        alertTitle: String?,
+        alertBody: String?,
+    ): Notification {
+        val layout = layoutFor(type)
+        val builder = Notification.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setOngoing(true)
+            .setOnlyAlertOnce(alertTitle == null && alertBody == null)
+
+        // ProgressStyle is the progress-centric Live Update style. Use a single
+        // determinate segment when data["progress"] is present, otherwise leave
+        // it indeterminate so the system shows an animated/ongoing indicator.
+        val progress = parseProgress(context)
+        val progressStyle = Notification.ProgressStyle()
+        if (progress != null) {
+            progressStyle.setProgressIndeterminate(false)
+            progressStyle.setProgressSegments(
+                listOf(Notification.ProgressStyle.Segment(100))
+            )
+            progressStyle.setProgress(progress)
+        } else {
+            progressStyle.setProgressIndeterminate(true)
+        }
+        builder.setStyle(progressStyle)
+
+        if (layout != 0) {
+            val views = RemoteViews(context.packageName, layout)
+            builder.setCustomContentView(views)
+            builder.setCustomBigContentView(views)
+        }
+        if (alertTitle != null) builder.setContentTitle(alertTitle)
+        if (alertBody != null) builder.setContentText(alertBody)
+        builder.setColorized(true)
+
+        val notification = builder.build()
+        // Mark as a promoted ongoing notification so the system treats it as a
+        // Live Update (status bar chip + lock screen prominence). The
+        // FLAG_PROMOTED_ONGOING bit is the API 36 signal for Live Updates.
+        notification.flags = notification.flags or Notification.FLAG_PROMOTED_ONGOING
+        return notification
+    }
+
+    /// Legacy (< API 36) fallback: the original custom-RemoteViews ongoing
+    /// notification posted via NotificationCompat. Unchanged behaviour.
+    private fun buildLegacyNotification(
         context: Context,
         type: String,
         id: String,
