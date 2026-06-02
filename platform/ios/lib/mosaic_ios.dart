@@ -1413,23 +1413,24 @@ ZStack(alignment: $alignment) {
 
   String _mapStackAlignment(String? align) {
     switch (align) {
-      case 'topCenter':
+      case 'topLeading':
+        return '.topLeading';
+      case 'top':
         return '.top';
-      case 'topRight':
+      case 'topTrailing':
         return '.topTrailing';
-      case 'centerLeft':
+      case 'leading':
         return '.leading';
       case 'center':
         return '.center';
-      case 'centerRight':
+      case 'trailing':
         return '.trailing';
-      case 'bottomLeft':
+      case 'bottomLeading':
         return '.bottomLeading';
-      case 'bottomCenter':
+      case 'bottom':
         return '.bottom';
-      case 'bottomRight':
+      case 'bottomTrailing':
         return '.bottomTrailing';
-      case 'topLeft':
       default:
         return '.topLeading';
     }

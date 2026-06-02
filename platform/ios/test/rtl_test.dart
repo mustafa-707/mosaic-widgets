@@ -42,12 +42,12 @@ void main() {
     final r = await runIos([
       irDef({
         '__type': 'HWStack',
-        'alignment': 'bottomRight',
+        'alignment': 'bottomTrailing',
         'children': [text('a')],
       })
     ]);
     final s = r.swiftForTestW();
-    // bottomRight maps to the mirror-safe .bottomTrailing, not a raw right edge.
+    // bottomTrailing maps to the mirror-safe .bottomTrailing, not a raw right edge.
     expect(s, contains('.bottomTrailing'));
     expect(s, isNot(contains('.bottomRight')));
     expect(s, isNot(contains(': .right')));
