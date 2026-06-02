@@ -149,3 +149,6 @@
 {"file":"platform/ios/lib/mosaic_ios.dart","action":"Edit","timestamp":"2026-06-02T08:02:39Z","important":false}
 {"file":"platform/android/test/configurable_android_test.dart","action":"Edit","timestamp":"2026-06-02T08:02:44Z","important":false}
 {"file":"platform/android/lib/mosaic_android.dart","action":"Edit","timestamp":"2026-06-02T08:02:56Z","important":false}
+{"file":"platform/android/test/live_activity_android_test.dart","action":"Edit","timestamp":"2026-06-02T08:07:22Z","important":false}
+{"file":"examples/demo_app/android/app/src/main/res/drawable/ic_weather.xml","action":"Write","timestamp":"2026-06-02T08:09:36Z","important":false}
+{"file":"examples/demo_app/android/app/build.gradle.kts","action":"Edit","timestamp":"2026-06-02T08:10:58Z","important":false}
