@@ -34,6 +34,7 @@ Future<GenResult> runIos(
   MosaicConfig? config,
   bool skipConfigWidget = false,
   List<Map<String, dynamic>> liveActivities = const [],
+  List<Map<String, dynamic>> controls = const [],
 }) async {
   final dir = await Directory.systemTemp.createTemp('hw_ios_test_');
 
@@ -76,6 +77,7 @@ Future<GenResult> runIos(
     config: cfg,
     definitions: defs,
     liveActivities: liveActivities,
+    controls: controls,
   ).generate(dir.path);
 
   return GenResult(dir);
