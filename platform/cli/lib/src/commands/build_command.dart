@@ -111,6 +111,14 @@ File? resolveConfigFile() {
   return null;
 }
 
+/// Returns a progress message for [count] controls, or null when there are none.
+///
+/// Used by [BuildCommand.run] to conditionally print the controls count.
+String? controlsProgressMessage(int count) {
+  if (count == 0) return null;
+  return 'Generating $count controls...';
+}
+
 class BuildCommand extends Command {
   @override
   final name = 'build';
@@ -137,16 +145,21 @@ class BuildCommand extends Command {
     final irDefinitions =
         ir.widgets.map((e) => IRDefinition.fromJson(e)).toList();
     final liveActivities = ir.liveActivities;
+    final controls = ir.controls;
 
     if (liveActivities.isNotEmpty) {
       print('Generating ${liveActivities.length} live activities...');
     }
+
+    final ctlMsg = controlsProgressMessage(controls.length);
+    if (ctlMsg != null) print(ctlMsg);
 
     print('Generating Android code...');
     final androidGenerator = AndroidGenerator(
       config: config,
       definitions: irDefinitions,
       liveActivities: liveActivities,
+      controls: controls,
     );
     await androidGenerator.generate(runner.projectRoot);
 
@@ -155,6 +168,7 @@ class BuildCommand extends Command {
       config: config,
       definitions: irDefinitions,
       liveActivities: liveActivities,
+      controls: controls,
     );
     await iosGenerator.generate(runner.projectRoot);
 
