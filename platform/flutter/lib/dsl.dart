@@ -737,6 +737,59 @@ class MosaicLiveActivity {
   };
 }
 
+/// The interaction kind of an [MControl].
+enum MControlKind { toggle, button }
+
+/// A Control Center / Lock Screen control (iOS 18+) or Quick Settings tile
+/// (Android).
+///
+/// Declared in a `*.control.dart` entry that exports `MControl build<Name>()`
+/// and registered under the `controls:` list in `mosaic.yaml`.
+class MControl {
+  /// Logical name; used to derive the builder function name (`build<Name>`).
+  final String name;
+
+  /// Whether this control is a stateful [MControlKind.toggle] or a stateless
+  /// [MControlKind.button].
+  final MControlKind kind;
+
+  /// Label shown under the control.
+  final String label;
+
+  /// iOS SF Symbol icon name.
+  final String? sfSymbol;
+
+  /// Android drawable name for the tile icon.
+  final String? androidIcon;
+
+  /// For toggles: the bound bool key reflecting the current on/off state.
+  final String? valueKey;
+
+  /// What tapping the control does. Toggles typically use [MActionCallback].
+  final MAction action;
+
+  const MControl({
+    required this.name,
+    required this.kind,
+    required this.label,
+    this.sfSymbol,
+    this.androidIcon,
+    this.valueKey,
+    required this.action,
+  });
+
+  Map<String, dynamic> toJson() => {
+    '__type': 'HWControl',
+    'name': name,
+    'kind': kind.name,
+    'label': label,
+    'sfSymbol': sfSymbol,
+    'androidIcon': androidIcon,
+    'valueKey': valueKey,
+    'action': action.toJson(),
+  };
+}
+
 /// Dynamic Island presentation regions.
 class MDynamicIsland {
   final MNode compactLeading;
