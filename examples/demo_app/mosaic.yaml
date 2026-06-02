@@ -39,3 +39,7 @@ widgets:
 live_activities:
   - name: OrderTracker
     entry: lib/platform/live_activities/order_tracker.live.dart
+
+controls:
+  - name: Torch
+    entry: lib/platform/controls/torch.control.dart

@@ -167,3 +167,4 @@
 {"file":"platform/cli/test/manifest_test.dart","action":"Edit","timestamp":"2026-06-02T08:25:25Z","important":false}
 {"file":"platform/cli/lib/src/commands/build_command.dart","action":"Edit","timestamp":"2026-06-02T08:25:40Z","important":false}
 {"file":"platform/ios/test/support/emit_full_controls.dart","action":"Write","timestamp":"2026-06-02T08:26:07Z","important":false}
+{"file":"examples/demo_app/mosaic.yaml","action":"Edit","timestamp":"2026-06-02T08:28:13Z","important":false}

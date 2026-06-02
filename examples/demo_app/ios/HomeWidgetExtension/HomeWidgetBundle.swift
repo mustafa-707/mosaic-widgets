@@ -14,5 +14,8 @@ struct HomeWidgetBundle: WidgetBundle {
         if #available(iOS 16.1, *) {
             OrderTrackerLiveActivity()
         }
+        if #available(iOS 18.0, *) {
+            TorchControl()
+        }
     }
 }

@@ -97,6 +97,18 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/hw_weather_info" />
         </receiver>
+            <service
+            android:name="com.example.demo_app.mosaic_generated.TorchTileService"
+            android:exported="true"
+            android:label="Flashlight"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="false" />
+        </service>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
