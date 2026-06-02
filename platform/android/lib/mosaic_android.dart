@@ -34,6 +34,45 @@ String _mosaicSpacerView(bool isVertical, {String weight = '1'}) {
   return '<Space android:layout_width="$width" android:layout_height="$height" android:layout_weight="$weight" />';
 }
 
+/// Maps an [MStack] alignment name to an Android gravity string.
+///
+/// Uses RTL-friendly `start`/`end` rather than `left`/`right`. Absent or
+/// unknown names fall back to `top|start` (matches the DSL default topLeading).
+String _stackAlignmentGravity(String? alignment) {
+  switch (alignment) {
+    case 'topLeading':     return 'top|start';
+    case 'top':            return 'top|center_horizontal';
+    case 'topTrailing':    return 'top|end';
+    case 'leading':        return 'center_vertical|start';
+    case 'center':         return 'center';
+    case 'trailing':       return 'center_vertical|end';
+    case 'bottomLeading':  return 'bottom|start';
+    case 'bottom':         return 'bottom|center_horizontal';
+    case 'bottomTrailing': return 'bottom|end';
+    default:               return 'top|start';
+  }
+}
+
+/// Injects `android:layout_gravity="[gravity]"` into [renderedChild] if and
+/// only if the child's root element does not already carry a `layout_gravity`
+/// attribute. This preserves `MPositioned` children which set their own
+/// `layout_gravity` via [PositionedHandler].
+///
+/// Only the FIRST element open-tag is touched — nested descendants are left
+/// intact. Children that are pure XML comments are returned unchanged.
+String _applyStackAlignment(String renderedChild, String gravity) {
+  // If the child already carries layout_gravity, leave it untouched.
+  if (renderedChild.contains('android:layout_gravity=')) return renderedChild;
+  // Inject just before the first `>` or `/>` that closes the root open tag.
+  final re = RegExp(r'(\s*)(\/?>)');
+  var done = false;
+  return renderedChild.replaceFirstMapped(re, (m) {
+    if (done) return m.group(0)!;
+    done = true;
+    return '${m.group(1)} android:layout_gravity="$gravity"${m.group(2)}';
+  });
+}
+
 /// Rewrites the cross-axis dimension of a rendered child element to
 /// `match_parent` to implement Flutter's `CrossAxisAlignment.stretch`. For a
 /// vertical column the cross axis is width; for a horizontal row it is height.
@@ -2171,11 +2210,17 @@ class StackHandler extends AndroidNodeHandler {
     final children = ((node.data['children'] as List?) ?? const [])
         .map((e) => IRNode.fromJson(e as Map<String, dynamic>))
         .toList();
+    final gravity = _stackAlignmentGravity(node.data['alignment'] as String?);
+    final renderedChildren = children
+        .map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers, buttons,
+            isInsideLinearLayout: isInsideLinearLayout, isVertical: isVertical))
+        .map((xml) => _applyStackAlignment(xml, gravity))
+        .toList();
     return '''
 <FrameLayout
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    ${children.map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers, buttons, isInsideLinearLayout: isInsideLinearLayout, isVertical: isVertical)).join('\n')}
+    ${renderedChildren.join('\n')}
 </FrameLayout>''';
   }
 }
