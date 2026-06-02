@@ -63,6 +63,54 @@ void main() {
     });
   });
 
+  group('tileServiceTag', () {
+    test('emits the QS_TILE intent-filter and BIND permission', () {
+      final tag = tileServiceTag('com.acme.app', 'Torch', 'Flashlight');
+      expect(
+        tag,
+        contains(
+          'android:name="com.acme.app.mosaic_generated.TorchTileService"',
+        ),
+      );
+      expect(tag, contains('android:exported="true"'));
+      expect(
+        tag,
+        contains(
+          'android:permission="android.permission.BIND_QUICK_SETTINGS_TILE"',
+        ),
+      );
+      expect(
+        tag,
+        contains(
+          'android:name="android.service.quicksettings.action.QS_TILE"',
+        ),
+      );
+      expect(
+        tag,
+        contains(
+          'android:name="android.service.quicksettings.ACTIVE_TILE"',
+        ),
+      );
+      expect(tag, contains('android:label="Flashlight"'));
+    });
+
+    test('sanitizes a space-bearing control name into the class name', () {
+      final tag = tileServiceTag('com.acme.app', 'My Light', 'On');
+      expect(
+        tag,
+        contains(
+          'android:name="com.acme.app.mosaic_generated.MyLightTileService"',
+        ),
+      );
+      expect(tag, isNot(contains('My LightTileService')));
+    });
+
+    test('xml-escapes the label', () {
+      final tag = tileServiceTag('com.acme.app', 'Torch', 'A & B');
+      expect(tag, contains('android:label="A &amp; B"'));
+    });
+  });
+
   group('deepLinkFilter', () {
     test('escapes a scheme containing &', () {
       final filter = deepLinkFilter('my&scheme');

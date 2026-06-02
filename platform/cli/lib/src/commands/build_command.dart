@@ -61,6 +61,38 @@ String listServiceTag(String androidPackage) {
             android:permission="android.permission.BIND_REMOTEVIEWS" />''';
 }
 
+/// Builds the `<service>` AndroidManifest entry for a Mosaic control's Quick
+/// Settings tile. A [TileService] (API 24+) MUST be exported and guarded with
+/// `android.permission.BIND_QUICK_SETTINGS_TILE`, expose the `QS_TILE`
+/// intent-filter and carry the `ACTIVE_TILE` meta-data, or the system refuses
+/// to surface it. The class name is derived with [sanitizeIdentifier] so it
+/// matches the generator's emitted `${sanitizeIdentifier(name)}TileService`.
+///
+/// NOTE: Quick Settings tiles are USER-ADDED — Android does not auto-place
+/// them. The `android:label` is the name the user sees in the QS edit screen.
+String tileServiceTag(
+  String androidPackage,
+  String controlName,
+  String label,
+) {
+  final safe = sanitizeIdentifier(controlName);
+  final serviceName = '$androidPackage.mosaic_generated.${safe}TileService';
+  final safeLabel = xmlEscape(label);
+  return '''
+        <service
+            android:name="$serviceName"
+            android:exported="true"
+            android:label="$safeLabel"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.quicksettings.ACTIVE_TILE"
+                android:value="false" />
+        </service>''';
+}
+
 /// True when any [definitions] node tree contains an `HWListView`, gating
 /// declaration of the [listServiceTag] in the manifest.
 bool definitionsUseListView(List<IRDefinition> definitions) {
@@ -173,7 +205,8 @@ class BuildCommand extends Command {
     await iosGenerator.generate(runner.projectRoot);
 
     print('Automating Android configuration...');
-    await _automateAndroidManifest(runner.projectRoot, config, irDefinitions);
+    await _automateAndroidManifest(
+        runner.projectRoot, config, irDefinitions, controls);
 
     print('Syncing assets...');
     await _syncAssets(runner.projectRoot, config);
@@ -229,6 +262,7 @@ class BuildCommand extends Command {
     String projectRoot,
     MosaicConfig config,
     List<IRDefinition> definitions,
+    List<Map<String, dynamic>> controls,
   ) async {
     final manifestFile = File(
       p.join(
@@ -292,6 +326,25 @@ class BuildCommand extends Command {
           '${listServiceTag(androidPackage)}\n    </application>',
         );
         print('Added MosaicListService to AndroidManifest.xml');
+      }
+    }
+
+    // Declare one Quick Settings <service> per Mosaic control. A TileService
+    // (API 24+) must be exported and guarded by BIND_QUICK_SETTINGS_TILE. Tiles
+    // are user-added; the OS will not auto-place them.
+    for (final control in controls) {
+      final name = (control['name'] as String?) ?? 'Control';
+      final label = (control['label'] as String?) ?? name;
+      final safe = sanitizeIdentifier(name);
+      final serviceName =
+          '$androidPackage.mosaic_generated.${safe}TileService';
+      if (!content.contains(serviceName) &&
+          content.contains('</application>')) {
+        content = content.replaceFirst(
+          '</application>',
+          '${tileServiceTag(androidPackage, name, label)}\n    </application>',
+        );
+        print('Added Quick Settings tile for $name to AndroidManifest.xml');
       }
     }
 
