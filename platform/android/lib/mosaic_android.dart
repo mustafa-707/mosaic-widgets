@@ -499,6 +499,8 @@ class AndroidGenerator {
     await _generateLiveActivityLayouts(layoutDir);
     await _generateLiveActivityManager(projectRoot);
 
+    await _generateControlTiles(projectRoot);
+
     await _writeDrawables(resDir);
     await _writeColors(resDir);
 
@@ -836,6 +838,169 @@ $layoutCases
     fun active(context: Context): List<String> = activeIds.toList()
 }
 ''');
+  }
+
+  /// Generates one `<Name>TileService.kt` per Mosaic [controls] entry — the
+  /// Android Quick Settings tile, which is the closest OS analog to an iOS
+  /// Control.
+  ///
+  /// IMPORTANT: Quick Settings tiles are USER-ADDED. Unlike app widgets (which
+  /// can be dropped on the home screen) Android does NOT auto-place a tile — the
+  /// user must add it from the Quick Settings edit screen. `TileService`
+  /// requires API 24+ (Nougat); the manifest declaration is gated by the host
+  /// app's minSdk.
+  ///
+  /// Each tile reflects/persists state through the SAME shared "widget_data"
+  /// SharedPreferences store the app widgets use, and fires its action by
+  /// broadcasting `<pkg>.MOSAIC_CALLBACK` with the `callbackName` extra —
+  /// mirroring the app-widget callback path so Flutter's backgroundCallback
+  /// receives it identically.
+  ///
+  ///   toggle -> onStartListening reflects the stored bool as the tile state;
+  ///             onClick flips the stored bool, updates the tile and fires the
+  ///             action.
+  ///   button -> a static tile; onClick fires the action (callback broadcast or
+  ///             startActivityAndCollapse for a launch-url action).
+  Future<void> _generateControlTiles(String projectRoot) async {
+    if (controls.isEmpty) return;
+
+    final packagePath = config.app.androidPackage.replaceAll('.', '/');
+    final kotlinDir = Directory(
+      p.join(
+        projectRoot,
+        'android',
+        'app',
+        'src',
+        'main',
+        'kotlin',
+        packagePath,
+        'mosaic_generated',
+      ),
+    );
+    if (!kotlinDir.existsSync()) kotlinDir.createSync(recursive: true);
+
+    for (final control in controls) {
+      final name = (control['name'] as String?) ?? 'Control';
+      final safe = _safeName(name);
+      final className = '${safe}TileService';
+      final kind = (control['kind'] as String?) ?? 'button';
+      final label = (control['label'] as String?) ?? name;
+      final androidIcon = control['androidIcon'] as String?;
+      final valueKey = control['valueKey'] as String?;
+      final action = (control['action'] as Map?)?.cast<String, dynamic>();
+
+      final file = File(p.join(kotlinDir.path, '$className.kt'));
+      await file.writeAsString(_renderTileService(
+        className: className,
+        kind: kind,
+        label: label,
+        androidIcon: androidIcon,
+        valueKey: valueKey,
+        action: action,
+      ));
+    }
+  }
+
+  /// Renders the Kotlin source for a single Quick Settings [TileService].
+  String _renderTileService({
+    required String className,
+    required String kind,
+    required String label,
+    String? androidIcon,
+    String? valueKey,
+    Map<String, dynamic>? action,
+  }) {
+    final labelLit = kotlinEscape(label);
+    final isToggle = kind == 'toggle' && valueKey != null;
+    final pkg = config.app.androidPackage;
+
+    final iconLine = androidIcon != null
+        ? '        qsTile?.icon = Icon.createWithResource(this, R.drawable.${kotlinEscape(androidIcon)})\n'
+        : '';
+
+    // onStartListening: label + icon + (toggle) state from the stored bool.
+    final stateLine = isToggle
+        ? '''
+        val on = getSharedPreferences("widget_data", Context.MODE_PRIVATE)
+            .getBoolean("${kotlinEscape(valueKey)}", false)
+        qsTile?.state = if (on) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE'''
+        : '        qsTile?.state = Tile.STATE_INACTIVE';
+
+    // onClick action body. Toggle flips the persisted bool first, then fires
+    // the action; button just fires the action.
+    final fireAction = _tileActionBody(action, className);
+    final clickBody = isToggle
+        ? '''
+        val prefs = getSharedPreferences("widget_data", Context.MODE_PRIVATE)
+        val next = !prefs.getBoolean("${kotlinEscape(valueKey)}", false)
+        prefs.edit().putBoolean("${kotlinEscape(valueKey)}", next).apply()
+        qsTile?.state = if (next) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
+        qsTile?.updateTile()
+$fireAction'''
+        : fireAction;
+
+    return '''$kotlinSentinel
+package $pkg.mosaic_generated
+
+import android.content.Context
+import android.content.Intent
+import android.graphics.drawable.Icon
+import android.net.Uri
+import android.service.quicksettings.Tile
+import android.service.quicksettings.TileService
+import $pkg.R
+
+/// Quick Settings tile for the Mosaic control. This is Android's closest analog
+/// to an iOS Control. Quick Settings tiles are USER-ADDED — Android does not
+/// auto-place them — and require API 24+ (declared in AndroidManifest with the
+/// QS_TILE intent-filter + BIND_QUICK_SETTINGS_TILE permission).
+///
+/// State and actions flow through the shared "widget_data" SharedPreferences
+/// store and the `$pkg.MOSAIC_CALLBACK` broadcast, mirroring the app-widget
+/// callback path so Flutter's backgroundCallback receives it identically.
+class $className : TileService() {
+    private val mosaicCallbackAction = "$pkg.MOSAIC_CALLBACK"
+
+    override fun onStartListening() {
+        super.onStartListening()
+        qsTile?.label = "$labelLit"
+$iconLine$stateLine
+        qsTile?.updateTile()
+    }
+
+    override fun onClick() {
+        super.onClick()
+$clickBody
+    }
+}
+''';
+  }
+
+  /// Builds the onClick action body for a tile: a `MOSAIC_CALLBACK` broadcast
+  /// for an `HWActionCallback`, or `startActivityAndCollapse` with an
+  /// ACTION_VIEW intent for an `HWLaunchUrlAction`. Mirrors the app-widget
+  /// callback path so the same Flutter backgroundCallback handles it.
+  String _tileActionBody(Map<String, dynamic>? action, String className) {
+    if (action == null) return '        // no action';
+    final type = action['__type'];
+    if (type == 'HWLaunchUrlAction') {
+      final url = kotlinEscape((action['url'] as String?) ?? '');
+      return '''
+        val launchIntent = Intent(Intent.ACTION_VIEW, Uri.parse("$url")).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        startActivityAndCollapse(launchIntent)''';
+    }
+    // HWActionCallback (default): broadcast the Mosaic callback so Flutter's
+    // backgroundCallback receives it exactly as it does for widget buttons.
+    final callbackName =
+        kotlinEscape((action['callbackName'] as String?) ?? 'refresh_all');
+    return '''
+        val callbackIntent = Intent(mosaicCallbackAction).apply {
+            setPackage(packageName)
+            putExtra("callbackName", "$callbackName")
+        }
+        sendBroadcast(callbackIntent)''';
   }
 
   /// Generates `MosaicListService.kt` — a single [RemoteViewsService] whose
