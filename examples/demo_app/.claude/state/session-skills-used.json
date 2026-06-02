@@ -1,8 +1,11 @@
 {
   "used": [
     "superpowers:using-superpowers",
-    "superpowers:test-driven-development"
+    "superpowers:test-driven-development",
+    "superpowers:using-superpowers",
+    "superpowers:test-driven-development",
+    "claude-code-harness:harness-work"
   ],
   "session_start": "2026-06-01T08:16:56Z",
-  "last_used": "2026-06-01T08:16:59Z"
+  "last_used": "2026-06-02T06:42:45Z"
 }
