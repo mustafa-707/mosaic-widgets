@@ -14,7 +14,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Spinner
-import android.widget.Switch
+import androidx.appcompat.widget.SwitchCompat
 import android.widget.TextView
 import com.example.demo_app.R
 
@@ -81,7 +81,7 @@ class CryptoWidgetConfigActivity : Activity() {
         layout.addView(field2)
         layout.addView(TextView(this).apply { text = "Compact Mode" })
         val saved3 = prefs.getString("compact", "false") ?: "false"
-        val field3 = Switch(this).apply {
+        val field3 = SwitchCompat(this).apply {
             isChecked = saved3.trim().lowercase() in setOf("true", "1", "yes")
         }
         layout.addView(field3)

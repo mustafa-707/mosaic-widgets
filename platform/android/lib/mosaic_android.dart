@@ -1550,7 +1550,7 @@ class $className : AppWidgetProvider() {
       switch (type) {
         case 'toggle':
           buildBuf.writeln('''
-        val $fieldName = Switch(this).apply {
+        val $fieldName = SwitchCompat(this).apply {
             isChecked = saved$i.trim().lowercase() in setOf("true", "1", "yes")
         }
         layout.addView($fieldName)''');
@@ -1621,7 +1621,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Spinner
-import android.widget.Switch
+import androidx.appcompat.widget.SwitchCompat
 import android.widget.TextView
 import ${config.app.androidPackage}.R
 

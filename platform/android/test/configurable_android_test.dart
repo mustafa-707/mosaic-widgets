@@ -69,19 +69,43 @@ void main() {
       expect(kt, contains('class ConfWConfigActivity'));
     });
 
-    test('builds one input per param type (EditText/Switch/Spinner)', () async {
+    test('builds one input per param type (EditText/SwitchCompat/Spinner)',
+        () async {
       final res = await runAndroid([configurableDef()]);
       final kt = res.file('$kotlinPath/ConfWConfigActivity.kt');
       expect(kt, contains('LinearLayout'));
       // text + number -> EditText (number gets numeric inputType).
       expect(kt, contains('EditText'));
       expect(kt, contains('InputType'));
-      // toggle -> Switch.
-      expect(kt, contains('Switch'));
+      // toggle -> SwitchCompat (AndroidX), NOT deprecated android.widget.Switch.
+      expect(kt, contains('SwitchCompat('),
+          reason: 'must instantiate AndroidX SwitchCompat');
       // choice -> Spinner over the choices.
       expect(kt, contains('Spinner'));
       expect(kt, contains('metric'));
       expect(kt, contains('imperial'));
+    });
+
+    test(
+        'imports androidx SwitchCompat and does not reference deprecated android.widget.Switch',
+        () async {
+      final res = await runAndroid([configurableDef()]);
+      final kt = res.file('$kotlinPath/ConfWConfigActivity.kt');
+      expect(
+        kt,
+        contains('import androidx.appcompat.widget.SwitchCompat'),
+        reason: 'must import AndroidX SwitchCompat',
+      );
+      expect(
+        kt,
+        isNot(contains('import android.widget.Switch')),
+        reason: 'must not import deprecated android.widget.Switch',
+      );
+      expect(
+        kt,
+        isNot(contains('Switch(this)')),
+        reason: 'must not instantiate deprecated android.widget.Switch',
+      );
     });
 
     test('writes each value into "widget_data" under the param key', () async {
