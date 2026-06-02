@@ -20,6 +20,10 @@ class IosGenerator {
   /// later wave; the iOS generator does not emit anything from it yet.
   final List<Map<String, dynamic>> liveActivities;
 
+  /// Control IR collected by the widget runner. Plumbed through for a
+  /// later wave; the iOS generator does not emit anything from it yet.
+  final List<Map<String, dynamic>> controls;
+
   final Map<String, IosNodeHandler> _handlers = {};
 
   /// The Swift expression that `HWBind` keys are resolved against. Defaults to
@@ -33,6 +37,7 @@ class IosGenerator {
     required this.config,
     required this.definitions,
     this.liveActivities = const [],
+    this.controls = const [],
   }) {
     _registerHandlers();
   }

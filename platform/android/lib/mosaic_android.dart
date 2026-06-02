@@ -145,6 +145,10 @@ class AndroidGenerator {
   /// later wave; the Android generator does not emit anything from it yet.
   final List<Map<String, dynamic>> liveActivities;
 
+  /// Control IR collected by the widget runner. Plumbed through for a
+  /// later wave; the Android generator does not emit anything from it yet.
+  final List<Map<String, dynamic>> controls;
+
   final Map<String, AndroidNodeHandler> _handlers = {};
 
   /// Drawable XML files to write under res/drawable, keyed by resource name
@@ -382,6 +386,7 @@ class AndroidGenerator {
     required this.config,
     required this.definitions,
     this.liveActivities = const [],
+    this.controls = const [],
   }) {
     _registerHandlers();
   }
