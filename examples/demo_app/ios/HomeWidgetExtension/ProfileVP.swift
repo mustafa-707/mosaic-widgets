@@ -1,6 +1,7 @@
 // MOSAIC-GENERATED — do not edit
 import SwiftUI
 import WidgetKit
+import AppIntents
 
 struct ProfileVPEntry: TimelineEntry {
     let date: Date
@@ -61,7 +62,7 @@ VStack(alignment: .leading, spacing: 0) {
 Text("\(entry.data["system_status"] as? String ?? String(describing: entry.data["system_status"] ?? "--"))").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 12.0)).dynamicTypeSize(.large)
 }
 Spacer()
-Text("⚡").font(.system(size: 12.0)).dynamicTypeSize(.large)
+Image(systemName: "bolt.fill").font(.system(size: 12.0)).foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0))
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .frame(width: 24.0, height: 24.0)
     .background(Color(red: 0.2196078431372549, green: 0.7411764705882353, blue: 0.9725490196078431, opacity: 1.0))
@@ -103,13 +104,14 @@ HStack(alignment: .center, spacing: 0) {
 }
 Spacer()
 if #available(iOS 17.0, *) {
-    Button(intent: MosaicRefreshIntent()) {
+    Button(intent: MosaicCallbackIntent(callbackName: "refresh_all")) {
         Text("Refresh").bold().foregroundColor(Color(red: 0.058823529411764705, green: 0.09019607843137255, blue: 0.16470588235294117, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 6.0, leading: 8.0, bottom: 6.0, trailing: 8.0))
     .background(Color(red: 0.2196078431372549, green: 0.7411764705882353, blue: 0.9725490196078431, opacity: 1.0))
     .clipShape(RoundedRectangle(cornerRadius: 8.0))
     }
     .buttonStyle(.plain)
-} else if let _u = URL(string: "hwrefresh://") {
+} else if let _encoded = "refresh_all".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+          let _u = URL(string: "mosaic-callback://\(_encoded)") {
     Link(destination: _u) {
         Text("Refresh").bold().foregroundColor(Color(red: 0.058823529411764705, green: 0.09019607843137255, blue: 0.16470588235294117, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 6.0, leading: 8.0, bottom: 6.0, trailing: 8.0))
     .background(Color(red: 0.2196078431372549, green: 0.7411764705882353, blue: 0.9725490196078431, opacity: 1.0))

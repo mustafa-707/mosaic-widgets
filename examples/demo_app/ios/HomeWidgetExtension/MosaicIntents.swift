@@ -16,6 +16,13 @@ struct MosaicRefreshIntent: AppIntent {
     static var isDiscoverable: Bool = false
 
     func perform() async throws -> some IntentResult {
+        if let defaults = UserDefaults(suiteName: "group.com.example.demo_app.widgets") {
+            let payload: [String: Any] = [
+                "callback": "refresh_all",
+                "timestamp": Date().timeIntervalSince1970,
+            ]
+            defaults.set(payload, forKey: "mosaic_pending_callback")
+        }
         WidgetCenter.shared.reloadAllTimelines()
         return .result()
     }

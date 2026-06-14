@@ -93,7 +93,7 @@ MosaicDefinition buildCryptoWidget() {
                   radius: 8,
                   background: MColor.hex("#FFFFFF", opacity: 0.2),
                   child: MCenter(
-                    child: MText("₿", style: MTextStyle(size: 18)),
+                    child: MIcon(sfSymbol: "bitcoinsign", androidDrawable: "ic_bitcoin", size: 18, color: MColor.hex("#FFFFFF")),
                   ),
                 ),
               ]),
@@ -135,7 +135,7 @@ MosaicDefinition buildCryptoWidget() {
               // Footer
               MRow(mainAxisAlignment: MMainAxisAlignment.spaceBetween, [
                 const MButton(
-                  action: MRefreshAction(),
+                  action: MActionCallback("refresh_crypto"),
                   child: MContainer(
                     background: MColor.hex("#FFFFFF", opacity: 0.1),
                     radius: 10,

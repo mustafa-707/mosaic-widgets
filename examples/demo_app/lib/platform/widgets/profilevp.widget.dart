@@ -62,7 +62,7 @@ MosaicDefinition buildProfileVP() {
                   radius: 12,
                   background: MColor.hex("#38BDF8"),
                   child: MCenter(
-                    child: MText("⚡", style: MTextStyle(size: 12)),
+                    child: MIcon(sfSymbol: "bolt.fill", androidDrawable: "ic_lightning", size: 12, color: MColor.hex("#FFFFFF")),
                   ),
                 ),
               ]),
@@ -159,7 +159,7 @@ MosaicDefinition buildProfileVP() {
                   ),
                 ),
                 MButton(
-                  action: MRefreshAction(),
+                  action: MActionCallback("refresh_all"),
                   child: MContainer(
                     background: MColor.hex("#38BDF8"),
                     radius: 8,

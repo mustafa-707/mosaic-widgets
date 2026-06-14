@@ -40,16 +40,26 @@ String _mosaicSpacerView(bool isVertical, {String weight = '1'}) {
 /// unknown names fall back to `top|start` (matches the DSL default topLeading).
 String _stackAlignmentGravity(String? alignment) {
   switch (alignment) {
-    case 'topLeading':     return 'top|start';
-    case 'top':            return 'top|center_horizontal';
-    case 'topTrailing':    return 'top|end';
-    case 'leading':        return 'center_vertical|start';
-    case 'center':         return 'center';
-    case 'trailing':       return 'center_vertical|end';
-    case 'bottomLeading':  return 'bottom|start';
-    case 'bottom':         return 'bottom|center_horizontal';
-    case 'bottomTrailing': return 'bottom|end';
-    default:               return 'top|start';
+    case 'topLeading':
+      return 'top|start';
+    case 'top':
+      return 'top|center_horizontal';
+    case 'topTrailing':
+      return 'top|end';
+    case 'leading':
+      return 'center_vertical|start';
+    case 'center':
+      return 'center';
+    case 'trailing':
+      return 'center_vertical|end';
+    case 'bottomLeading':
+      return 'bottom|start';
+    case 'bottom':
+      return 'bottom|center_horizontal';
+    case 'bottomTrailing':
+      return 'bottom|end';
+    default:
+      return 'top|start';
   }
 }
 
@@ -196,8 +206,8 @@ class AndroidGenerator {
   /// target ('text' → setTextColor, 'background' → setInt setBackgroundColor,
   /// 'progress' → setInt setColorFilter on the tint). Populated by handlers
   /// that encounter a bind-form color; flushed in [_generateKotlinProvider].
-  final List<
-      ({String viewId, String key, String target, double opacity})> _colorBinds = [];
+  final List<({String viewId, String key, String target, double opacity})>
+      _colorBinds = [];
 
   /// Registers a runtime color bind for [viewId] resolving prefs [key] applied
   /// via [target] ('text' | 'background' | 'progress'). [opacity] (default 1.0)
@@ -205,7 +215,8 @@ class AndroidGenerator {
   /// opacity of 1.0 leaves the parsed color untouched.
   void registerColorBind(String viewId, String key, String target,
       {double opacity = 1.0}) {
-    _colorBinds.add((viewId: viewId, key: key, target: target, opacity: opacity));
+    _colorBinds
+        .add((viewId: viewId, key: key, target: target, opacity: opacity));
   }
 
   /// Format directive for bound text keys: maps a bind key to its MText
@@ -590,11 +601,10 @@ class AndroidGenerator {
         .map((la) => (la['name'] as String?) ?? 'live_activity')
         .toSet()
         .map((name) {
-          final lit = kotlinEscape(name);
-          final layout = 'hw_la_${_safeName(name).toLowerCase()}';
-          return '            "$lit" -> R.layout.$layout';
-        })
-        .join('\n');
+      final lit = kotlinEscape(name);
+      final layout = 'hw_la_${_safeName(name).toLowerCase()}';
+      return '            "$lit" -> R.layout.$layout';
+    }).join('\n');
 
     final file = File(p.join(kotlinDir.path, 'MosaicLiveActivityManager.kt'));
     await file.writeAsString('''$kotlinSentinel
@@ -1311,13 +1321,11 @@ object MosaicData {
 
     final file = File(p.join(kotlinDir.path, 'HomeWidgetBridgeHelper.kt'));
 
-    final providerClasses = definitions
-        .map((d) => '${_safeName(d.name)}Provider')
-        .toList();
+    final providerClasses =
+        definitions.map((d) => '${_safeName(d.name)}Provider').toList();
     final refreshAllLogic = providerClasses
         .map(
-          (cls) =>
-              '''
+          (cls) => '''
         context.sendBroadcast(android.content.Intent(context, $cls::class.java).apply {
             action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
             val ids = android.appwidget.AppWidgetManager.getInstance(context)
@@ -1327,11 +1335,10 @@ object MosaicData {
         )
         .join('\n');
 
-    final refreshSpecificLogic = definitions
-        .map(
-          (d) {
-            final safeCls = '${_safeName(d.name)}Provider';
-            return '''
+    final refreshSpecificLogic = definitions.map(
+      (d) {
+        final safeCls = '${_safeName(d.name)}Provider';
+        return '''
             "${kotlinEscape(d.name)}" -> {
                 context.sendBroadcast(android.content.Intent(context, $safeCls::class.java).apply {
                     action = android.appwidget.AppWidgetManager.ACTION_APPWIDGET_UPDATE
@@ -1340,9 +1347,8 @@ object MosaicData {
                     putExtra(android.appwidget.AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
                 })
             }''';
-          },
-        )
-        .join('\n');
+      },
+    ).join('\n');
 
     await file.writeAsString('''$kotlinSentinel
 package ${config.app.androidPackage}.mosaic_generated
@@ -1522,66 +1528,60 @@ $xmlSentinel
     final className = '${safe}Provider';
     final file = File(p.join(kotlinDir.path, '$className.kt'));
 
-    final bindLogic = usedBinds.entries
-        .map((entry) {
-          final key = entry.key;
-          final id = idForKey(key);
-          final lit = kotlinEscape(key);
-          final type = entry.value;
-          switch (type) {
-            case 'progress':
-              return 'views.setProgressBar(R.id.hw_progress_$id, 100, MosaicData.resolveDouble(context, "$lit").toInt(), false)';
-            case 'image':
-              return 'views.setImageViewUri(R.id.hw_image_$id, android.net.Uri.parse(MosaicData.resolveString(context, "$lit", "")))';
-            case 'text':
-            default:
-              final format = _textFormats[key];
-              if (format != null) {
-                // Formatted bound text: resolve the raw string then format it
-                // with the device default Locale via MosaicData.formatValue.
-                return 'views.setTextViewText(R.id.hw_text_$id, MosaicData.formatValue(MosaicData.resolveString(context, "$lit"), "$format"))';
-              }
-              return 'views.setTextViewText(R.id.hw_text_$id, MosaicData.resolveString(context, "$lit"))';
+    final bindLogic = usedBinds.entries.map((entry) {
+      final key = entry.key;
+      final id = idForKey(key);
+      final lit = kotlinEscape(key);
+      final type = entry.value;
+      switch (type) {
+        case 'progress':
+          return 'views.setProgressBar(R.id.hw_progress_$id, 100, MosaicData.resolveDouble(context, "$lit").toInt(), false)';
+        case 'image':
+          return 'views.setImageViewUri(R.id.hw_image_$id, android.net.Uri.parse(MosaicData.resolveString(context, "$lit", "")))';
+        case 'text':
+        default:
+          final format = _textFormats[key];
+          if (format != null) {
+            // Formatted bound text: resolve the raw string then format it
+            // with the device default Locale via MosaicData.formatValue.
+            return 'views.setTextViewText(R.id.hw_text_$id, MosaicData.formatValue(MosaicData.resolveString(context, "$lit"), "$format"))';
           }
-        })
-        .join('\n        ');
+          return 'views.setTextViewText(R.id.hw_text_$id, MosaicData.resolveString(context, "$lit"))';
+      }
+    }).join('\n        ');
 
-    final timerLogic = timers.entries
-        .map((entry) {
-          final id = entry.key;
-          final targetEpoch = entry.value;
-          // Count direction: count-down by default; count-up when registered.
-          // setChronometerCountDown requires API 24+; ignored on lower SDKs.
-          final countDown = !_timersCountUp.contains(id);
-          // Count-down: base = elapsedRealtime + offset (future target, ticks
-          // toward 0). Count-up: base = elapsedRealtime - offset (past target,
-          // ticks up from 0 / elapsed since target).
-          final baseSign = countDown ? '+' : '-';
-          return '''
+    final timerLogic = timers.entries.map((entry) {
+      final id = entry.key;
+      final targetEpoch = entry.value;
+      // Count direction: count-down by default; count-up when registered.
+      // setChronometerCountDown requires API 24+; ignored on lower SDKs.
+      final countDown = !_timersCountUp.contains(id);
+      // Count-down: base = elapsedRealtime + offset (future target, ticks
+      // toward 0). Count-up: base = elapsedRealtime - offset (past target,
+      // ticks up from 0 / elapsed since target).
+      final baseSign = countDown ? '+' : '-';
+      return '''
         val target$id = ${targetEpoch}L
         val offset$id = target$id - System.currentTimeMillis()
         views.setChronometer(R.id.hw_timer_$id, android.os.SystemClock.elapsedRealtime() $baseSign offset$id, null, true)
         views.setChronometerCountDown(R.id.hw_timer_$id, $countDown)
       ''';
-        })
-        .join('\n        ');
+    }).join('\n        ');
 
-    final visibilityLogic = visibilityKeys
-        .map(
-          (key) {
-            final id = idForKey(key);
-            final lit = kotlinEscape(key);
-            final base =
-                'views.setViewVisibility(R.id.hw_visibility_$id, if (MosaicData.resolveBool(context, "$lit")) android.view.View.VISIBLE else android.view.View.GONE)';
-            if (!_visibilityWithReplacement.contains(key)) return base;
-            // Replacement present: toggle the child and the replacement (_alt)
-            // inversely so exactly one is shown.
-            final alt =
-                'views.setViewVisibility(R.id.hw_visibility_${id}_alt, if (MosaicData.resolveBool(context, "$lit")) android.view.View.GONE else android.view.View.VISIBLE)';
-            return '$base\n        $alt';
-          },
-        )
-        .join('\n        ');
+    final visibilityLogic = visibilityKeys.map(
+      (key) {
+        final id = idForKey(key);
+        final lit = kotlinEscape(key);
+        final base =
+            'views.setViewVisibility(R.id.hw_visibility_$id, if (MosaicData.resolveBool(context, "$lit")) android.view.View.VISIBLE else android.view.View.GONE)';
+        if (!_visibilityWithReplacement.contains(key)) return base;
+        // Replacement present: toggle the child and the replacement (_alt)
+        // inversely so exactly one is shown.
+        final alt =
+            'views.setViewVisibility(R.id.hw_visibility_${id}_alt, if (MosaicData.resolveBool(context, "$lit")) android.view.View.GONE else android.view.View.VISIBLE)';
+        return '$base\n        $alt';
+      },
+    ).join('\n        ');
 
     final staticImageLogic = _staticImageUris.entries
         .map(
@@ -1593,50 +1593,45 @@ $xmlSentinel
     // Runtime color binds: resolve a hex string from prefs, parse to an int
     // color and apply via the appropriate RemoteViews call. Parse failures are
     // swallowed (try/catch) so a bad value just leaves the placeholder.
-    final colorBindLogic = _colorBinds
-        .asMap()
-        .entries
-        .map((e) {
-          final i = e.key;
-          final cb = e.value;
-          final lit = kotlinEscape(cb.key);
-          // Bind-form colors may carry an opacity (<1.0); apply it to the
-          // parsed color's alpha channel. Opacity 1.0 leaves the color as-is.
-          final String colorVar;
-          final String opacityLine;
-          if (cb.opacity < 1.0) {
-            final alpha = (cb.opacity * 255).toInt().clamp(0, 255);
-            opacityLine =
-                '\n            val c$i = (cRaw$i and 0x00FFFFFF.toInt()) or ($alpha shl 24)';
-            colorVar = 'c$i';
-          } else {
-            opacityLine = '';
-            colorVar = 'cRaw$i';
-          }
-          final apply = switch (cb.target) {
-            'background' =>
-              'views.setInt(R.id.${cb.viewId}, "setBackgroundColor", $colorVar)',
-            'progress' =>
-              'views.setInt(R.id.${cb.viewId}, "setColorFilter", $colorVar)',
-            _ => 'views.setTextColor(R.id.${cb.viewId}, $colorVar)',
-          };
-          return '''
+    final colorBindLogic = _colorBinds.asMap().entries.map((e) {
+      final i = e.key;
+      final cb = e.value;
+      final lit = kotlinEscape(cb.key);
+      // Bind-form colors may carry an opacity (<1.0); apply it to the
+      // parsed color's alpha channel. Opacity 1.0 leaves the color as-is.
+      final String colorVar;
+      final String opacityLine;
+      if (cb.opacity < 1.0) {
+        final alpha = (cb.opacity * 255).toInt().clamp(0, 255);
+        opacityLine =
+            '\n            val c$i = (cRaw$i and 0x00FFFFFF.toInt()) or ($alpha shl 24)';
+        colorVar = 'c$i';
+      } else {
+        opacityLine = '';
+        colorVar = 'cRaw$i';
+      }
+      final apply = switch (cb.target) {
+        'background' =>
+          'views.setInt(R.id.${cb.viewId}, "setBackgroundColor", $colorVar)',
+        'progress' =>
+          'views.setInt(R.id.${cb.viewId}, "setColorFilter", $colorVar)',
+        _ => 'views.setTextColor(R.id.${cb.viewId}, $colorVar)',
+      };
+      return '''
         try {
             val cRaw$i = android.graphics.Color.parseColor(MosaicData.resolveString(context, "$lit"))$opacityLine
             $apply
         } catch (e: Exception) { }''';
-        })
-        .join('\n        ');
+    }).join('\n        ');
 
     // RemoteViews collection wiring: for each HWListView in this definition,
     // build an Intent at the shared MosaicListService carrying the list key,
     // attach it as the ListView's remote adapter, and notify the data set so
     // the factory re-reads MosaicData.resolveList. A unique data Uri per
     // (widget, list) prevents Android from collapsing distinct intents.
-    final listAdapterLogic = _listViews
-        .map((lv) {
-          final lit = kotlinEscape(lv.key);
-          return '''
+    final listAdapterLogic = _listViews.map((lv) {
+      final lit = kotlinEscape(lv.key);
+      return '''
         val listIntent_${lv.idKey} = android.content.Intent(context, MosaicListService::class.java).apply {
             putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
             putExtra("hw_list_key", "$lit")
@@ -1644,27 +1639,23 @@ $xmlSentinel
         }
         views.setRemoteAdapter(R.id.hw_list_${lv.idKey}, listIntent_${lv.idKey})
         appWidgetManager.notifyAppWidgetViewDataChanged(appWidgetId, R.id.hw_list_${lv.idKey})''';
-        })
-        .join('\n        ');
+    }).join('\n        ');
 
-    final buttonLogic = buttons
-        .asMap()
-        .entries
-        .map((entry) {
-          final index = entry.key;
-          final action = entry.value;
-          final viewId = index == 0 ? "hw_button_main" : "hw_button_$index";
+    final buttonLogic = buttons.asMap().entries.map((entry) {
+      final index = entry.key;
+      final action = entry.value;
+      final viewId = index == 0 ? "hw_button_main" : "hw_button_$index";
 
-          if (action['__type'] == 'HWLaunchUrlAction') {
-            final url = kotlinEscape(action['url'] as String);
-            return '''
+      if (action['__type'] == 'HWLaunchUrlAction') {
+        final url = kotlinEscape(action['url'] as String);
+        return '''
         val intent$index = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse("$url"))
         val pendingIntent$index = android.app.PendingIntent.getActivity(context, appWidgetId * 100 + $index, intent$index, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
         views.setOnClickPendingIntent(R.id.$viewId, pendingIntent$index)
         ''';
-          } else if (action['__type'] == 'HWActionCallback') {
-            final callbackName = kotlinEscape(action['callbackName'] as String);
-            return '''
+      } else if (action['__type'] == 'HWActionCallback') {
+        final callbackName = kotlinEscape(action['callbackName'] as String);
+        return '''
         val intent$index = android.content.Intent(context, $className::class.java).apply {
             action = mosaicCallbackAction
             putExtra("callbackName", "$callbackName")
@@ -1673,8 +1664,8 @@ $xmlSentinel
         val pendingIntent$index = android.app.PendingIntent.getBroadcast(context, appWidgetId * 100 + $index, intent$index, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
         views.setOnClickPendingIntent(R.id.$viewId, pendingIntent$index)
         ''';
-          } else {
-            return '''
+      } else {
+        return '''
         val intent$index = android.content.Intent(context, $className::class.java).apply {
             action = mosaicCallbackAction
             putExtra("callbackName", "refresh_all")
@@ -1683,9 +1674,8 @@ $xmlSentinel
         val pendingIntent$index = android.app.PendingIntent.getBroadcast(context, appWidgetId * 100 + $index, intent$index, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
         views.setOnClickPendingIntent(R.id.$viewId, pendingIntent$index)
         ''';
-          }
-        })
-        .join('\n        ');
+      }
+    }).join('\n        ');
 
     await file.writeAsString('''$kotlinSentinel
 package ${config.app.androidPackage}.mosaic_generated
@@ -1985,8 +1975,8 @@ class ColumnHandler extends AndroidNodeHandler {
       crossAxis,
     );
     var rendered = children
-        .map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers,
-            buttons,
+        .map((c) => context.nodeToXml(
+            c, usedBinds, visibilityKeys, timers, buttons,
             isInsideLinearLayout: true, isVertical: true))
         .toList();
     if (crossAxis == 'stretch') {
@@ -2049,8 +2039,8 @@ class RowHandler extends AndroidNodeHandler {
       crossAxis,
     );
     var rendered = children
-        .map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers,
-            buttons,
+        .map((c) => context.nodeToXml(
+            c, usedBinds, visibilityKeys, timers, buttons,
             isInsideLinearLayout: true, isVertical: false))
         .toList();
     if (crossAxis == 'stretch') {
@@ -2132,8 +2122,7 @@ class TextHandler extends AndroidNodeHandler {
     final style = node.data['style']?['bold'] == true ? 'bold' : 'normal';
     // Standalone opacity applies to the whole view regardless of color alpha.
     final opacity = node.data['style']?['opacity'];
-    final alphaAttr =
-        opacity != null ? ' android:alpha="$opacity"' : '';
+    final alphaAttr = opacity != null ? ' android:alpha="$opacity"' : '';
 
     // maxLines: clamp the line count and ellipsize the overflow with "...".
     final maxLines = node.data['maxLines'];
@@ -2202,9 +2191,8 @@ class ContainerHandler extends AndroidNodeHandler {
     final isBgBind =
         backgroundMap != null && context.isColorBind(backgroundMap);
     // A non-bind background is "present" only if it carries a static color.
-    final background = (backgroundMap != null && !isBgBind)
-        ? backgroundMap['hex']
-        : null;
+    final background =
+        (backgroundMap != null && !isBgBind) ? backgroundMap['hex'] : null;
     final gradient = node.data['gradient'];
     final border = node.data['border'];
     final radius = (node.data['radius'] ?? 0).toDouble();
@@ -2402,7 +2390,8 @@ $xmlSentinel
     if (border == null) return '';
     final b = border as Map;
     final width = (b['width'] ?? 1.0).toDouble();
-    final color = context.parseColor((b['color'] as Map).cast<String, dynamic>());
+    final color =
+        context.parseColor((b['color'] as Map).cast<String, dynamic>());
     return '\n    <stroke android:width="${width}dp" android:color="$color" />';
   }
 }
@@ -2432,19 +2421,18 @@ class PaddingHandler extends AndroidNodeHandler {
 
     // Use padding directly on a FrameLayout wrapper.
     final isSpacer = child.type == 'HWSpacer';
-    final weightAttr = (isInsideLinearLayout && isSpacer)
-        ? ' android:layout_weight="1"'
-        : '';
+    final weightAttr =
+        (isInsideLinearLayout && isSpacer) ? ' android:layout_weight="1"' : '';
     final width = (isInsideLinearLayout && isSpacer && isVertical)
         ? 'match_parent'
         : (isInsideLinearLayout && isSpacer && !isVertical
-              ? '0dp'
-              : 'match_parent');
+            ? '0dp'
+            : 'match_parent');
     final height = (isInsideLinearLayout && isSpacer && isVertical)
         ? '0dp'
         : (isInsideLinearLayout && isSpacer && !isVertical
-              ? 'match_parent'
-              : 'match_parent');
+            ? 'match_parent'
+            : 'match_parent');
 
     return '''
 <FrameLayout
@@ -2475,7 +2463,8 @@ class StackHandler extends AndroidNodeHandler {
         .toList();
     final gravity = _stackAlignmentGravity(node.data['alignment'] as String?);
     final renderedChildren = children
-        .map((c) => context.nodeToXml(c, usedBinds, visibilityKeys, timers, buttons,
+        .map((c) => context.nodeToXml(
+            c, usedBinds, visibilityKeys, timers, buttons,
             isInsideLinearLayout: isInsideLinearLayout, isVertical: isVertical))
         .map((xml) => _applyStackAlignment(xml, gravity))
         .toList();
@@ -2533,19 +2522,18 @@ class ButtonHandler extends AndroidNodeHandler {
     buttons.add(action);
     final id = index == 0 ? "hw_button_main" : "hw_button_$index";
     final isSpacer = child.type == 'HWSpacer';
-    final weightAttr = (isInsideLinearLayout && isSpacer)
-        ? ' android:layout_weight="1"'
-        : '';
+    final weightAttr =
+        (isInsideLinearLayout && isSpacer) ? ' android:layout_weight="1"' : '';
     final width = (isInsideLinearLayout && isSpacer && isVertical)
         ? 'match_parent'
         : (isInsideLinearLayout && isSpacer && !isVertical
-              ? '0dp'
-              : 'match_parent');
+            ? '0dp'
+            : 'match_parent');
     final height = (isInsideLinearLayout && isSpacer && isVertical)
         ? '0dp'
         : (isInsideLinearLayout && isSpacer && !isVertical
-              ? 'match_parent'
-              : 'wrap_content');
+            ? 'match_parent'
+            : 'wrap_content');
 
     return '''
 <FrameLayout
@@ -2580,19 +2568,18 @@ class VisibilityHandler extends AndroidNodeHandler {
     visibilityKeys.add(key);
     final visId = AndroidGenerator.idForKey(key);
     final isSpacer = child.type == 'HWSpacer';
-    final weightAttr = (isInsideLinearLayout && isSpacer)
-        ? ' android:layout_weight="1"'
-        : '';
+    final weightAttr =
+        (isInsideLinearLayout && isSpacer) ? ' android:layout_weight="1"' : '';
     final width = (isInsideLinearLayout && isSpacer && isVertical)
         ? 'match_parent'
         : (isInsideLinearLayout && isSpacer && !isVertical
-              ? '0dp'
-              : 'match_parent');
+            ? '0dp'
+            : 'match_parent');
     final height = (isInsideLinearLayout && isSpacer && isVertical)
         ? '0dp'
         : (isInsideLinearLayout && isSpacer && !isVertical
-              ? 'match_parent'
-              : 'wrap_content');
+            ? 'match_parent'
+            : 'wrap_content');
 
     final replacementJson = node.data['replacement'];
     if (replacementJson == null) {
@@ -2728,7 +2715,8 @@ class ProgressBarHandler extends AndroidNodeHandler {
     if (isBind) {
       final key = value['key'] as String;
       usedBinds[key] = 'progress';
-      idAttr = 'android:id="@+id/hw_progress_${AndroidGenerator.idForKey(key)}"';
+      idAttr =
+          'android:id="@+id/hw_progress_${AndroidGenerator.idForKey(key)}"';
     } else if (value != null) {
       // Static value: emit it directly into the layout (set at runtime for binds).
       final progress = (value as num).toInt();

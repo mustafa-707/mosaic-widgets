@@ -1,6 +1,7 @@
 // MOSAIC-GENERATED — do not edit
 import SwiftUI
 import WidgetKit
+import AppIntents
 
 struct WeatherEntry: TimelineEntry {
     let date: Date

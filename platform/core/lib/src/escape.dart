@@ -23,9 +23,7 @@ String swiftEscape(String s) => s
     .replaceAll('\r', r'\r')
     .replaceAll('\t', r'\t');
 
-/// Converts an arbitrary string into a valid identifier
-/// (`[A-Za-z_][A-Za-z0-9_]*`). Non-identifier chars dropped; leading digit
-/// gets a `_` prefix; empty input becomes `_`.
+/// Converts an arbitrary string into a valid identifier.
 String sanitizeIdentifier(String s) {
   final cleaned = s.replaceAll(RegExp(r'[^A-Za-z0-9_]'), '');
   if (cleaned.isEmpty) return '_';

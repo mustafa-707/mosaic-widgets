@@ -14,60 +14,66 @@ Future<void> backgroundCallback(String name) async {
 }
 
 Future<void> fetchAndSaveData() async {
-  // try {
-  // 1. Fetch Random News Headline
-  final headlines = [
-    "Global Markets Surge Amid Economic Optimism",
-    "Tech Giants Announce Next-Gen AI Integration",
-    "SpaceX Successfully Lands Starship Prototype",
-    "New Breakthrough in Quantum Computing Research",
-    "Global Health Initiative Reaches Major Milestone",
-    "Sustainable Energy Production Hits Record High",
-  ];
-  final randomNews = headlines[DateTime.now().second % headlines.length];
-  await MosaicBridge.saveString("news_title", randomNews);
+  try {
+    // 1. Fetch Random News Headline
+    final headlines = [
+      "Global Markets Surge Amid Economic Optimism",
+      "Tech Giants Announce Next-Gen AI Integration",
+      "SpaceX Successfully Lands Starship Prototype",
+      "New Breakthrough in Quantum Computing Research",
+      "Global Health Initiative Reaches Major Milestone",
+      "Sustainable Energy Production Hits Record High",
+    ];
+    final randomNews = headlines[DateTime.now().second % headlines.length];
+    await MosaicBridge.saveString("news_title", randomNews);
 
-  // 2. Mock System Stats (Dynamic based on time for demo)
-  final battery = 75 - (DateTime.now().minute % 20);
-  final memory = 4.2 + (DateTime.now().second % 10) / 10.0;
-  final memoryProgress = (memory / 8.0) * 100.0;
+    // 2. Mock System Stats (Dynamic based on time for demo)
+    final battery = 75 - (DateTime.now().minute % 20);
+    final memory = 4.2 + (DateTime.now().second % 10) / 10.0;
+    final memoryProgress = (memory / 8.0) * 100.0;
 
-  await MosaicBridge.saveString('battery_level', battery.toString());
-  await MosaicBridge.saveString(
-    'battery_progress',
-    battery.toDouble().toString(),
-  );
-  await MosaicBridge.saveString('memory_usage', memory.toStringAsFixed(1));
-  await MosaicBridge.saveString(
-    'memory_progress',
-    memoryProgress.toStringAsFixed(1),
-  );
-  await MosaicBridge.saveString('system_status', 'OPTIMIZED');
-
-  // 3. Fetch Crypto Prices from CoinGecko (Real API)
-  final response = await http.get(
-    Uri.parse(
-      'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true',
-    ),
-  );
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    final btc = data['bitcoin'];
-    final price = btc['usd'];
-    final change = btc['usd_24h_change'];
-
+    await MosaicBridge.saveString('battery_level', battery.toString());
     await MosaicBridge.saveString(
-      'btc_price',
-      '\$${price.toStringAsFixed(2)}',
+      'battery_progress',
+      battery.toDouble().toString(),
     );
+    await MosaicBridge.saveString('memory_usage', memory.toStringAsFixed(1));
     await MosaicBridge.saveString(
-      'btc_change',
-      '${change > 0 ? "+" : ""}${change.toStringAsFixed(2)}%',
+      'memory_progress',
+      memoryProgress.toStringAsFixed(1),
     );
+    await MosaicBridge.saveString('system_status', 'OPTIMIZED');
+
+    // 3. Mock Weather Data
+    final temps = [72, 68, 75, 80, 65, 71, 77, 69, 74, 78];
+    final temp = temps[DateTime.now().second % temps.length];
+    await MosaicBridge.saveString('temp', '${temp}°F');
+
+    // 4. Global URL for widget tap action
+    await MosaicBridge.saveString('global_url', 'hwdemo://dashboard');
+
+    // 5. Fetch Crypto Prices from CoinGecko (Real API)
+    final response = await http.get(
+      Uri.parse(
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true',
+      ),
+    );
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      final btc = data['bitcoin'];
+      final price = btc['usd'];
+      final change = btc['usd_24h_change'];
+
+      // Save price as raw number string so Swift Double() parsing works
+      await MosaicBridge.saveString('btc_price', price.toStringAsFixed(2));
+      await MosaicBridge.saveString(
+        'btc_change',
+        '${change > 0 ? "+" : ""}${change.toStringAsFixed(2)}%',
+      );
+    }
+  } catch (e) {
+    debugPrint("Background Fetch Error: $e");
   }
-  // } catch (e) {
-  //   debugPrint("Background Fetch Error: $e");
-  // }
 }
 
 void main() {
@@ -93,6 +99,11 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const MyHomePage(title: 'Home Widget Dashboard'),
+      onUnknownRoute: (settings) {
+        return MaterialPageRoute(
+          builder: (context) => const MyHomePage(title: 'Home Widget Dashboard'),
+        );
+      },
     );
   }
 }

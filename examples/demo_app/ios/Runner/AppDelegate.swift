@@ -142,7 +142,36 @@ import ActivityKit
     })
 
     GeneratedPluginRegistrant.register(with: self)
-    return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    let ret = super.application(application, didFinishLaunchingWithOptions: launchOptions)
+    checkPendingCallbacks()
+    return ret
+  }
+
+  override func applicationDidBecomeActive(_ application: UIApplication) {
+    super.applicationDidBecomeActive(application)
+    checkPendingCallbacks()
+  }
+
+  override func applicationWillEnterForeground(_ application: UIApplication) {
+    super.applicationWillEnterForeground(application)
+    // Also check here — this fires before didBecomeActive and catches
+    // the transition from background → foreground more reliably.
+    checkPendingCallbacks()
+  }
+
+  private func checkPendingCallbacks() {
+    let kMosaicAppGroup = "group.com.example.demo_app.widgets"
+    guard let defaults = UserDefaults(suiteName: kMosaicAppGroup) else { return }
+    // Force a re-read from disk — the widget extension may have written
+    // to the same suite from a different process.
+    defaults.synchronize()
+    if let payload = defaults.dictionary(forKey: "mosaic_pending_callback"),
+       let callback = payload["callback"] as? String {
+        defaults.removeObject(forKey: "mosaic_pending_callback")
+        defaults.synchronize()
+        NSLog("[Mosaic] Dispatching pending callback: \(callback)")
+        mosaicChannel?.invokeMethod("backgroundCallback", arguments: ["callbackName": callback])
+    }
   }
 
   // Unified Save Method

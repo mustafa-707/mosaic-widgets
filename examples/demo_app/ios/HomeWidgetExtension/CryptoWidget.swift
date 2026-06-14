@@ -96,7 +96,7 @@ VStack(alignment: .leading, spacing: 0) {
 Text("BTC/USD").bold().foregroundColor(Color(light: Color(hex: "#FFFFFF"), dark: Color(hex: "#E5E7EB"))).font(.system(size: 14.0)).dynamicTypeSize(.large)
 }
 Spacer()
-Text("₿").font(.system(size: 18.0)).dynamicTypeSize(.large)
+Image(systemName: "bitcoinsign").font(.system(size: 18.0)).foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0))
     .frame(maxWidth: .infinity, maxHeight: .infinity)
     .frame(width: 32.0, height: 32.0)
     .background(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.2))
@@ -113,13 +113,14 @@ Text("24h").foregroundColor(Color(red: 0.5764705882352941, green: 0.772549019607
 Spacer()
 HStack(alignment: .center, spacing: 0) {
     if #available(iOS 17.0, *) {
-    Button(intent: MosaicRefreshIntent()) {
+    Button(intent: MosaicCallbackIntent(callbackName: "refresh_crypto")) {
         Text("Refresh").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 6.0, leading: 12.0, bottom: 6.0, trailing: 12.0))
     .background(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.1))
     .clipShape(RoundedRectangle(cornerRadius: 10.0))
     }
     .buttonStyle(.plain)
-} else if let _u = URL(string: "hwrefresh://") {
+} else if let _encoded = "refresh_crypto".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+          let _u = URL(string: "mosaic-callback://\(_encoded)") {
     Link(destination: _u) {
         Text("Refresh").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 6.0, leading: 12.0, bottom: 6.0, trailing: 12.0))
     .background(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 0.1))
@@ -131,9 +132,9 @@ HStack(alignment: .center, spacing: 0) {
     Text("LIVE: ").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 8.0)).dynamicTypeSize(.large)
 Group {
     if #available(iOS 16.0, *) {
-        Text(timerInterval: Date(timeIntervalSince1970: 1780388903.426)...Date.distantFuture, countsDown: false)
+        Text(timerInterval: Date(timeIntervalSince1970: 1780943543.207)...Date.distantFuture, countsDown: false)
     } else {
-        Text(Date(timeIntervalSince1970: 1780388903.426), style: .timer)
+        Text(Date(timeIntervalSince1970: 1780943543.207), style: .timer)
     }
 }.foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
 }

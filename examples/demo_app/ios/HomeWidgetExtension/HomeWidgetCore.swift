@@ -1,6 +1,7 @@
 // MOSAIC-GENERATED — do not edit
 import SwiftUI
 import UIKit
+import WidgetKit
 
 let kMosaicAppGroup = "group.com.example.demo_app.widgets"
 

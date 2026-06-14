@@ -53,7 +53,7 @@
     <FrameLayout
         android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:layout_gravity="center">
-        <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⚡" android:textColor="#FFFFFF" android:textSize="12.0sp" android:textStyle="normal" />
+        <ImageView android:src="@drawable/ic_lightning" android:tint="#FFFFFF" android:layout_width="12.0dp" android:layout_height="12.0dp" />
     </FrameLayout>
 </FrameLayout>
 </FrameLayout>
