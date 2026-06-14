@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 

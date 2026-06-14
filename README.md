@@ -12,7 +12,7 @@
 Write a widget once in Flutter-style Dart. Mosaic generates real native **SwiftUI/WidgetKit** (iOS) and **RemoteViews/Kotlin** (Android) — including **Live Activities, Dynamic Island, and Lock Screen** widgets. Your app pushes live data; the OS draws the tile. No per-platform widget code.
 
 ```dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MosaicDefinition buildNews() => MosaicDefinition(
   name: 'News',
@@ -50,7 +50,7 @@ dev_dependencies:
 
 ## Use it in 4 steps
 
-1. **Define** a widget in `lib/home_widgets/news.widget.dart` — definition files import the pure-Dart DSL `package:mosaic/dsl.dart` (see the example above; the function must be `build<Name>()`).
+1. **Define** a widget in `lib/home_widgets/news.widget.dart` — definition files import the pure-Dart DSL `package:mosaic_widgets/dsl.dart` (see the example above; the function must be `build<Name>()`).
 2. **Register** it in `mosaic.yaml`:
    ```yaml
    app: { bundle_id: com.example.app, android_package: com.example.app, ios_app_group: group.com.example.app.widgets }
@@ -61,9 +61,9 @@ dev_dependencies:
        ios: { families: [systemMedium] }   # add accessoryRectangular for Lock Screen
    ```
 3. **Generate** native code: `dart run mosaic_cli build`
-4. **Push data** from your app (uses the full barrel `package:mosaic/mosaic.dart`):
+4. **Push data** from your app (uses the full barrel `package:mosaic_widgets/mosaic_widgets.dart`):
    ```dart
-   import 'package:mosaic/mosaic.dart';
+   import 'package:mosaic_widgets/mosaic_widgets.dart';
    await MosaicBridge.setAppGroupId('group.com.example.app.widgets'); // iOS
    await MosaicBridge.saveString('title', 'Markets rally');
    await MosaicBridge.refreshAll();

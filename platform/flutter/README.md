@@ -33,13 +33,13 @@ dev_dependencies:
 
 ### 1. Define a widget
 
-Widget definition files import the **pure-Dart DSL** (`package:mosaic/dsl.dart`) so
+Widget definition files import the **pure-Dart DSL** (`package:mosaic_widgets/dsl.dart`) so
 the build runner can execute them with `dart run` — no Flutter runtime needed at
 build time.
 
 ```dart
 // lib/widgets/price.widget.dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MosaicDefinition buildPriceWidget() {
   return MosaicDefinition(
@@ -105,10 +105,10 @@ Re-run this after every DSL change. The command is safe to run repeatedly.
 
 ### 4. Push data from your Flutter app
 
-App code uses the **full barrel** (`package:mosaic/mosaic.dart` = DSL + `MosaicBridge`):
+App code uses the **full barrel** (`package:mosaic_widgets/mosaic_widgets.dart` = DSL + `MosaicBridge`):
 
 ```dart
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 
 // Called once, e.g. in main():
 await MosaicBridge.setAppGroupId('group.com.example.myapp.widgets');
@@ -147,7 +147,7 @@ await MosaicBridge.refreshAll(); // or MosaicBridge.refresh('PriceWidget')
 
 ```dart
 // lib/live_activities/order.live.dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MosaicLiveActivity buildOrderTracker() {
   return MosaicLiveActivity(
@@ -168,7 +168,7 @@ MosaicLiveActivity buildOrderTracker() {
 
 ```dart
 // App code — full barrel import.
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 
 final id = await MosaicLiveActivities.start('OrderTracker', {
   'status': 'Preparing your order',

@@ -1,6 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();

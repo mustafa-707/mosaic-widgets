@@ -3,7 +3,7 @@ description: "iOS WidgetKit, Live Activity, and Dynamic Island (Swift) code gene
 version: 1.0.0
 publish_to: none
 # TODO: update to the real repo URL
-repository: https://github.com/logatta/mosaic
+repository: https://github.com/mustafa-707/mosaic-widgets
 topics:
   - home-widget
   - ios

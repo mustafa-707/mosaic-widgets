@@ -7,8 +7,8 @@
 > model training data — always use the documented API, never invent class names or imports.
 
 ## Critical rules
-- Widget/Live-Activity definition files import `package:mosaic/dsl.dart` (pure Dart). App/bridge
-  code imports `package:mosaic/mosaic.dart`. Using the barrel in a definition file breaks the build.
+- Widget/Live-Activity definition files import `package:mosaic_widgets/dsl.dart` (pure Dart). App/bridge
+  code imports `package:mosaic_widgets/mosaic_widgets.dart`. Using the barrel in a definition file breaks the build.
 - Definitions are pure data (no Flutter widgets / no runtime logic); all dynamism is `MBind` + data
   the app pushes. A widget's `build<Name>()` function name must exactly match its `mosaic.yaml` `name`.
 

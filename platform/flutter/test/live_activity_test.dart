@@ -1,4 +1,4 @@
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {

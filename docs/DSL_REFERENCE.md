@@ -5,7 +5,7 @@ The Mosaic DSL lets you build native UIs using a Flutter-like declarative syntax
 Widget definition files import the pure-Dart DSL:
 
 ```dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 ```
 
 ## Root
@@ -98,10 +98,10 @@ Use `MBind("key")` anywhere a dynamic value is expected. Runtime binding is supp
 - **Visibility** (`MVisibility`)
 - **Timer targets** (`MTimer`)
 
-Push values from your app through `MosaicBridge` (which imports the full barrel `package:mosaic/mosaic.dart`), then call `refresh` / `refreshAll`:
+Push values from your app through `MosaicBridge` (which imports the full barrel `package:mosaic_widgets/mosaic_widgets.dart`), then call `refresh` / `refreshAll`:
 
 ```dart
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 
 await MosaicBridge.saveString("news_title", "Breaking News!");
 await MosaicBridge.saveBool("is_online", true);
@@ -139,7 +139,7 @@ Accessory families are gated `if #available(iOS 16.0, *)`. **Android skips acces
 
 ## Live Activities
 
-Live Activities are described with their own DSL (separate from `MosaicDefinition`) and declared in `mosaic.yaml` under `live_activities:`. Define one per `*.live.dart` entry that imports `package:mosaic/dsl.dart` and exports `MosaicLiveActivity build<Name>()`. Binds inside any of these trees resolve against the activity's content-state data map (the `Map<String,String>` pushed from Flutter), not the widget data store.
+Live Activities are described with their own DSL (separate from `MosaicDefinition`) and declared in `mosaic.yaml` under `live_activities:`. Define one per `*.live.dart` entry that imports `package:mosaic_widgets/dsl.dart` and exports `MosaicLiveActivity build<Name>()`. Binds inside any of these trees resolve against the activity's content-state data map (the `Map<String,String>` pushed from Flutter), not the widget data store.
 
 ### MosaicLiveActivity
 - `name`: `String` — must match the `name` in `mosaic.yaml`.
@@ -157,7 +157,7 @@ Optional layout slots for the expanded Dynamic Island (each `MNode?`):
 - `leading`, `trailing`, `center`, `bottom`.
 
 ```dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MosaicLiveActivity buildOrderTracker() {
   return MosaicLiveActivity(
@@ -183,7 +183,7 @@ MosaicLiveActivity buildOrderTracker() {
 }
 ```
 
-The Flutter lifecycle API (`MosaicLiveActivities.start/update/end`, imported from `package:mosaic/mosaic.dart`) is documented in the [Live Activities Guide](LIVE_ACTIVITIES.md).
+The Flutter lifecycle API (`MosaicLiveActivities.start/update/end`, imported from `package:mosaic_widgets/mosaic_widgets.dart`) is documented in the [Live Activities Guide](LIVE_ACTIVITIES.md).
 
 > **Android 16 Live Updates:** on API 36+ the ongoing notification is upgraded to a `Notification.ProgressStyle` promoted-ongoing notification (Android 16 "Live Update"). The `progress` key in the data map (integer 0–100) drives the progress bar. The custom-RemoteViews ongoing notification remains the pre-36 fallback.
 
@@ -195,7 +195,7 @@ Control widgets surface in iOS Control Center / Lock Screen (iOS 18+) and Androi
 
 ### File layout
 
-Create a `*.control.dart` file that imports `package:mosaic/dsl.dart` and exports a top-level `MControl build<Name>()` function. Register it under `controls:` in `mosaic.yaml`:
+Create a `*.control.dart` file that imports `package:mosaic_widgets/dsl.dart` and exports a top-level `MControl build<Name>()` function. Register it under `controls:` in `mosaic.yaml`:
 
 ```yaml
 controls:
@@ -206,7 +206,7 @@ controls:
 ### MControl
 
 ```dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MControl buildTorch() => const MControl(
   name: 'Torch',

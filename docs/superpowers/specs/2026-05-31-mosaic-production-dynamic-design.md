@@ -119,7 +119,7 @@ against the current array element rather than the global store.
   - iOS `firstWhere` uses `orElse`/early validation with a descriptive error.
   - Null-safe IR field access in all handlers (`children`, `child`, `bind`).
 - **E — CLI (MED):**
-  - `add widget` scaffold imports `package:mosaic/mosaic.dart`.
+  - `add widget` scaffold imports `package:mosaic_widgets/mosaic_widgets.dart`.
   - `clean` implemented for iOS (remove generated `mosaic_generated`/widget Swift files).
 - **F — missing handlers (MED):**
   - `MBorder` (real border via shape drawable / SwiftUI `.border`/overlay).

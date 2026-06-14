@@ -1,4 +1,4 @@
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 /// A delivery-tracking Live Activity: lock-screen banner + Dynamic Island.
 /// The app drives it via MosaicLiveActivities.start/update/end with a

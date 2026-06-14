@@ -10,5 +10,5 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  mosaic:
+  mosaic_widgets:
     path: ../

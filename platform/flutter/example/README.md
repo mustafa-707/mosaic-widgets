@@ -9,7 +9,7 @@ iOS and Android wiring, see the
 ## Minimal widget definition
 
 ```dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MosaicDefinition buildExampleWidget() {
   return MosaicDefinition(
@@ -41,7 +41,7 @@ MosaicDefinition buildExampleWidget() {
 ## Pushing data from the app
 
 ```dart
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 
 await MosaicBridge.setAppGroupId('group.com.example.myapp.widgets');
 await MosaicBridge.saveString('subtitle', 'Live from Flutter!');

@@ -1,4 +1,4 @@
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 /// A Control Center / Quick Settings toggle. Tapping flips the shared
 /// `torch_on` bool and fires the `toggle_torch` background callback.

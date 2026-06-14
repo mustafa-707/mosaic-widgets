@@ -14,7 +14,7 @@ A Live Activity is driven by a `Map<String, String>` *content state*. `MBind('ke
 Create an entry file that imports the pure-Dart DSL and exports a `MosaicLiveActivity build<Name>()` function. This is the demo's `examples/demo_app/lib/platform/live_activities/order_tracker.live.dart`:
 
 ```dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 /// A delivery-tracking Live Activity driven by a {status, progress, eta} map.
 MosaicLiveActivity buildOrderTracker() {
@@ -94,10 +94,10 @@ This emits the iOS `MosaicActivityAttributes.swift` + `<Name>LiveActivity.swift`
 
 ## 3. Drive the lifecycle from Flutter
 
-App code uses `MosaicLiveActivities` from the full barrel `package:mosaic/mosaic.dart`. State is always a `Map<String, String>` (stringify numbers/dates; let `MFormat` do locale formatting at render).
+App code uses `MosaicLiveActivities` from the full barrel `package:mosaic_widgets/mosaic_widgets.dart`. State is always a `Map<String, String>` (stringify numbers/dates; let `MFormat` do locale formatting at render).
 
 ```dart
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 
 // Check availability (iOS: Live Activities enabled; Android: notifications enabled).
 if (!await MosaicLiveActivities.areEnabled()) return;

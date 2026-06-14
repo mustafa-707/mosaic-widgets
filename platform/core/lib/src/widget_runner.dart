@@ -81,7 +81,7 @@ class WidgetRunner {
 
     return '''
 import 'dart:convert';
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 ${imports.join('\n')}
 
 void main() {

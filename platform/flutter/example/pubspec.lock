@@ -46,17 +46,17 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.18.0"
-  mosaic:
-    dependency: "direct main"
-    description:
-      path: ".."
-      relative: true
-    source: path
-    version: "1.0.0"
   mosaic_core:
     dependency: transitive
     description:
       path: "../../core"
+      relative: true
+    source: path
+    version: "1.0.0"
+  mosaic_widgets:
+    dependency: "direct main"
+    description:
+      path: ".."
       relative: true
     source: path
     version: "1.0.0"

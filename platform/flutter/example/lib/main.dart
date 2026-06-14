@@ -1,15 +1,15 @@
 // Example for package:mosaic
 //
-// Widget definition files import package:mosaic/dsl.dart (pure-Dart DSL) so
+// Widget definition files import package:mosaic_widgets/dsl.dart (pure-Dart DSL) so
 // the build runner can execute them with `dart run` — no Flutter runtime needed
 // at build time.
 //
-// App/bridge code imports package:mosaic/mosaic.dart (DSL + MosaicBridge).
+// App/bridge code imports package:mosaic_widgets/mosaic_widgets.dart (DSL + MosaicBridge).
 
-// Widget definitions use package:mosaic/dsl.dart (pure-Dart, build-time safe).
-// App/bridge code uses package:mosaic/mosaic.dart (re-exports dsl.dart + MosaicBridge).
+// Widget definitions use package:mosaic_widgets/dsl.dart (pure-Dart, build-time safe).
+// App/bridge code uses package:mosaic_widgets/mosaic_widgets.dart (re-exports dsl.dart + MosaicBridge).
 // In a single file that uses both, import only the full barrel.
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 
 // ---------------------------------------------------------------------------
 // Widget definition

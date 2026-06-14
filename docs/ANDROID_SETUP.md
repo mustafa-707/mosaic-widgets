@@ -106,7 +106,7 @@ No `MainActivity.kt` changes are required for controls — callbacks arrive via 
 
 ```dart
 // lib/platform/controls/torch.control.dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MControl buildTorch() => const MControl(
   name: 'Torch',
@@ -173,7 +173,7 @@ See the [Live Activities Guide](LIVE_ACTIVITIES.md) for the full walkthrough.
 The CLI automatically adds a deep-link intent filter to your `MainActivity` in `AndroidManifest.xml`. The scheme comes from `deep_link_scheme` under `app:` in `mosaic.yaml` and **defaults to `mosaic`** (so links look like `mosaic://...`). Handle these links in Flutter:
 
 ```dart
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 
 MosaicBridge.onDeepLink.listen((url) {
   print('User tapped widget: $url');

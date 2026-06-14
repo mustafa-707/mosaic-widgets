@@ -3,7 +3,7 @@ description: "Command-line tool to scaffold, generate, and manage native home wi
 publish_to: none
 version: 1.0.0
 # TODO: update to the real repo URL
-repository: https://github.com/logatta/mosaic
+repository: https://github.com/mustafa-707/mosaic-widgets
 topics:
   - home-widget
   - cli

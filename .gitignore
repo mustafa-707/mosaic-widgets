@@ -8,3 +8,7 @@ build/
 **/Pods/
 **/.symlinks/
 **/ephemeral/
+.mcp.json
+CLAUDE.md
+.claude/
+.claude-flow/

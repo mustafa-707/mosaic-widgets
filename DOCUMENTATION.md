@@ -21,9 +21,9 @@ dev_dependencies:
 ```
 
 > **Import rule:** widget definition files (`*.widget.dart`) import the pure-Dart DSL
-> `package:mosaic/dsl.dart` so the build runner can execute them under `dart run`.
+> `package:mosaic_widgets/dsl.dart` so the build runner can execute them under `dart run`.
 > Application code that talks to the bridge imports the full barrel
-> `package:mosaic/mosaic.dart` (DSL + `MosaicBridge`).
+> `package:mosaic_widgets/mosaic_widgets.dart` (DSL + `MosaicBridge`).
 
 ## 🚀 Setup Guides
 
@@ -36,10 +36,10 @@ Detailed setup instructions for each platform:
 
 ## 🛠️ Typical Workflow
 
-1.  **Define**: Create a `.widget.dart` file using the Mosaic DSL (`import 'package:mosaic/dsl.dart';`) that returns a `MosaicDefinition`.
+1.  **Define**: Create a `.widget.dart` file using the Mosaic DSL (`import 'package:mosaic_widgets/dsl.dart';`) that returns a `MosaicDefinition`.
 2.  **Config**: Register the widget in `mosaic.yaml`.
 3.  **Build**: Run `dart run mosaic_cli build`.
-4.  **Connect**: Use `MosaicBridge` (`import 'package:mosaic/mosaic.dart';`) in your Flutter app to push data and refresh widgets.
+4.  **Connect**: Use `MosaicBridge` (`import 'package:mosaic_widgets/mosaic_widgets.dart';`) in your Flutter app to push data and refresh widgets.
 5.  **Run**: Launch the app and add the widget to your home screen!
 
 ## 🔧 Troubleshooting

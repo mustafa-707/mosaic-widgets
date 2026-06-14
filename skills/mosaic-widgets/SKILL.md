@@ -14,10 +14,10 @@ command runs them and emits native Swift/Kotlin/XML. The app pushes live data th
 API below, do not invent classes or imports.
 
 ## The one rule that trips everyone up
-- **Widget/Live-Activity definition files import `package:mosaic/dsl.dart`** (pure Dart — the build
+- **Widget/Live-Activity definition files import `package:mosaic_widgets/dsl.dart`** (pure Dart — the build
   runner executes them under `dart run`, which cannot compile Flutter).
-- **App code** (using `MosaicBridge` / `MosaicLiveActivities`) imports `package:mosaic/mosaic.dart`.
-Putting `package:mosaic/mosaic.dart` in a definition file breaks `mosaic_cli build`.
+- **App code** (using `MosaicBridge` / `MosaicLiveActivities`) imports `package:mosaic_widgets/mosaic_widgets.dart`.
+Putting `package:mosaic_widgets/mosaic_widgets.dart` in a definition file breaks `mosaic_cli build`.
 
 ## Workflow
 1. `dart run mosaic_cli init` → creates `mosaic.yaml` + `lib/home_widgets/`.
@@ -35,7 +35,7 @@ Putting `package:mosaic/mosaic.dart` in a definition file breaks `mosaic_cli bui
 
 ## Minimal widget
 ```dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MosaicDefinition buildNews() => MosaicDefinition(
   name: 'News',                 // must match the mosaic.yaml entry name
@@ -76,7 +76,7 @@ MosaicDefinition buildNews() => MosaicDefinition(
 
 ## Data binding (app side)
 ```dart
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 await MosaicBridge.setAppGroupId('group.com.example.app.widgets'); // iOS
 await MosaicBridge.saveString('headline', 'Markets rally');
 await MosaicBridge.saveJson('item', {...});  // also saveList / saveBool
@@ -87,7 +87,7 @@ MosaicBridge.registerBackgroundCallback((name) async { ... });
 
 ## Live Activities + Dynamic Island (iOS 16.1+)
 ```dart
-// in a *.live.dart file, imports package:mosaic/dsl.dart
+// in a *.live.dart file, imports package:mosaic_widgets/dsl.dart
 MosaicLiveActivity buildOrder() => MosaicLiveActivity(
   name: 'Order',
   lockScreen: MText(MBind('status')),
@@ -99,7 +99,7 @@ MosaicLiveActivity buildOrder() => MosaicLiveActivity(
   ),
 );
 ```
-Register under `live_activities:` in `mosaic.yaml`. Control from the app (import `package:mosaic/mosaic.dart`):
+Register under `live_activities:` in `mosaic.yaml`. Control from the app (import `package:mosaic_widgets/mosaic_widgets.dart`):
 ```dart
 final id = await MosaicLiveActivities.start('Order', {'status':'On the way','eta':'12m','progress':'40'}, push: false);
 await MosaicLiveActivities.update(id!, {'progress':'80'}, alert: const MActivityAlert(title:'Almost there', body:'2 min'));
@@ -140,7 +140,7 @@ live_activities:
 ## Common mistakes
 | Mistake | Fix |
 |---|---|
-| Definition file imports `package:mosaic/mosaic.dart` | Use `package:mosaic/dsl.dart` in definition files |
+| Definition file imports `package:mosaic_widgets/mosaic_widgets.dart` | Use `package:mosaic_widgets/dsl.dart` in definition files |
 | Function named wrong | It must be `build<Name>()` where `<Name>` matches the `mosaic.yaml` entry |
 | Forgot to register in `mosaic.yaml` | Add it under `widgets:` / `live_activities:` |
 | Bound date shows wrong | `MFormat.date`/`relativeTime` expect epoch **milliseconds** |
@@ -151,10 +151,10 @@ live_activities:
 
 ## Control Widgets (iOS 18 Control Center / Android Quick Settings)
 
-Control widgets are separate from home-screen widgets. They live in `*.control.dart` files (import `package:mosaic/dsl.dart`, no Flutter), export `MControl build<Name>()`, and are registered under `controls:` in `mosaic.yaml`.
+Control widgets are separate from home-screen widgets. They live in `*.control.dart` files (import `package:mosaic_widgets/dsl.dart`, no Flutter), export `MControl build<Name>()`, and are registered under `controls:` in `mosaic.yaml`.
 
 ```dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MControl buildTorch() => const MControl(
   name: 'Torch',

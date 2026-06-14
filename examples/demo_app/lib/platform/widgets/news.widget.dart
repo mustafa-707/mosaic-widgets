@@ -1,4 +1,4 @@
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MosaicDefinition buildNewsWidget() {
   return MosaicDefinition(

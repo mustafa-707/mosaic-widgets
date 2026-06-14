@@ -122,10 +122,10 @@ import ActivityKit  // required if you use Live Activities (Section 8)
 
 ## 6. Sharing Data from Flutter
 
-App code imports the full barrel (`package:mosaic/mosaic.dart`). The bridge handles sharing data via `UserDefaults` using the App Group. No extra native code is needed for standard data binding:
+App code imports the full barrel (`package:mosaic_widgets/mosaic_widgets.dart`). The bridge handles sharing data via `UserDefaults` using the App Group. No extra native code is needed for standard data binding:
 
 ```dart
-import 'package:mosaic/mosaic.dart';
+import 'package:mosaic_widgets/mosaic_widgets.dart';
 
 await MosaicBridge.setAppGroupId('group.com.yourname.myapp');
 await MosaicBridge.saveString('news_title', 'Hello iOS!');
@@ -231,7 +231,7 @@ No additional Info.plist key is required for controls (unlike Live Activities). 
 
 ```dart
 // lib/platform/controls/torch.control.dart
-import 'package:mosaic/dsl.dart';
+import 'package:mosaic_widgets/dsl.dart';
 
 MControl buildTorch() => const MControl(
   name: 'Torch',

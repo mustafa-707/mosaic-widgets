@@ -45,7 +45,7 @@ dart run mosaic_cli init
 dart run mosaic_cli add widget PriceWidget
 
 # 3. Edit lib/widgets/price_widget.widget.dart
-#    (pure-Dart DSL — import 'package:mosaic/dsl.dart').
+#    (pure-Dart DSL — import 'package:mosaic_widgets/dsl.dart').
 
 # 4. Generate native code — re-run after every DSL change.
 dart run mosaic_cli build
