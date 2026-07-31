@@ -5,6 +5,6 @@
     android:minHeight="143dp"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/hw_weather"
-    
+     android:previewLayout="@layout/hw_weather" android:description="@string/mosaic_desc_weather"
     >
 </appwidget-provider>

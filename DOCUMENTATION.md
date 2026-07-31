@@ -10,7 +10,7 @@ To use this framework in any Flutter project, add the following to your `pubspec
 
 ```yaml
 dependencies:
-  mosaic:
+  mosaic_widgets:
     path: path/to/mosaic/platform/flutter
   mosaic_core:
     path: path/to/mosaic/platform/core

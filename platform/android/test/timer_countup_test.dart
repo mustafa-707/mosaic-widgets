@@ -30,7 +30,7 @@ void main() {
     expect(kt, contains('setChronometerCountDown(R.id.hw_timer_0, true)'));
   });
 
-  test('timer countUp:true uses minus-offset Chronometer base', () async {
+  test('count-up puts the base in the past, so it renders a positive', () async {
     final r = await runAndroid([
       irDef({
         '__type': 'HWTimer',
@@ -39,13 +39,17 @@ void main() {
       })
     ]);
     final kt = provider(r);
-    // Count-up must count up from a past target: base = elapsedRealtime - offset.
+    // `offset = target - now`, so for the past target a count-up timer counts
+    // from, offset is already negative and the base must simply add it —
+    // landing in the past, which Chronometer renders as a growing positive.
+    // Negating it instead put the base in the FUTURE and rendered a negative
+    // timer on screen (observed as "LIVE: -28:03").
     expect(
         kt,
         contains(
-            'views.setChronometer(R.id.hw_timer_0, android.os.SystemClock.elapsedRealtime() - offset0, null, true)'));
+            'views.setChronometer(R.id.hw_timer_0, android.os.SystemClock.elapsedRealtime() + offset0, null, true)'));
     expect(kt, contains('setChronometerCountDown(R.id.hw_timer_0, false)'));
-    expect(kt, isNot(contains('elapsedRealtime() + offset0')));
+    expect(kt, isNot(contains('elapsedRealtime() - offset0')));
   });
 
   test('timer default (count-down) keeps plus-offset Chronometer base',

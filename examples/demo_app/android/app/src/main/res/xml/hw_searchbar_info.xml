@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOSAIC-GENERATED -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="287dp"
+    android:minHeight="71dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/hw_searchbar"
+     android:previewLayout="@layout/hw_searchbar" android:description="@string/mosaic_desc_searchbar"
+    >
+</appwidget-provider>

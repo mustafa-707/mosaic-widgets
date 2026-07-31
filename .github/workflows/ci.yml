@@ -1,0 +1,157 @@
+name: CI
+
+on:
+  push:
+    branches: [main, mosaic-rework]
+  pull_request:
+
+jobs:
+  dart:
+    name: ${{ matrix.package }} (dart)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: [core, cli, android, ios]
+    defaults:
+      run:
+        working-directory: platform/${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: "3.12.2"
+      - run: dart pub get
+      - run: dart analyze --fatal-infos
+      - run: dart test
+
+  flutter:
+    name: ${{ matrix.package }} (flutter)
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - package: platform/flutter
+          - package: examples/demo_app
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.7"
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  # The only job that compiles generated Android output. Unit tests assert on
+  # strings; AAPT and kotlinc assert on reality, and several bugs reached the
+  # demo that nothing else would have caught — a literal where AAPT demands a
+  # @string resource, a drawable that only exists in res/mipmap, a Kotlin
+  # reference to a variable that is not in scope.
+  android-build:
+    name: generated android code compiles
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.7"
+      - name: Generate native code from the demo's widgets
+        working-directory: examples/demo_app
+        run: |
+          flutter pub get
+          dart run mosaic_cli build
+      - name: Fail if the project reports setup problems
+        working-directory: examples/demo_app
+        run: dart run mosaic_cli doctor
+      - name: Assemble the APK (runs AAPT and kotlinc over the generated code)
+        working-directory: examples/demo_app
+        run: flutter build apk --debug
+
+  # Scaffolds a project the way a new user would, from `flutter create` onward.
+  # The demo is a mature project with everything already wired, so it cannot
+  # catch first-run regressions — and the first-run path is where a scaffold
+  # that wrote to a directory it never created, a config that crashed on an
+  # omitted `ios:` block, and an `init` that hard-coded com.example.app all
+  # hid until someone tried it by hand.
+  greenfield:
+    name: a new project scaffolds and builds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: mosaic
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.44.7"
+
+      - name: flutter create, then depend on this checkout
+        run: |
+          flutter create --org com.acme --project-name gf greenfield
+          cd greenfield
+          flutter pub add mosaic_widgets --path "$GITHUB_WORKSPACE/mosaic/platform/flutter"
+          flutter pub add dev:mosaic_cli --path "$GITHUB_WORKSPACE/mosaic/platform/cli"
+
+      - name: Scaffold one of every entry type
+        working-directory: greenfield
+        run: |
+          dart run mosaic_cli init
+          dart run mosaic_cli add widget Steps
+          dart run mosaic_cli add live-activity Delivery
+          dart run mosaic_cli add control Torch
+          dart run mosaic_cli list
+
+      - name: Generate and compile
+        working-directory: greenfield
+        run: |
+          dart run mosaic_cli build
+          flutter analyze
+          flutter build apk --debug
+
+      - name: Doctor reports the iOS wiring that still needs Xcode
+        working-directory: greenfield
+        run: |
+          # Expected to fail: a fresh project has no Widget Extension target and
+          # no App Group, and doctor exits non-zero on fatal setup problems. The
+          # check here is that it SAYS SO rather than passing silently, which is
+          # what it used to do.
+          if dart run mosaic_cli doctor; then
+            echo "::error::doctor passed on a project with no iOS widget extension"
+            exit 1
+          fi
+
+  # Proves the generated Swift still compiles at every version Mosaic gates on:
+  # 16.0 baseline, 16.1 Live Activities, 17.0 AppIntents, 18.0 Controls.
+  swift-typecheck:
+    name: generated swift typechecks
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: "3.12.2"
+      - name: Generate a widget exercising the component pack
+        working-directory: platform/ios
+        run: |
+          dart pub get
+          echo "GEN_DIR=$(dart run test/support/verify_typecheck.dart | tail -1)" >> "$GITHUB_ENV"
+      - name: swiftc -typecheck at each gated iOS version
+        run: |
+          for target in 16.0 16.1 17.0 18.0; do
+            echo "::group::iOS $target"
+            xcrun --sdk iphoneos swiftc -typecheck \
+              -target "arm64-apple-ios$target" \
+              "$GEN_DIR"/*.swift
+            echo "::endgroup::"
+          done

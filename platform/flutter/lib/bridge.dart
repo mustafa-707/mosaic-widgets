@@ -243,4 +243,90 @@ class MosaicBridge {
       'appGroupId': _appGroupId,
     });
   }
+
+  /// The APNs push tokens WidgetKit issued for widgets declaring `push: true`,
+  /// keyed by widget name.
+  ///
+  /// Only the widget extension is told these tokens, and it cannot reach your
+  /// server — it stores them for the app to collect. Read this on launch and on
+  /// resume, and register whatever it returns:
+  ///
+  /// ```dart
+  /// final tokens = await MosaicBridge.widgetPushTokens();
+  /// for (final entry in tokens.entries) {
+  ///   await myApi.registerWidgetToken(widget: entry.key, token: entry.value);
+  /// }
+  /// ```
+  ///
+  /// Your server then pushes `{"aps":{"content-changed":true}}` to a token with
+  /// `apns-push-type: widgets` and topic `<bundle-id>.push-type.widgets`, which
+  /// reloads that widget's timeline while the app is closed.
+  ///
+  /// Empty until WidgetKit issues a token — it does so once a widget is placed,
+  /// and not at all in the simulator. **iOS 26+ only**; returns empty on
+  /// Android, which has no widget-push equivalent.
+  static Future<Map<String, String>> widgetPushTokens() async {
+    try {
+      final tokens = await _channel.invokeMapMethod<String, String>(
+        'widgetPushTokens',
+        {'appGroupId': _appGroupId},
+      );
+      return tokens ?? const {};
+    } on MissingPluginException {
+      // Android has no widget-push equivalent, so its host may not implement
+      // this at all. Absence of tokens is the correct answer, not an error.
+      return const {};
+    } on PlatformException {
+      return const {};
+    }
+  }
+
+  /// Whether [requestPinWidget] can do anything on this device.
+  ///
+  /// False on iOS (no such API exists) and on Android launchers that do not
+  /// implement widget pinning. Use it to decide between showing an "Add to
+  /// Home Screen" button and showing manual instructions.
+  static Future<bool> canRequestPinWidget() async {
+    try {
+      return await _channel.invokeMethod<bool>('canRequestPinWidget') ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// Asks the launcher to show its "add widget" dialog for [widgetName],
+  /// letting a user place a widget without leaving your app.
+  ///
+  /// This is the single biggest lever on widget adoption: most users never
+  /// discover the launcher's widget picker on their own.
+  ///
+  /// Returns whether the dialog was shown — **not** whether the user accepted;
+  /// Android does not report the outcome. Detect actual placement by watching
+  /// for the widget's first update.
+  ///
+  /// **Android only** (API 26+, and only on launchers that support pinning).
+  /// iOS exposes no equivalent — Apple requires the user to go through the
+  /// widget gallery — so this returns false there and you should fall back to
+  /// on-screen instructions. Check [canRequestPinWidget] first.
+  ///
+  /// ```dart
+  /// if (await MosaicBridge.canRequestPinWidget()) {
+  ///   await MosaicBridge.requestPinWidget('News');
+  /// } else {
+  ///   showDialog(...); // "Long-press the home screen, tap Widgets…"
+  /// }
+  /// ```
+  static Future<bool> requestPinWidget(String widgetName) async {
+    try {
+      return await _channel.invokeMethod<bool>(
+            'requestPinWidget',
+            {'widgetName': widgetName},
+          ) ??
+          false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
 }

@@ -59,7 +59,7 @@ void main() {
   });
 
   group('MContainer shadow', () {
-    test('shadow emits documented no-op comment, layout still valid',
+    test('a shadow with no background draws nothing, layout still valid',
         () async {
       final r = await runAndroid([
         irDef(container(text('x'), extra: {
@@ -72,11 +72,12 @@ void main() {
         })),
       ]);
       final xml = layout(r);
-      expect(
-        xml,
-        contains(
-            '<!-- shadow not supported by RemoteViews; ignored on Android -->'),
-      );
+      // This container has no background, and a shape with nothing in it casts
+      // nothing — the same as iOS, where `.shadow` on a transparent view draws
+      // no shadow. A silhouette here would render as a stray grey rectangle.
+      // The drawn case is covered in shadow_test.dart.
+      expect(xml, isNot(contains('hw_shadowed_')));
+      expect(xml, isNot(contains('shadow not supported')));
       // Layout still valid: declaration first line, FrameLayout present.
       expect(xml.split('\n').first, startsWith('<?xml'));
       expect(xml, contains('<FrameLayout'));

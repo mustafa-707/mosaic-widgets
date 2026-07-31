@@ -163,13 +163,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.18.0"
-  mosaic:
-    dependency: "direct main"
-    description:
-      path: "../../platform/flutter"
-      relative: true
-    source: path
-    version: "1.0.0"
   mosaic_android:
     dependency: transitive
     description:
@@ -195,6 +188,13 @@ packages:
     dependency: transitive
     description:
       path: "../../platform/ios"
+      relative: true
+    source: path
+    version: "1.0.0"
+  mosaic_widgets:
+    dependency: "direct main"
+    description:
+      path: "../../platform/flutter"
       relative: true
     source: path
     version: "1.0.0"

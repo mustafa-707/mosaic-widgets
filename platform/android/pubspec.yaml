@@ -2,8 +2,10 @@ name: mosaic_android
 description: "Android AppWidget (RemoteViews/Kotlin) code generator for the Mosaic home-widget framework."
 publish_to: none
 version: 1.0.0
-# TODO: update to the real repo URL
 repository: https://github.com/mustafa-707/mosaic-widgets
+homepage: https://github.com/mustafa-707/mosaic-widgets
+issue_tracker: https://github.com/mustafa-707/mosaic-widgets/issues
+documentation: https://github.com/mustafa-707/mosaic-widgets#readme
 topics:
   - home-widget
   - android

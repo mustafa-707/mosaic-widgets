@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOSAIC-GENERATED -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="143dp"
+    android:minHeight="143dp"
+    android:updatePeriodMillis="0"
+    android:initialLayout="@layout/hw_memory"
+     android:resizeMode="horizontal|vertical" android:previewLayout="@layout/hw_memory"
+    >
+</appwidget-provider>

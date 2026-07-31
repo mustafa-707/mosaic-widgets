@@ -53,6 +53,6 @@ void main() {
       })
     ]);
     final s = r.swiftForTestW();
-    expect(s, contains('resolveFileImage((entry.data["avatar"] as? String))'));
+    expect(s, contains('resolveFileImage(mosaicStr(entry.data["avatar"]))'));
   });
 }

@@ -15,7 +15,7 @@ void main() {
   }
 
   group('HWDivider', () {
-    test('horizontal divider emits a View with background + height', () async {
+    test('horizontal divider emits a weighted FrameLayout with background + height', () async {
       final r = await runAndroid([
         irDef({
           '__type': 'HWDivider',
@@ -26,7 +26,7 @@ void main() {
         })
       ]);
       final xml = layout(r);
-      expect(xml, contains('<View'));
+      expect(xml, contains('<FrameLayout'));
       expect(xml, contains('android:background="#FF0000"'));
       expect(xml, contains('android:layout_height="2.0dp"'));
       expect(xml, contains('android:layout_width="match_parent"'));
@@ -84,7 +84,7 @@ void main() {
       expect(xml, contains('android:layout_height="32.0dp"'));
     });
 
-    test('icon without androidDrawable emits comment + empty sized View',
+    test('icon without androidDrawable emits comment + empty sized FrameLayout',
         () async {
       final r = await runAndroid([
         irDef({
@@ -97,7 +97,7 @@ void main() {
       ]);
       final xml = layout(r);
       expect(xml, contains('<!-- icon has no androidDrawable -->'));
-      expect(xml, contains('<View'));
+      expect(xml, contains('<FrameLayout'));
       expect(xml, contains('android:layout_width="24.0dp"'));
       expect(xml, isNot(contains('@drawable/')));
     });

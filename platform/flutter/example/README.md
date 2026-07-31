@@ -1,6 +1,6 @@
 # mosaic example
 
-A minimal, self-contained example of the [`mosaic`](https://pub.dev/packages/mosaic) package.
+A minimal, self-contained example of the [`mosaic_widgets`](https://pub.dev/packages/mosaic_widgets) package.
 
 For a full working app with multiple widgets, Live Activities, real API calls, and both
 iOS and Android wiring, see the

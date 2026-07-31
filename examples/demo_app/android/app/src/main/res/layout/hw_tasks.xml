@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOSAIC-GENERATED -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout android:id="@+id/hw_clip__240_null_null"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:paddingStart="14.0dp" android:paddingEnd="14.0dp" android:paddingTop="14.0dp" android:paddingBottom="14.0dp"
+     android:background="@drawable/hw_bg_1424581498"
+    >
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="top|start">
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="start|center_vertical">
+    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="TODAY" android:textColor="#38BDF8" android:textSize="10.0sp" android:textStyle="bold" />
+<FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
+<TextView android:id="@+id/hw_text_tasks_count" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#64748B" android:textSize="10.0sp" android:textStyle="normal" />
+</LinearLayout>
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="8.0dp" />
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="0dp"
+    android:layout_weight="1">
+    <ListView android:id="@+id/hw_list_tasks" android:layout_width="match_parent" android:layout_height="match_parent" />
+</FrameLayout>
+</LinearLayout>
+</FrameLayout>
+</FrameLayout>

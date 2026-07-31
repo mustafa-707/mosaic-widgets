@@ -14,7 +14,7 @@ as a dev dependency instead.
 
 | Package | Role |
 |---------|------|
-| [mosaic](https://pub.dev/packages/mosaic) | Flutter DSL + `MosaicBridge` runtime |
+| [mosaic_widgets](https://pub.dev/packages/mosaic_widgets) | Flutter DSL + `MosaicBridge` runtime |
 | [mosaic_core](https://pub.dev/packages/mosaic_core) | IR, config, runner primitives |
 | [mosaic_android](https://pub.dev/packages/mosaic_android) | Android RemoteViews/Kotlin generator |
 | **mosaic_ios** ← _you are here_ | iOS WidgetKit/Live Activity generator |
@@ -58,6 +58,6 @@ The full DSL surface is supported on iOS, including:
 - Live Activities and Dynamic Island.
 
 For all supported DSL nodes and attributes see the
-[DSL Reference](https://github.com/your-org/mosaic/blob/main/DOCS/DSL_REFERENCE.md).
+[DSL Reference](https://github.com/your-org/mosaic/blob/main/docs/DSL_REFERENCE.md).
 For Live Activity setup see the
-[Live Activities Guide](https://github.com/your-org/mosaic/blob/main/DOCS/LIVE_ACTIVITIES.md).
+[Live Activities Guide](https://github.com/your-org/mosaic/blob/main/docs/LIVE_ACTIVITIES.md).

@@ -5,6 +5,6 @@
     android:minHeight="143dp"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/hw_cryptowidget"
-     android:resizeMode="horizontal|vertical"
+     android:resizeMode="horizontal|vertical" android:previewLayout="@layout/hw_cryptowidget" android:description="@string/mosaic_desc_cryptowidget"
      android:configure="com.example.demo_app.mosaic_generated.CryptoWidgetConfigActivity">
 </appwidget-provider>

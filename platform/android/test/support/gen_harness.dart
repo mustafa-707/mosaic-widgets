@@ -11,6 +11,13 @@ class GenResult {
   /// Returns the **contents** of the file at [rel] (relative to the temp root).
   String file(String rel) => File(p.join(root.path, rel)).readAsStringSync();
 
+  /// The file's contents, or null when it was never generated — so a test can
+  /// assert the absence of an output as precisely as its presence.
+  String? fileOrNull(String rel) {
+    final f = File(p.join(root.path, rel));
+    return f.existsSync() ? f.readAsStringSync() : null;
+  }
+
   bool exists(String rel) => File(p.join(root.path, rel)).existsSync();
 
   /// All generated resource XML files under `res/` (layout, xml, drawable).
@@ -41,8 +48,13 @@ class GenResult {
 Future<GenResult> runAndroid(
   List<IRDefinition> defs, {
   MosaicConfig? config,
+  List<Map<String, dynamic>> liveActivities = const [],
+  Directory? root,
 }) async {
-  final dir = await Directory.systemTemp.createTemp('hw_android_test_');
+  // [root] reuses an earlier run's project, so a test can generate twice over
+  // the same tree — the only way to observe what a *second* build does with the
+  // output of the first, such as leaving stale files behind.
+  final dir = root ?? await Directory.systemTemp.createTemp('hw_android_test_');
 
   // Pre-create the res directory so the generator can find it.
   await Directory(
@@ -71,7 +83,11 @@ Future<GenResult> runAndroid(
         ],
       });
 
-  await AndroidGenerator(config: cfg, definitions: defs).generate(dir.path);
+  await AndroidGenerator(
+    config: cfg,
+    definitions: defs,
+    liveActivities: liveActivities,
+  ).generate(dir.path);
 
   return GenResult(dir);
 }

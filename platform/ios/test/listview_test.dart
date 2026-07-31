@@ -13,7 +13,10 @@ void main() {
     ]);
     final s = r.swiftForTestW();
     // real data path: reads the bound array from entry data
-    expect(s, contains('entry.data["items"] as? [[String: Any]]'));
+    // Was a direct cast. saveList JSON-encodes to a String, so the cast was
+    // nil for every list the app ever saved and the widget rendered empty —
+    // see list_and_currency_test.dart.
+    expect(s, contains('mosaicRowList(entry.data["items"])'));
     expect(s, contains('ForEach('));
     expect(s, contains('.enumerated()'));
     // stable id

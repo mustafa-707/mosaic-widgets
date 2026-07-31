@@ -21,7 +21,7 @@ from a single source of truth. No platform-specific UI code required.
 ```yaml
 # pubspec.yaml
 dependencies:
-  mosaic: ^0.0.1
+  mosaic_widgets: ^0.0.1
 
 dev_dependencies:
   mosaic_cli: ^1.0.0
@@ -187,9 +187,9 @@ await MosaicLiveActivities.end(id, policy: MEndPolicy.afterDefault);
 
 ## Documentation
 
-- [DSL Reference](https://github.com/your-org/mosaic/blob/main/DOCS/DSL_REFERENCE.md) — all
+- [DSL Reference](https://github.com/your-org/mosaic/blob/main/docs/DSL_REFERENCE.md) — all
   components, styling, binding, actions, and Live Activity DSL.
-- [Live Activities Guide](https://github.com/your-org/mosaic/blob/main/DOCS/LIVE_ACTIVITIES.md)
-- [Android Setup Guide](https://github.com/your-org/mosaic/blob/main/DOCS/ANDROID_SETUP.md)
-- [iOS Setup Guide](https://github.com/your-org/mosaic/blob/main/DOCS/IOS_SETUP.md)
+- [Live Activities Guide](https://github.com/your-org/mosaic/blob/main/docs/LIVE_ACTIVITIES.md)
+- [Android Setup Guide](https://github.com/your-org/mosaic/blob/main/docs/ANDROID_SETUP.md)
+- [iOS Setup Guide](https://github.com/your-org/mosaic/blob/main/docs/IOS_SETUP.md)
 - [Full demo app](https://github.com/your-org/mosaic/tree/main/examples/demo_app)

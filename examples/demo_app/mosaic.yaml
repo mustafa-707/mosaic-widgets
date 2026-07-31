@@ -2,9 +2,12 @@ app:
   bundle_id: com.example.demo_app
   android_package: com.example.demo_app
   ios_app_group: group.com.example.demo_app.widgets
+  deep_link_scheme: hwdemo   # must match the MLaunchUrlAction URLs below
 
 widgets:
   - name: ProfileVP
+    label: System Status
+    description: Battery, memory and system health at a glance.
     entry: lib/platform/widgets/profilevp.widget.dart
     android:
       min_sdk: 21
@@ -13,6 +16,8 @@ widgets:
       families: [systemSmall, systemMedium]
 
   - name: NewsWidget
+    label: Top Headline
+    description: The latest space and science headline.
     entry: lib/platform/widgets/news.widget.dart
     android:
       min_sdk: 21
@@ -21,6 +26,9 @@ widgets:
       families: [systemMedium]
 
   - name: CryptoWidget
+    label: Bitcoin Price
+    push: true
+    description: Live BTC price and 24-hour change.
     entry: lib/platform/widgets/crypto.widget.dart
     android:
       min_sdk: 21
@@ -29,6 +37,8 @@ widgets:
       families: [systemMedium, accessoryRectangular]
 
   - name: Weather
+    label: Weather
+    description: Current conditions, switchable between °C and °F.
     entry: lib/platform/widgets/weather.widget.dart
     android:
       min_sdk: 21
@@ -36,10 +46,109 @@ widgets:
     ios:
       families: [systemSmall, systemMedium]
 
+  - name: SearchBar
+    label: Search
+    description: A search pill that opens the app, with voice and lens shortcuts.
+    entry: lib/platform/widgets/search.widget.dart
+    android:
+      min_sdk: 21
+      sizes: [medium, large]
+    ios:
+      families: [systemMedium, systemLarge]
+  - name: Tasks
+    entry: lib/platform/widgets/tasks.widget.dart
+    ios:
+      # A 4x2 list needs width. Left unset it fell back to the smallest family,
+      # which truncated every title to about six characters.
+      families: [systemMedium, systemLarge]
+
+  - name: Flashlight
+    entry: lib/platform/widgets/flashlight.widget.dart
+    ios:
+      # One tap target; there is nothing to gain from a larger family.
+      families: [systemSmall]
+
+  - name: Memory
+    entry: lib/platform/widgets/memory.widget.dart
+    ios:
+      families: [systemSmall, systemMedium]
+
 live_activities:
   - name: OrderTracker
     entry: lib/platform/live_activities/order_tracker.live.dart
+    # Puts the delivery activity on a paired Apple Watch's Smart Stack and in
+    # CarPlay, reusing the lock-screen layout. iOS 18+ for this activity.
+    watch: true
 
 controls:
   - name: Torch
     entry: lib/platform/controls/torch.control.dart
+
+# Sources the widget's own refresh button fetches, without waking the app.
+# Widget-extension AppIntents cannot run Dart, so a callback listed here is
+# fetched natively; anything not listed still defers to the app's next
+# foreground.
+refresh:
+  refresh_crypto:
+    url: https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true
+    headers:
+      Accept: application/json
+    map:
+      btc_price: bitcoin.usd
+      btc_change: bitcoin.usd_24h_change
+
+  refresh_news:
+    url: https://api.spaceflightnewsapi.net/v4/articles/?limit=2
+    headers:
+      Accept: application/json
+    map:
+      news_title: results[0].title
+      news_image: results[0].image_url
+      news_title_2: results[1].title
+      news_source: results[0].news_site
+
+  # Two requests: the same reading in each unit, so the °C/°F toggle switches
+  # instantly without another round-trip.
+  refresh_weather:
+    - url: https://api.open-meteo.com/v1/forecast?latitude=37.77&longitude=-122.42&current=temperature_2m&daily=temperature_2m_max,temperature_2m_min&forecast_days=1
+      map:
+        temp_c: current.temperature_2m
+        hi_c: daily.temperature_2m_max[0]
+        lo_c: daily.temperature_2m_min[0]
+    - url: https://api.open-meteo.com/v1/forecast?latitude=37.77&longitude=-122.42&current=temperature_2m&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&temperature_unit=fahrenheit
+      map:
+        temp_f: current.temperature_2m
+        hi_f: daily.temperature_2m_max[0]
+        lo_f: daily.temperature_2m_min[0]
+
+  # The ProfileVP button refreshes everything at once.
+  refresh_all:
+    - url: https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true
+      map:
+        btc_price: bitcoin.usd
+        btc_change: bitcoin.usd_24h_change
+    - url: https://api.spaceflightnewsapi.net/v4/articles/?limit=2
+      map:
+        news_title: results[0].title
+    - url: https://api.open-meteo.com/v1/forecast?latitude=37.77&longitude=-122.42&current=temperature_2m&daily=temperature_2m_max,temperature_2m_min&forecast_days=1
+      map:
+        temp_c: current.temperature_2m
+        hi_c: daily.temperature_2m_max[0]
+        lo_c: daily.temperature_2m_min[0]
+    - url: https://api.open-meteo.com/v1/forecast?latitude=37.77&longitude=-122.42&current=temperature_2m&daily=temperature_2m_max,temperature_2m_min&forecast_days=1&temperature_unit=fahrenheit
+      map:
+        temp_f: current.temperature_2m
+        hi_f: daily.temperature_2m_max[0]
+        lo_f: daily.temperature_2m_min[0]
+
+# Widget text by locale. A widget renders outside the Flutter engine, so Dart's
+# localization is unavailable to it — these become real platform resources
+# (Localizable.strings / values-<locale>) that the OS selects by device language.
+# The first locale listed is the default.
+strings:
+  en:
+    trending_now: TRENDING NOW
+    read_action: READ
+  ar:
+    trending_now: الأكثر تداولاً
+    read_action: اقرأ

@@ -7,13 +7,13 @@ the IR (Intermediate Representation) tree that the Dart DSL compiles into, the `
 config model, and the widget-runner interface used by the code generators.
 
 Most projects **do not add this package directly** — it arrives as a transitive dependency
-of [`mosaic`](https://pub.dev/packages/mosaic) and [`mosaic_cli`](https://pub.dev/packages/mosaic_cli).
+of [`mosaic_widgets`](https://pub.dev/packages/mosaic_widgets) and [`mosaic_cli`](https://pub.dev/packages/mosaic_cli).
 
 ## Ecosystem
 
 | Package | Role |
 |---------|------|
-| [mosaic](https://pub.dev/packages/mosaic) | Flutter DSL + `MosaicBridge` runtime |
+| [mosaic_widgets](https://pub.dev/packages/mosaic_widgets) | Flutter DSL + `MosaicBridge` runtime |
 | **mosaic_core** ← _you are here_ | IR, config, runner primitives |
 | [mosaic_android](https://pub.dev/packages/mosaic_android) | Android RemoteViews/Kotlin generator |
 | [mosaic_ios](https://pub.dev/packages/mosaic_ios) | iOS WidgetKit/Live Activity generator |
@@ -55,4 +55,4 @@ final definition = await WidgetRunner.run(config.widgets.first);
 final output = MyCustomGenerator().generate(definition);
 ```
 
-For most app developers, see [`mosaic`](https://pub.dev/packages/mosaic) instead.
+For most app developers, see [`mosaic_widgets`](https://pub.dev/packages/mosaic_widgets) instead.

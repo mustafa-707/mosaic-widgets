@@ -30,6 +30,52 @@ class WidgetRunner {
   /// `file://` URIs, calls the corresponding `build<Name>()` function, and
   /// prints the collected IR payload between sentinel markers so that
   /// [runAll] can extract it from stdout.
+  /// Checks that every declared entry file defines its `build<Name>()`
+  /// function, returning one human-readable problem per mismatch.
+  ///
+  /// The runner is generated Dart, so a name that does not line up otherwise
+  /// surfaces as `Error: Method not found: 'buildFoo'` pointing into
+  /// `.dart_tool/hw_gen/runner.dart` — a file the developer never wrote and
+  /// which says nothing about the naming convention or which entry to edit.
+  /// Renaming a widget in `mosaic.yaml` without renaming its builder is the
+  /// common way to land here.
+  List<String> missingBuilders() {
+    final problems = <String>[];
+
+    void check(String kind, String name, String entry) {
+      final path = p.isAbsolute(entry) ? entry : p.join(projectRoot, entry);
+      final file = File(path);
+      if (!file.existsSync()) {
+        problems.add('$kind "$name" declares entry "$entry", which does not '
+            'exist (looked in ${p.absolute(path)}).');
+        return;
+      }
+      final expected = 'build$name';
+      // Matches the declaration but not a call, so a recursive helper or an
+      // invocation elsewhere in the file cannot mask a missing definition.
+      final declared = RegExp(
+        r'(?:^|\n)\s*(?:[\w<>,\s?]+\s+)?' + RegExp.escape(expected) + r'\s*\(',
+      ).hasMatch(file.readAsStringSync());
+      if (!declared) {
+        problems.add('$kind "$name" needs a top-level `$expected()` function '
+            'in ${p.relative(path, from: projectRoot)}. Mosaic derives the '
+            'name from the `name:` in mosaic.yaml, so the two must match — '
+            'rename one to agree with the other.');
+      }
+    }
+
+    for (final w in config.widgets) {
+      check('Widget', w.name, w.entry);
+    }
+    for (final la in config.liveActivities) {
+      check('Live activity', la.name, la.entry);
+    }
+    for (final ctl in config.controls) {
+      check('Control', ctl.name, ctl.entry);
+    }
+    return problems;
+  }
+
   Future<String> buildRunnerScript() async {
     final imports = <String>[];
     final calls = <String>[];
@@ -113,6 +159,14 @@ void main() {
     final tempDir = Directory(p.join(projectRoot, '.dart_tool', 'hw_gen'));
     if (!tempDir.existsSync()) {
       tempDir.createSync(recursive: true);
+    }
+
+    final missing = missingBuilders();
+    if (missing.isNotEmpty) {
+      throw Exception(
+        'Widget builder functions are missing:\n'
+        '${missing.map((e) => '  - $e').join('\n')}',
+      );
     }
 
     final scriptFile = File(p.join(tempDir.path, 'runner.dart'));

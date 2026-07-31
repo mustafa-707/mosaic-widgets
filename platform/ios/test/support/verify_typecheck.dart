@@ -77,6 +77,46 @@ Future<void> main() async {
         'count': _bind('unread'),
         'color': null,
       },
+      // Charts — added later than this fixture, so nothing was compiling them.
+      {
+        '__type': 'HWSparkline',
+        'bind': _bind('series'),
+        'color': _color('#38BDF8'),
+        'strokeWidth': 2.0,
+        'fill': true,
+      },
+      {
+        '__type': 'HWSparkline',
+        'bind': _bind('series'),
+        'color': null,
+        'strokeWidth': 1.0,
+        'fill': false,
+        'height': 40.0,
+      },
+      {
+        '__type': 'HWBarChart',
+        'bind': _bind('series'),
+        'color': _color('#22C55E'),
+        'spacing': 3.0,
+        'radius': 2.0,
+      },
+      // The same key rendered twice. On Android this collided into one view id
+      // and the second never updated; on iOS each closure has its own scope, so
+      // this is here to keep that true rather than assumed.
+      _text(_bind('dupe')),
+      _text(_bind('dupe')),
+      {
+        '__type': 'HWVisibility',
+        'bind': _bind('flag'),
+        'child': _text('on'),
+        'replacement': _text('off'),
+      },
+      {
+        '__type': 'HWVisibility',
+        'bind': _bind('flag'),
+        'child': _text('ON2'),
+        'replacement': _text('OFF2'),
+      },
       // Text maxLines + align
       _text('hello world', style: {
         'size': 12,

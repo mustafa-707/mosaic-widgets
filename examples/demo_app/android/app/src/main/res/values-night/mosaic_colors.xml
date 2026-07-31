@@ -1,7 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- MOSAIC-GENERATED -->
 <resources>
+    <color name="mosaic_1619312530">#94A3B8</color>
     <color name="mosaic_1890917449">#E5E7EB</color>
+    <color name="mosaic_242350405">#0B1120</color>
     <color name="mosaic_628155314">#1C3D5A</color>
     <color name="mosaic_684357526">#000000</color>
+    <color name="mosaic_sys_1541652284">#34D399</color>
+    <color name="mosaic_sys_620628118">#2563EB</color>
+    <color name="mosaic_sys_638900184">#1E293B</color>
 </resources>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOSAIC-GENERATED -->
+<resources>
+    <string name="mosaic_desc_profilevp">Battery, memory and system health at a glance.</string>
+    <string name="mosaic_desc_newswidget">The latest space and science headline.</string>
+    <string name="mosaic_desc_cryptowidget">Live BTC price and 24-hour change.</string>
+    <string name="mosaic_desc_weather">Current conditions, switchable between °C and °F.</string>
+    <string name="mosaic_desc_searchbar">A search pill that opens the app, with voice and lens shortcuts.</string>
+</resources>

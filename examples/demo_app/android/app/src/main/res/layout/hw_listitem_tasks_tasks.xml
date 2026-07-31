@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOSAIC-GENERATED -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:paddingStart="0.0dp" android:paddingEnd="0.0dp"
+    android:paddingTop="0.0dp" android:paddingBottom="6.0dp">
+    <FrameLayout android:id="@+id/hw_clip__100_null_null"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:paddingStart="10.0dp" android:paddingEnd="10.0dp" android:paddingTop="9.0dp" android:paddingBottom="9.0dp"
+     android:background="@drawable/hw_bg_110181657"
+    >
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"
+    android:orientation="horizontal"
+    android:gravity="start|center_vertical">
+    <TextView android:id="@+id/hw_item_marker" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#38BDF8" android:textSize="13.0sp" android:textStyle="normal" />
+<FrameLayout
+    android:layout_width="10.0dp" android:layout_height="wrap_content" />
+<FrameLayout
+    android:layout_width="0dp" android:layout_height="wrap_content"
+    android:layout_weight="1">
+    <TextView android:id="@+id/hw_item_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#E2E8F0" android:textSize="13.0sp" android:textStyle="normal" android:maxLines="1" android:ellipsize="end" />
+</FrameLayout>
+<FrameLayout
+    android:layout_width="8.0dp" android:layout_height="wrap_content" />
+<FrameLayout android:id="@+id/hw_clip__60_null_null"
+    android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingStart="6.0dp" android:paddingEnd="6.0dp" android:paddingTop="3.0dp" android:paddingBottom="3.0dp"
+     android:background="@drawable/hw_bg_729549873"
+    >
+    <TextView android:id="@+id/hw_item_due" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#94A3B8" android:textSize="10.0sp" android:textStyle="bold" />
+</FrameLayout>
+</LinearLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>

@@ -8,12 +8,17 @@ import Foundation
 // `Activity.request(...)` throws.
 
 @available(iOS 16.1, *)
+@MainActor
 enum MosaicActivityController {
     /// Set by the host AppDelegate to forward per-activity APNs push tokens to
     /// Flutter over the `mosaic_bridge` channel (method `liveActivityPushToken`,
     /// arguments `{id, token}`). The token is delivered as a lowercase hex
     /// string. Left nil when push updates are not wired up.
-    static var onPushToken: ((String, String) -> Void)?
+    ///
+    /// `nonisolated(unsafe)`: assigned once by the host AppDelegate during
+    /// startup and only read afterwards, so no synchronization is required.
+    /// Swift 6 language mode rejects a plain mutable static without this.
+    nonisolated(unsafe) static var onPushToken: ((String, String) -> Void)?
 
     /// Requests a new Live Activity and returns its id (nil on failure).
     ///
@@ -46,7 +51,10 @@ enum MosaicActivityController {
             }
             if push {
                 let id = activity.id
-                Task.detached {
+                // Inherits this type's @MainActor isolation on purpose: a
+                // detached task would have to send the non-Sendable Activity
+                // across isolation domains, which Swift 6 rejects.
+                Task {
                     for await tokenData in activity.pushTokenUpdates {
                         let token = tokenData.map { String(format: "%02x", $0) }.joined()
                         MosaicActivityController.onPushToken?(id, token)

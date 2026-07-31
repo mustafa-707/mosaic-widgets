@@ -11,8 +11,8 @@ import Foundation
 
 @available(iOS 18.0, *)
 struct TorchSetValueIntent: SetValueIntent {
-    static var title: LocalizedStringResource = "Flashlight"
-    static var isDiscoverable: Bool = false
+    static let title: LocalizedStringResource = "Flashlight"
+    static let isDiscoverable: Bool = false
 
     @Parameter(title: "Value")
     var value: Bool

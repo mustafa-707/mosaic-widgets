@@ -27,6 +27,9 @@ Map<String, dynamic> row(
     };
 
 void main() {
+  // Matches only the generated spacer, not structural FrameLayouts.
+  final spacer = RegExp(r'<FrameLayout [^>]*android:layout_weight=');
+
   String layout(r) => r.file('android/app/src/main/res/layout/hw_testw.xml');
 
   test('column spaceBetween emits weighted Space spacers between children only',
@@ -37,7 +40,7 @@ void main() {
     ]);
     final xml = layout(r);
     // 3 children => 2 spacers between them.
-    expect('<Space '.allMatches(xml).length, 2);
+    expect(spacer.allMatches(xml).length, 2);
     expect(xml, contains('android:layout_weight="1"'));
   });
 
@@ -47,7 +50,7 @@ void main() {
     ]);
     final xml = layout(r);
     // 2 children => 3 spacers (before, between, after).
-    expect('<Space '.allMatches(xml).length, 3);
+    expect(spacer.allMatches(xml).length, 3);
     expect(xml, contains('android:layout_weight="1"'));
   });
 
@@ -57,7 +60,7 @@ void main() {
     ]);
     final xml = layout(r);
     expect(xml, contains('spaceAround approximated'));
-    expect(xml, contains('<Space '));
+    expect(spacer.allMatches(xml), isNotEmpty);
     expect(xml, contains('android:layout_weight'));
   });
 
@@ -66,7 +69,7 @@ void main() {
       irDef(row([text('a'), text('b')], mainAxisAlignment: 'spaceBetween'))
     ]);
     final xml = layout(r);
-    expect('<Space '.allMatches(xml).length, 1);
+    expect(spacer.allMatches(xml).length, 1);
     expect(xml, contains('android:layout_weight="1"'));
   });
 
@@ -77,7 +80,7 @@ void main() {
     ]);
     final xml = layout(r);
     // Vertical: spacer grows on height (0dp + weight), width wrap_content.
-    expect(xml, contains('<Space android:layout_width="wrap_content"'));
+    expect(xml, contains('<FrameLayout android:layout_width="wrap_content"'));
     expect(xml, contains('android:layout_height="0dp"'));
   });
 }

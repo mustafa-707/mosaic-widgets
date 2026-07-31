@@ -88,7 +88,9 @@ void main() {
     // spacer/next child there must be a wrapper FrameLayout enclosing BOTH ids,
     // i.e. three opening <FrameLayout tags (wrapper + child + alt) closed by
     // three </FrameLayout> tags before the spacer.
-    final spacerIdx = xml.indexOf('<Space ');
+    // Spacers are FrameLayouts carrying a weight — structural ones are not.
+    final spacer = RegExp(r'<FrameLayout [^>]*android:layout_weight=');
+    final spacerIdx = spacer.firstMatch(xml)!.start;
     // The child's own FrameLayout open tag is the one immediately preceding its
     // id; the wrapper is the FrameLayout open tag before THAT.
     final childOpen = xml.lastIndexOf('<FrameLayout', showIdx);
@@ -102,7 +104,7 @@ void main() {
 
     // Exactly one main-axis spacer is injected between the two column slots
     // (visibility wrapper + the "other" text) for spaceBetween.
-    final spacerCount = '<Space '.allMatches(xml).length;
+    final spacerCount = spacer.allMatches(xml).length;
     expect(spacerCount, 1);
     expect(xml, contains('android:layout_weight="1"'));
 

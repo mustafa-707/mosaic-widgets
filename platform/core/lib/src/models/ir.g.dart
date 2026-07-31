@@ -9,6 +9,9 @@ part of 'ir.dart';
 IRDefinition _$IRDefinitionFromJson(Map<String, dynamic> json) => IRDefinition(
       name: json['name'] as String,
       root: IRNode.fromJson(json['root'] as Map<String, dynamic>),
+      compactRoot: json['compactRoot'] == null
+          ? null
+          : IRNode.fromJson(json['compactRoot'] as Map<String, dynamic>),
       updateInterval: (json['updateInterval'] as num?)?.toInt(),
       width: (json['width'] as num?)?.toInt() ?? 2,
       height: (json['height'] as num?)?.toInt() ?? 2,
@@ -24,6 +27,7 @@ Map<String, dynamic> _$IRDefinitionToJson(IRDefinition instance) =>
     <String, dynamic>{
       'name': instance.name,
       'root': instance.root.toJson(),
+      'compactRoot': instance.compactRoot?.toJson(),
       'updateInterval': instance.updateInterval,
       'width': instance.width,
       'height': instance.height,

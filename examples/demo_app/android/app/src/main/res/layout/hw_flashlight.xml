@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOSAIC-GENERATED -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout
+    android:id="@+id/hw_button_main"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:clickable="true" android:focusable="true">
+    <FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <FrameLayout
+        android:id="@+id/hw_visibility_torch_on"
+        android:layout_width="match_parent" android:layout_height="match_parent">
+        <FrameLayout android:contentDescription="Flashlight on, tap to turn off" android:importantForAccessibility="noHideDescendants"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+<FrameLayout android:id="@+id/hw_clip__220_null_null"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+     android:background="@drawable/hw_gradient_2040875166"
+    >
+    <FrameLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_gravity="top|start"
+     android:layout_marginTop="-34.0dp" android:layout_marginStart="-34.0dp">
+    <FrameLayout android:id="@+id/hw_clip__320_640_640"
+    android:layout_width="64.0dp" android:layout_height="64.0dp"
+     android:background="@drawable/hw_bg_1489912224"
+    >
+    <FrameLayout android:layout_width="0dp" android:layout_height="0dp" />
+</FrameLayout>
+</FrameLayout>
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <FrameLayout
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="center">
+        <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_vertical|center_horizontal">
+    <ImageView android:src="@drawable/ic_flash_on" android:tint="#422006" android:layout_width="32.0dp" android:layout_height="32.0dp" />
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="6.0dp" />
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="ON" android:textColor="#BF422006" android:textSize="10.0sp" android:textStyle="bold" android:gravity="center" android:textAlignment="center" />
+</LinearLayout>
+    </FrameLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>
+    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/hw_visibility_torch_on_alt"
+        android:layout_width="match_parent" android:layout_height="match_parent">
+        <FrameLayout android:contentDescription="Flashlight off, tap to turn on" android:importantForAccessibility="noHideDescendants"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+<FrameLayout android:id="@+id/hw_clip__220_null_null_2"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+     android:background="@drawable/hw_gradient_1590241330"
+    >
+    <FrameLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_gravity="top|start"
+     android:layout_marginTop="-34.0dp" android:layout_marginStart="-34.0dp">
+    <FrameLayout android:id="@+id/hw_clip__320_640_640_2"
+    android:layout_width="64.0dp" android:layout_height="64.0dp"
+     android:background="@drawable/hw_bg_1227926061"
+    >
+    <FrameLayout android:layout_width="0dp" android:layout_height="0dp" />
+</FrameLayout>
+</FrameLayout>
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <FrameLayout
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="center">
+        <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_vertical|center_horizontal">
+    <ImageView android:src="@drawable/ic_flash_off" android:tint="#94A3B8" android:layout_width="32.0dp" android:layout_height="32.0dp" />
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="6.0dp" />
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="OFF" android:textColor="#64748B" android:textSize="10.0sp" android:textStyle="bold" android:gravity="center" android:textAlignment="center" />
+</LinearLayout>
+    </FrameLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>
+    </FrameLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>

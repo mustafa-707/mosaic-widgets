@@ -30,12 +30,32 @@ MosaicDefinition buildNewsWidget() {
           ),
         ),
 
+        // Article thumbnail. The URL arrives from the same refresh source as
+        // the headline (`news_image`), and the widget process downloads and
+        // caches it without the app running.
+        MPositioned(
+          top: 0,
+          right: 0,
+          bottom: 0,
+          child: MContainer(
+            width: 88,
+            child: MNetworkImage(
+              MBind('news_image'),
+              placeholder: const MColor.hex('#1E293B'),
+              radius: 16,
+            ),
+          ),
+        ),
+
         MPadding(
-          const MInsets.all(16),
+          // The thumbnail is a sibling in the MStack, so it does not push this
+          // content aside — the right inset (88 thumbnail + 16 gutter) is what
+          // keeps the headline and READ button from running under the photo.
+          const MInsets.only(left: 16, top: 16, bottom: 16, right: 104),
           MColumn(crossAxisAlignment: MCrossAxisAlignment.start, [
             MRow([
-              const MText(
-                "TRENDING NOW",
+              MText(
+                const MLocalized("trending_now"),
                 style: MTextStyle(
                   color: MColor.hex("#F43F5E"),
                   bold: true,
@@ -43,45 +63,54 @@ MosaicDefinition buildNewsWidget() {
                 ),
               ),
               const MSpacer(),
-              MRow([
-                MTimer(
-                  target: DateTime.now().add(const Duration(hours: 1)),
+              // How fresh the story is, formatted for the device locale —
+              // "2 minutes ago" rather than a raw stamp.
+              MText(
+                MBind("news_updated"),
+                format: MFormat.relativeTime,
+                style: const MTextStyle(
+                  color: MColor.hex("#94A3B8"),
+                  size: 10,
+                ),
+              ),
+            ]),
+            const MSpacer(),
+            // Rotates the top two stories. On Android a ViewFlipper advances
+            // itself with the app closed; iOS shows the first child only, so
+            // the lead story must be first.
+            MFlipper(
+              interval: const Duration(seconds: 6),
+              [
+                MText(
+                  MBind("news_title"),
+                  maxLines: 2,
                   style: const MTextStyle(
-                    color: MColor.hex("#22C55E"),
-                    size: 10,
+                    color: MColor.hex("#FFFFFF"),
+                    size: 14,
                     bold: true,
                   ),
                 ),
-                const MPadding(
-                  MInsets.only(left: 4),
-                  MText(
-                    "LIVE",
-                    style: MTextStyle(
-                      color: MColor.hex("#94A3B8"),
-                      size: 10,
-                      bold: true,
-                    ),
+                MText(
+                  MBind("news_title_2"),
+                  maxLines: 2,
+                  style: const MTextStyle(
+                    color: MColor.hex("#FFFFFF"),
+                    size: 14,
+                    bold: true,
                   ),
                 ),
-              ]),
-            ]),
-            const MSpacer(),
-            MText(
-              MBind("news_title"),
-              style: const MTextStyle(
-                color: MColor.hex("#FFFFFF"),
-                size: 14,
-                bold: true,
-              ),
+              ],
             ),
             const MSpacer(),
             MRow([
-              MColumn(crossAxisAlignment: MCrossAxisAlignment.start, [
-                const MText(
-                  "World News • Just now",
-                  style: MTextStyle(color: MColor.hex("#64748B"), size: 10),
+              MText(
+                MBind("news_source"),
+                maxLines: 1,
+                style: const MTextStyle(
+                  color: MColor.hex("#64748B"),
+                  size: 10,
                 ),
-              ]),
+              ),
               const MSpacer(),
               const MButton(
                 action: MActionCallback("refresh_news"),
@@ -91,7 +120,7 @@ MosaicDefinition buildNewsWidget() {
                   child: MPadding(
                     MInsets.symmetric(horizontal: 10, vertical: 4),
                     MText(
-                      "READ",
+                      MLocalized("read_action"),
                       style: MTextStyle(
                         color: MColor.hex("#F43F5E"),
                         size: 10,

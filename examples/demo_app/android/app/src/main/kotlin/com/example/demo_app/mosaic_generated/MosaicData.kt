@@ -64,18 +64,53 @@ object MosaicData {
     ///   percent      -> NumberFormat.getPercentInstance()
     ///   date         -> DateFormat.getDateInstance() on Date(epochMillis)
     ///   relativeTime -> DateUtils.getRelativeTimeSpanString(epochMillis)
-    fun formatValue(raw: String, format: String): String {
+    fun formatValue(raw: String, format: String, currencyCode: String? = null): String {
         return try {
             when (format) {
                 "decimal" -> NumberFormat.getInstance().format(raw.toDouble())
-                "currency" -> NumberFormat.getCurrencyInstance().format(raw.toDouble())
+                // A declared code keeps the widget honest: without it the value
+                // is rendered in the *device's* currency, so a USD price reads
+                // as the local currency without ever being converted.
+                "currency" -> NumberFormat.getCurrencyInstance().apply {
+                    if (currencyCode != null) {
+                        try { currency = java.util.Currency.getInstance(currencyCode) }
+                        catch (e: Exception) { }
+                    }
+                }.format(raw.toDouble())
                 "percent" -> NumberFormat.getPercentInstance().format(raw.toDouble())
+                // Already in percent units, so no scaling — only a sign and a
+                // fixed scale. %+.2f uses the locale's decimal separator.
+                "signedPercent" ->
+                    String.format(java.util.Locale.getDefault(), "%+.2f%%", raw.toDouble())
                 "date" -> DateFormat.getDateInstance().format(Date(raw.toLong()))
                 "relativeTime" -> DateUtils.getRelativeTimeSpanString(raw.toLong()).toString()
                 else -> raw
             }
         } catch (e: Exception) {
             raw
+        }
+    }
+
+    /// A stored numeric series, for charting.
+    ///
+    /// Entries may arrive as JSON numbers or as strings, depending on how the
+    /// app saved them; anything unparseable is skipped rather than zeroed,
+    /// which would put a false trough in the line.
+    fun resolveDoubleList(ctx: Context, key: String): List<Double> {
+        return try {
+            val raw = prefs(ctx).getString(key, null) ?: return emptyList()
+            val arr = JSONArray(raw)
+            val out = ArrayList<Double>(arr.length())
+            for (i in 0 until arr.length()) {
+                val v = arr.opt(i)
+                when (v) {
+                    is Number -> out.add(v.toDouble())
+                    is String -> v.toDoubleOrNull()?.let { out.add(it) }
+                }
+            }
+            out
+        } catch (e: Exception) {
+            emptyList()
         }
     }
 

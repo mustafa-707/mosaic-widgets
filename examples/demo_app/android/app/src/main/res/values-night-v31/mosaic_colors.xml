@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOSAIC-GENERATED -->
+<resources>
+    <color name="mosaic_sys_1541652284">@android:color/system_accent1_200</color>
+    <color name="mosaic_sys_620628118">@android:color/system_accent1_200</color>
+    <color name="mosaic_sys_638900184">@android:color/system_neutral1_900</color>
+</resources>

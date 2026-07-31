@@ -12,82 +12,74 @@ When you run `dart run mosaic_cli build`, the CLI performs the following:
 
 ## 2. Syncing Assets
 
+> Removing or renaming a widget in `mosaic.yaml` makes its generated provider,
+> layout, and info XML unreferenced. `build` deletes those orphans and logs each
+> one; only files carrying the `MOSAIC-GENERATED` sentinel are eligible, so
+> anything you wrote by hand stays.
+
+
 Images placed in `assets/widgets/` in your Flutter project are automatically copied to `android/app/src/main/res/drawable/`.
 
 -   **Important**: Filenames are automatically normalized (lower-cased, hyphens to underscores) to comply with Android resource naming rules.
 
-## 3. MainActivity: Bridge, Callbacks, and Deep Links
+## 3. Register the Mosaic Plugin
 
-Mosaic talks to native Android over the `mosaic_bridge` method channel. Your `MainActivity.kt` is the reference wiring — it must:
+`mosaic_cli build` generates `MosaicPlugin.kt` into your app's
+`mosaic_generated` package. It contains the whole host side of the bridge: the
+`mosaic_bridge` method channel (`saveString`, `saveBool`, `refresh`,
+`refreshAll`, the Live Activity lifecycle), the receiver that forwards widget
+button callbacks to Dart, and deep-link handling.
 
-1.  Set up the `mosaic_bridge` `MethodChannel` and handle `saveString`, `saveBool`, `refresh`, and `refreshAll`. The `refresh` / `refreshAll` calls delegate to the generated `mosaic_generated.HomeWidgetBridgeHelper`.
-2.  Register a `BroadcastReceiver` for the `"<package>.MOSAIC_CALLBACK"` action that forwards widget button callbacks to the Flutter `backgroundCallback`.
-3.  Forward incoming deep-link intents (`Intent.ACTION_VIEW`) to the Flutter `onDeepLink` channel.
-
-The current reference implementation lives at
-`examples/demo_app/android/app/src/main/kotlin/com/example/demo_app/MainActivity.kt`.
-The key pieces look like this:
+Two overrides in `MainActivity.kt` — there is no channel code to copy:
 
 ```kotlin
+package com.example.your_app
+
+import android.content.Intent
+import com.example.your_app.mosaic_generated.MosaicPlugin
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "mosaic_bridge"
+    private val mosaic = MosaicPlugin()
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        val channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
-        channel.setMethodCallHandler { call, result ->
-            when (call.method) {
-                "saveString" -> { /* persist to SharedPreferences */ }
-                "saveBool"   -> { /* persist to SharedPreferences */ }
-                "refreshAll" -> {
-                    com.example.demo_app.mosaic_generated.HomeWidgetBridgeHelper.refreshAll(this)
-                    result.success(null)
-                }
-                "refresh" -> {
-                    val widgetName = call.argument<String>("widgetName")
-                    com.example.demo_app.mosaic_generated.HomeWidgetBridgeHelper.refresh(this, widgetName!!)
-                    result.success(null)
-                }
-                else -> result.notImplemented()
-            }
-        }
-
-        // Forward widget button callbacks to Flutter
-        val callbackReceiver = object : android.content.BroadcastReceiver() {
-            override fun onReceive(ctx: Context, intent: Intent) {
-                val name = intent.getStringExtra("callbackName")
-                if (name != null) {
-                    channel.invokeMethod("backgroundCallback", mapOf("callbackName" to name))
-                }
-            }
-        }
-        val filter = android.content.IntentFilter("$packageName.MOSAIC_CALLBACK")
-        if (android.os.Build.VERSION.SDK_INT >= 33) {
-            registerReceiver(callbackReceiver, filter, android.content.Context.RECEIVER_NOT_EXPORTED)
-        } else {
-            @Suppress("UnspecifiedRegisterReceiverFlag")
-            registerReceiver(callbackReceiver, filter)
-        }
-
-        handleIntent(intent, channel)
+        mosaic.register(this, flutterEngine)
     }
 
-    private fun handleIntent(intent: Intent, channel: MethodChannel) {
-        if (Intent.ACTION_VIEW == intent.action) {
-            intent.dataString?.let { channel.invokeMethod("onDeepLink", mapOf("url" to it)) }
-        }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        mosaic.handleIntent(intent)
     }
 }
 ```
 
-Copy this wiring into your own `MainActivity.kt`, adjusting the `mosaic_generated` package prefix to match your `android_package`.
+`onNewIntent` is the second override because a warm app receives widget taps
+there; without it a tap on a running app is silently dropped. `register` handles
+the launch intent itself, so a cold start from a widget keeps its deep link.
+
+The reference is `examples/demo_app/.../MainActivity.kt` — 24 lines, all of it
+above.
+
+> Earlier versions of this guide had you write the channel by hand. If you still
+> have that code, delete it and call `MosaicPlugin` instead: the generated
+> version also registers the callback receiver on the application context behind
+> a guard (the hand-written one leaked a receiver on every activity recreation)
+> and preserves `saveBool` as a real boolean, which `MosaicData.resolveBool`
+> needs.
+
 
 ## 4. Adaptive Colors, RTL & Locale
 
 - **Dark mode**: adaptive colors (`MColor.hex(..., dark: ...)`) are generated as a `res/values/mosaic_colors.xml` + `res/values-night/mosaic_colors.xml` pair and referenced by `@color/mosaic_<hash>`. Android applies the night variant automatically based on the system theme. (`dart run mosaic_cli clean` removes these generated `values*/mosaic_colors.xml` files.)
 - **Runtime-bound colors** (`MColor.bind(...)`) are resolved at update time from the data store and applied to the `RemoteViews`.
-- **RTL**: layouts use `start`/`end` gravity and padding so they mirror automatically. Ensure your manifest's `<application>` has `android:supportsRtl="true"` (the CLI doctor warns if it is `false`).
+- **RemoteViews size limit**: a widget update crosses a Binder transaction with a hard size cap. Exceed it and the launcher drops the **whole** update — the widget shows only its static layout, every bound value vanishes at once, and nothing is logged. Mosaic keeps every bitmap it sends inside that budget for you: network images are decoded downsampled (bounds first, power-of-two `inSampleSize`, longest side ≤ 320px), and `MSparkline`/`MBarChart` bitmaps are scaled from the widget's dp bounds but clamped to ~60k pixels with the aspect ratio preserved. `MImage` costs nothing here — asset and file images are passed as a URI the launcher resolves itself.
+- **Cross-platform layout parity**: an `MRow` sizes to its tallest child but centres vertically inside a taller parent (a container, a button, a stack), matching SwiftUI's behaviour when an `HStack` sits in a filled frame. A bound key drives every view it appears in — a battery level rendered as both `MText` and `MProgressBar` updates both. Both were Android-only divergences from iOS.
+- **RTL**: layouts use `start`/`end` gravity and padding so they mirror automatically. Ensure your manifest's `<application>` has `android:supportsRtl="true"` — `doctor` warns when it is `false` **or absent**, since Android ignores `start`/`end` gravity without the opt-in.
 - **Formatting**: `MFormat` on bound `MText` values is applied with the device locale via `NumberFormat` / `DateFormat` / `DateUtils` when the provider updates.
+- **Translated text**: keys declared under `strings:` in `mosaic.yaml` and used as `MText(const MLocalized('key'))` are generated into `res/values/mosaic_localized.xml` (the first-listed locale, used as fallback) plus one `res/values-<locale>/mosaic_localized.xml` per additional locale, and referenced from the layout as `@string/mosaic_s_<key>`. Android resolves the right table from the device language with no code on your side — this is why widget text cannot use `intl`/`AppLocalizations`, which need the Flutter engine the widget process does not have. Values are XML-escaped, and `build` fails if a key is used but missing from the default locale — otherwise the only symptom is a runtime resource-resolution failure on devices in an unlisted language. (`dart run mosaic_cli clean` removes these generated files.)
 
 ## 5. Control Widgets (Quick Settings Tiles)
 
@@ -168,7 +160,26 @@ Android has no true Live Activity, so Mosaic maps a `MosaicLiveActivity` to a pr
 
 See the [Live Activities Guide](LIVE_ACTIVITIES.md) for the full walkthrough.
 
-## 7. Deep Linking
+## 7. Prompting the User to Add a Widget
+
+`AppWidgetManager.requestPinAppWidget` lets your app open the launcher's
+"add widget" dialog directly, which matters because most users never find the
+widget picker themselves. The generated `MosaicPlugin` exposes it:
+
+```dart
+if (await MosaicBridge.canRequestPinWidget()) {
+  await MosaicBridge.requestPinWidget('News');   // the mosaic.yaml name
+}
+```
+
+- Requires **API 26+** and a launcher that reports `isRequestPinAppWidgetSupported`. Both are checked for you; an unsupported launcher returns false rather than throwing, so you can fall back to instructions.
+- The plugin maps the mosaic.yaml widget name to its generated provider class, so you never reference Kotlin class names from Dart. An unknown name returns an `UNKNOWN_WIDGET` error listing the valid ones — a typo should not be indistinguishable from an unsupported launcher.
+- The result reports only that the dialog appeared. Android does not tell the app whether the user accepted; watch for the widget's first update if you need to know.
+
+## 8. Deep Linking
+
+> `build` injects the `<intent-filter>` for `app.deep_link_scheme` into `MainActivity` and **fails** if any `MLaunchUrlAction` uses a different custom scheme — otherwise the only symptom is a tap that does nothing, with no error in logcat. Re-running after a scheme change replaces the generated filter instead of leaving the old scheme registered.
+
 
 The CLI automatically adds a deep-link intent filter to your `MainActivity` in `AndroidManifest.xml`. The scheme comes from `deep_link_scheme` under `app:` in `mosaic.yaml` and **defaults to `mosaic`** (so links look like `mosaic://...`). Handle these links in Flutter:
 
@@ -180,7 +191,7 @@ MosaicBridge.onDeepLink.listen((url) {
 });
 ```
 
-## 8. Manual Verification
+## 9. Manual Verification
 
 If widgets do not appear in the widget picker:
 1.  Check `AndroidManifest.xml` to ensure the `<receiver>` tags were added correctly inside the `<application>` tag.

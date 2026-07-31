@@ -53,72 +53,167 @@ Both your main App and the Widget Extension need to be in the same **App Group**
 
 The CLI automatically generates a `HomeWidgetBundle.swift` file that includes all your widgets. You don't need to write any Swift entry point code manually! Just ensure this file is added to your target in Section 3.
 
-## 5. Wire Up AppDelegate (Refresh + Deep Links)
+## 5. Register the Mosaic Plugin
 
-Mosaic talks to native iOS over the `mosaic_bridge` method channel. Your `AppDelegate.swift` must set up that channel to:
+`mosaic_cli build` generates `ios/Runner/MosaicPlugin.swift`, which contains the
+entire host side of the bridge: the `mosaic_bridge` method channel, App Group
+writes, widget reloads, the Live Activity lifecycle, deep-link forwarding, and
+draining the pending callback a widget's refresh button leaves behind.
 
--   Persist values with `saveString` / `saveBool` into the shared App Group `UserDefaults`.
--   Handle `refresh` for a **single** widget via `WidgetCenter.shared.reloadTimelines(ofKind:)`, and `refreshAll` via `reloadAllTimelines()`.
--   Forward opened URLs to the Flutter `onDeepLink` channel by implementing `application(_:open:options:)`.
+Two one-time steps:
 
-The current reference implementation lives at
-`examples/demo_app/ios/Runner/AppDelegate.swift`. The key pieces look like this:
+1. Drag `Runner/MosaicPlugin.swift` into the **Runner** group in Xcode so it
+   joins the Runner target. (The widget extension folder is auto-synced;
+   `Runner` is not.) Skip this and the build fails with
+   `Cannot find 'MosaicPlugin' in scope`.
+2. Register it in `AppDelegate.swift`:
 
 ```swift
 import Flutter
 import UIKit
-import WidgetKit
-import ActivityKit  // required if you use Live Activities (Section 8)
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
-  private var mosaicChannel: FlutterMethodChannel?
-
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    let controller = window?.rootViewController as! FlutterViewController
-    let channel = FlutterMethodChannel(name: "mosaic_bridge",
-                                       binaryMessenger: controller.binaryMessenger)
-    mosaicChannel = channel
-
-    channel.setMethodCallHandler { (call, result) in
-      switch call.method {
-      case "saveString", "saveBool":
-        // persist value to UserDefaults(suiteName: appGroupId)
-        break
-      case "refresh":
-        let args = call.arguments as? [String: Any]
-        if #available(iOS 14.0, *), let kind = args?["widgetName"] as? String {
-          WidgetCenter.shared.reloadTimelines(ofKind: kind)
-        }
-        result(nil)
-      case "refreshAll":
-        if #available(iOS 14.0, *) { WidgetCenter.shared.reloadAllTimelines() }
-        result(nil)
-      default:
-        result(FlutterMethodNotImplemented)
-      }
-    }
-
     GeneratedPluginRegistrant.register(with: self)
+    MosaicPlugin.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-  }
-
-  // Forward opened deep-link URLs to Flutter
-  override func application(_ app: UIApplication, open url: URL,
-      options: [UIApplication.OpenURLOptionsKey : Any] = [:]) -> Bool {
-    mosaicChannel?.invokeMethod("onDeepLink", arguments: ["url": url.absoluteString])
-    return super.application(app, open: url, options: options)
   }
 }
 ```
 
-> The `saveString` / `saveBool` handlers write to `UserDefaults(suiteName:)` using the App Group ID
-> supplied from Flutter. Call `MosaicBridge.setAppGroupId(...)` before saving, or the native side
-> returns a `NO_APP_GROUP_ID` error. The deep-link scheme defaults to `mosaic` (configurable via
-> `deep_link_scheme` in `mosaic.yaml`).
+That is the whole integration — there is no channel boilerplate to copy. The
+reference is `examples/demo_app/ios/Runner/AppDelegate.swift`.
+
+`MosaicBridge.setAppGroupId(...)` is optional: the plugin falls back to the
+`ios_app_group` from `mosaic.yaml`. An explicit call still wins.
+
+`dart run mosaic_cli doctor` fails if the plugin is unregistered, missing from
+the Runner target, or if the App Group is absent from either entitlements file.
+
+### 5b. Making a refresh button actually fetch
+
+A refresh button runs an AppIntent **inside the widget extension**, which has no
+Flutter engine and cannot run your Dart fetch code. By default the intent records
+the request and reloads the timeline — but the reload re-reads the *same* stored
+data, so the widget redraws identically and the button looks broken. The data
+only changes once the app is next opened.
+
+The fetch runs in the widget's **timeline provider**, not in the intent. WidgetKit
+gives the provider a proper window for async work and waits for it; an AppIntent
+is expected to finish promptly and its network call may not survive. So the
+button reloads the timeline, and the provider fetches on that path — which means
+the widget also refreshes on system-scheduled reloads, with no tap at all.
+
+> **If a refresh button seems to do nothing, this is almost always why:** the
+> callback has no `refresh:` entry.
+
+Declare the endpoint and the intent fetches it natively:
+
+```yaml
+refresh:
+  refresh_crypto:                       # the MActionCallback name
+    url: https://api.example.com/price
+    method: GET                         # optional, defaults to GET
+    headers:
+      Accept: application/json          # optional
+    map:                                # stored key → path into the JSON
+      btc_price: bitcoin.usd
+```
+
+A callback may declare a **list** of sources instead of one, so a single button
+can fetch several endpoints — the same reading in two units, or a "refresh
+everything" button. One failing endpoint does not discard the others:
+
+```yaml
+refresh:
+  refresh_weather:
+    - url: https://api.open-meteo.com/v1/forecast?latitude=37.77&longitude=-122.42&current=temperature_2m
+      map: { temp_c: current.temperature_2m }
+    - url: https://api.open-meteo.com/v1/forecast?latitude=37.77&longitude=-122.42&current=temperature_2m&temperature_unit=fahrenheit
+      map: { temp_f: current.temperature_2m }
+```
+
+`mosaic_cli build` emits `MosaicRefreshSources.swift`. Notes:
+
+- A provider fetches the sources supplying **the keys its own widget binds**, so
+  you never wire a widget to a callback by hand. Sources are de-duplicated by
+  URL, so a key declared under several callbacks is still fetched once.
+- Paths are dot-separated with optional `[n]` indices and an optional leading
+  `$.`. A missing path is logged and skipped, not fatal.
+- Values are stored as strings — numbers via `stringValue`, booleans as `1`/`0`.
+  There is no formatting step, so either return display-ready values or render
+  units in the widget (the demo's Weather widget renders `°C`/`°F` itself, so the
+  app and the native fetch store identical raw numbers).
+- If a fetch fails or writes nothing, the intent falls back to the
+  pending-callback handoff, so behavior is never worse than before.
+- **iOS only.** On Android the button still defers to the app.
+
+### 5c. In-widget state without launching the app
+
+`MToggleAction('key')` flips a stored bool from inside the widget — no app
+launch, no network. Combine it with `MVisibility` to swap subtrees, which is how
+the demo's Weather widget switches °C/°F instantly:
+
+```dart
+MVisibility(
+  bind: MBind('weather_unit_f'),
+  child: MText(MBind('temp_f')),
+  replacement: MText(MBind('temp_c')),
+),
+MButton(action: const MToggleAction('weather_unit_f'), child: const MText('°C / °F')),
+```
+
+Requires iOS 17+ for the in-widget button; older iOS opens the app instead.
+Android is supported too — the provider handles the broadcast itself.
+
+### 5d. Server-driven updates (WidgetKit push, iOS 26+)
+
+A timeline reload normally happens on the system's schedule or when the app asks.
+With push updates your server reloads a widget's timeline directly, while the app
+is closed.
+
+Opt in per widget:
+
+```yaml
+widgets:
+  - name: CryptoWidget
+    push: true
+```
+
+`mosaic_cli build` then emits a `WidgetPushHandler` for that widget, gated to
+iOS 26 — the widget still works on iOS 16, just without push. WidgetKit hands the
+extension an APNs token, which the extension stores in the App Group because it
+cannot reach your server itself. The app collects and relays it:
+
+```dart
+final tokens = await MosaicBridge.widgetPushTokens();   // {'CryptoWidget': 'abc…'}
+for (final entry in tokens.entries) {
+  await myApi.registerWidgetToken(widget: entry.key, token: entry.value);
+}
+```
+
+Call that on launch and on resume — a token appears only once the widget is
+placed, and may change. Your server then sends:
+
+```
+apns-push-type: widgets
+apns-topic: <your-bundle-id>.push-type.widgets
+
+{ "aps": { "content-changed": true } }
+```
+
+Notes:
+
+- The system budgets these like timeline reloads and delivers them
+  opportunistically — it is not a real-time channel.
+- No token is issued in the simulator; test on a device.
+- **iOS only.** `widgetPushTokens()` returns empty on Android, which has no
+  WidgetKit-style widget push. To refresh an Android widget from a server, push
+  to the app (FCM) and call `MosaicBridge.refreshAll()`.
 
 ## 6. Sharing Data from Flutter
 
@@ -161,54 +256,20 @@ Add the following to the **main app** `Info.plist` (already present in the demo 
 
 > `dart run mosaic_cli doctor` warns if this key is missing.
 
-### Route the lifecycle in AppDelegate
+### Live Activity lifecycle
 
-The CLI generates a `MosaicActivityController` (and `MosaicActivityAttributes.swift`) into the widget extension, gated `@available(iOS 16.1, *)`. Your `AppDelegate.swift` `mosaic_bridge` handler routes the lifecycle method-channel calls to it. Import `ActivityKit` alongside `WidgetKit`. The reference implementation is `examples/demo_app/ios/Runner/AppDelegate.swift`:
+Nothing to wire. `MosaicPlugin` already routes `startActivity`, `updateActivity`,
+`endActivity`, `activitiesEnabled` and `activeActivities` to the generated
+`MosaicActivityController` (gated `@available(iOS 16.1, *)`), and forwards APNs
+push tokens to `MosaicLiveActivities.onPushToken`. Drive it from Dart:
 
-```swift
-import ActivityKit
-// ... inside channel.setMethodCallHandler:
-
-case "startActivity":
-  if #available(iOS 16.1, *) {
-    let args = call.arguments as! [String: Any]
-    let type = args["activityType"] as! String
-    let data = (args["state"] as? [String: String]) ?? [:]
-    result(MosaicActivityController.start(type: type, data: data))
-  } else {
-    result(FlutterError(code: "UNAVAILABLE", message: "Live Activities require iOS 16.1+", details: nil))
-  }
-
-case "updateActivity":
-  if #available(iOS 16.1, *) {
-    let args = call.arguments as! [String: Any]
-    let alert = args["alert"] as? [String: Any]
-    MosaicActivityController.update(
-      id: args["id"] as! String,
-      data: (args["state"] as? [String: String]) ?? [:],
-      alertTitle: alert?["title"] as? String,
-      alertBody: alert?["body"] as? String)
-    result(nil)
-  } else { result(false) }
-
-case "endActivity":
-  if #available(iOS 16.1, *) {
-    let args = call.arguments as! [String: Any]
-    MosaicActivityController.end(
-      id: args["id"] as! String,
-      data: args["state"] as? [String: String],
-      policy: (args["policy"] as? String) ?? "afterDefault")
-    result(nil)
-  } else { result(false) }
-
-case "activitiesEnabled":
-  if #available(iOS 16.1, *) { result(MosaicActivityController.enabled()) } else { result(false) }
-
-case "activeActivities":
-  if #available(iOS 16.1, *) { result(MosaicActivityController.active()) } else { result([String]()) }
+```dart
+final id = await MosaicLiveActivities.start(
+    'Order', {'status': 'On the way', 'eta': '12m', 'progress': '40'});
+await MosaicLiveActivities.update(id!, {'progress': '80'});
+await MosaicLiveActivities.end(id, policy: MEndPolicy.afterDefault);
 ```
 
-See the [Live Activities Guide](LIVE_ACTIVITIES.md) for defining the activity and driving it from Flutter.
 
 ## 9. Control Widgets (iOS 18+)
 
@@ -252,7 +313,57 @@ controls:
 
 The `action` callback is forwarded to Flutter via the existing `mosaic_bridge` deep-link / callback path (no additional AppDelegate wiring is needed).
 
-## 10. Troubleshooting
+## 10. Translated Widget Text
+
+Widget code runs in the extension process, where `intl` and `AppLocalizations`
+do not exist. Declare the text in `mosaic.yaml` instead:
+
+```yaml
+strings:
+  en: { trending_now: TRENDING NOW, read_action: READ }
+  ar: { trending_now: الأكثر تداولاً, read_action: اقرأ }
+```
+
+```dart
+MText(const MLocalized('trending_now'), style: ...)
+```
+
+The generator writes `ios/HomeWidgetExtension/<locale>.lproj/Localizable.strings`
+and emits `Text(LocalizedStringKey("trending_now"))`. Because the extension
+target uses a synchronized file group (§3), the `.lproj` folders are picked up
+with no Xcode changes and are compiled into the `.appex`.
+
+Points worth knowing:
+
+- The strings must live in the **extension's** bundle. `LocalizedStringKey` resolves against `Bundle.main`, which inside an extension is the `.appex` — your app's `Localizable.strings` is never consulted.
+- The first locale listed in `strings:` is the fallback for unlisted languages and for keys a secondary locale omits (`build` warns about those).
+- Using `MLocalized('k')` without declaring `k` in the default locale fails the build rather than shipping a widget that renders the literal string `k`.
+- Quotes in values are escaped, so `say "hi"` is safe.
+- `MLocalized` is for static text. Live values stay `MBind`; add `MFormat` for locale-correct numbers and dates.
+- Verify with `find build/ios/*/HomeWidgetExtensionExtension.appex -name Localizable.strings` after a build — Xcode compiles them to binary plists, readable via `plutil -p`.
+
+## 11. Deep-Link URL Scheme
+
+A widget's `Link` / `widgetURL` on a custom scheme opens nothing unless the host
+app declares that scheme. `build` writes a `CFBundleURLTypes` entry for
+`app.deep_link_scheme` into `ios/Runner/Info.plist`, so this needs no manual
+Xcode step — and it fails the build if an `MLaunchUrlAction` uses a different
+custom scheme, which would otherwise be a silently dead tap.
+
+Changing the scheme replaces the generated entry. If you already maintain your
+own `CFBundleURLTypes` (extra roles, icon files), Mosaic leaves it alone and
+assumes you have registered the scheme yourself.
+
+## 12. Adding a Widget from Inside the App
+
+iOS has no API for this. Apple requires the user to go through the widget
+gallery, so `MosaicBridge.canRequestPinWidget()` returns false on iOS and
+`requestPinWidget()` is a no-op returning false. Branch on the capability check
+and show instructions ("Long-press the Home Screen, tap **+**, then search for
+your app") rather than a button that does nothing. The same calls do open the
+launcher's add-widget dialog on Android 8+, so one code path covers both.
+
+## 13. Troubleshooting
 
 ### 🔴 Error: "Cycle inside Runner; building could produce unreliable results"
 

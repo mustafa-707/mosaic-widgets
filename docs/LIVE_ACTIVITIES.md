@@ -80,7 +80,21 @@ Add the activity under a `live_activities:` list (name + entry), alongside your 
 live_activities:
   - name: OrderTracker
     entry: lib/platform/live_activities/order_tracker.live.dart
+    watch: true      # optional — also show on Apple Watch / CarPlay
 ```
+
+### `watch:` — Apple Watch and CarPlay
+
+`watch: true` adds `supplementalActivityFamilies([.small, .medium])`, so the
+activity appears in a paired Apple Watch's Smart Stack and in CarPlay. It reuses
+the lock-screen layout you already wrote — there is no second tree to build.
+
+The modifier is **iOS 18+**, while Live Activities start at 16.1, and a
+`WidgetConfiguration` is an opaque type that cannot branch on availability
+inside its own body. So opting in raises **that activity's** minimum to iOS 18:
+below 18 it is not registered, and `Activity.request` for it does nothing. Every
+other activity, widget and control in the project is unaffected. Leave it off if
+you still support iOS 16–17.
 
 Then regenerate native code:
 

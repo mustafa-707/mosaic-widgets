@@ -5,6 +5,6 @@
     android:minHeight="71dp"
     android:updatePeriodMillis="1800000"
     android:initialLayout="@layout/hw_newswidget"
-     android:resizeMode="horizontal"
+     android:resizeMode="horizontal" android:previewLayout="@layout/hw_newswidget" android:description="@string/mosaic_desc_newswidget"
     >
 </appwidget-provider>

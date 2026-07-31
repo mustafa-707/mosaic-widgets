@@ -21,6 +21,13 @@ MosaicConfig _$MosaicConfigFromJson(Map<String, dynamic> json) => MosaicConfig(
                   MosaicControlConfig.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      refresh: json['refresh'] == null
+          ? const {}
+          : _refreshFromJson(json['refresh']),
+      strings: (json['strings'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, Map<String, String>.from(e as Map)),
+          ) ??
+          {},
     );
 
 Map<String, dynamic> _$MosaicConfigToJson(MosaicConfig instance) =>
@@ -29,6 +36,8 @@ Map<String, dynamic> _$MosaicConfigToJson(MosaicConfig instance) =>
       'widgets': instance.widgets,
       'live_activities': instance.liveActivities,
       'controls': instance.controls,
+      'refresh': _refreshToJson(instance.refresh),
+      'strings': instance.strings,
     };
 
 MosaicAppConfig _$MosaicAppConfigFromJson(Map<String, dynamic> json) =>
@@ -51,15 +60,25 @@ MosaicWidgetConfig _$MosaicWidgetConfigFromJson(Map<String, dynamic> json) =>
     MosaicWidgetConfig(
       name: json['name'] as String,
       entry: json['entry'] as String,
-      android: MosaicAndroidWidgetConfig.fromJson(
-          json['android'] as Map<String, dynamic>),
-      ios: MosaicIosWidgetConfig.fromJson(json['ios'] as Map<String, dynamic>),
+      android: json['android'] == null
+          ? null
+          : MosaicAndroidWidgetConfig.fromJson(
+              json['android'] as Map<String, dynamic>),
+      ios: json['ios'] == null
+          ? null
+          : MosaicIosWidgetConfig.fromJson(json['ios'] as Map<String, dynamic>),
+      label: json['label'] as String?,
+      description: json['description'] as String?,
+      push: json['push'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$MosaicWidgetConfigToJson(MosaicWidgetConfig instance) =>
     <String, dynamic>{
       'name': instance.name,
       'entry': instance.entry,
+      'push': instance.push,
+      'label': instance.label,
+      'description': instance.description,
       'android': instance.android,
       'ios': instance.ios,
     };
@@ -69,6 +88,7 @@ MosaicLiveActivityConfig _$MosaicLiveActivityConfigFromJson(
     MosaicLiveActivityConfig(
       name: json['name'] as String,
       entry: json['entry'] as String,
+      watch: json['watch'] as bool? ?? false,
     );
 
 Map<String, dynamic> _$MosaicLiveActivityConfigToJson(
@@ -76,6 +96,7 @@ Map<String, dynamic> _$MosaicLiveActivityConfigToJson(
     <String, dynamic>{
       'name': instance.name,
       'entry': instance.entry,
+      'watch': instance.watch,
     };
 
 MosaicControlConfig _$MosaicControlConfigFromJson(Map<String, dynamic> json) =>
@@ -91,11 +112,34 @@ Map<String, dynamic> _$MosaicControlConfigToJson(
       'entry': instance.entry,
     };
 
+MosaicRefreshSourceConfig _$MosaicRefreshSourceConfigFromJson(
+        Map<String, dynamic> json) =>
+    MosaicRefreshSourceConfig(
+      url: json['url'] as String,
+      method: json['method'] as String? ?? 'GET',
+      headers: (json['headers'] as Map<String, dynamic>?)?.map(
+            (k, e) => MapEntry(k, e as String),
+          ) ??
+          {},
+      map: Map<String, String>.from(json['map'] as Map),
+    );
+
+Map<String, dynamic> _$MosaicRefreshSourceConfigToJson(
+        MosaicRefreshSourceConfig instance) =>
+    <String, dynamic>{
+      'url': instance.url,
+      'method': instance.method,
+      'headers': instance.headers,
+      'map': instance.map,
+    };
+
 MosaicAndroidWidgetConfig _$MosaicAndroidWidgetConfigFromJson(
         Map<String, dynamic> json) =>
     MosaicAndroidWidgetConfig(
-      minSdk: (json['min_sdk'] as num).toInt(),
-      sizes: (json['sizes'] as List<dynamic>).map((e) => e as String).toList(),
+      minSdk: (json['min_sdk'] as num?)?.toInt() ?? 21,
+      sizes:
+          (json['sizes'] as List<dynamic>?)?.map((e) => e as String).toList() ??
+              const [],
     );
 
 Map<String, dynamic> _$MosaicAndroidWidgetConfigToJson(

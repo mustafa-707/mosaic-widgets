@@ -37,6 +37,6 @@ void main() {
     final s = r.swiftForTestW();
     expect(s, contains('.trim('));
     expect(s, contains('entry.data["pct"]'));
-    expect(s, contains('doubleValue'));
+    expect(s, contains('mosaicNum(entry.data["pct"])'));
   });
 }

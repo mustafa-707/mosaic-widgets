@@ -3,8 +3,8 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
-    <FrameLayout
-    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    <FrameLayout android:id="@+id/hw_clip__240_null_null"
+    android:layout_width="match_parent" android:layout_height="match_parent"
      android:background="@drawable/hw_gradient_955063472"
     >
     <FrameLayout
@@ -22,8 +22,19 @@
 </FrameLayout>
 </FrameLayout>
 <FrameLayout
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:layout_gravity="bottom|end"
+     android:layout_marginTop="0.0dp" android:layout_marginEnd="0.0dp" android:layout_marginBottom="0.0dp">
+    <FrameLayout
+    android:layout_width="88.0dp" android:layout_height="wrap_content"
+    
+    >
+    <ImageView android:id="@+id/hw_netimg_news_image" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" android:background="@drawable/hw_clip_1271444450" />
+</FrameLayout>
+</FrameLayout>
+<FrameLayout
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingStart="16.0dp" android:paddingEnd="16.0dp"
+    android:paddingStart="16.0dp" android:paddingEnd="104.0dp"
     android:paddingTop="16.0dp" android:paddingBottom="16.0dp" android:layout_gravity="top|start">
     <LinearLayout
     android:layout_width="match_parent"
@@ -35,43 +46,33 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="start|center_vertical">
-    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="TRENDING NOW" android:textColor="#F43F5E" android:textSize="10.0sp" android:textStyle="bold" />
+    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/mosaic_s_trending_now" android:textColor="#F43F5E" android:textSize="10.0sp" android:textStyle="bold" />
 <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:gravity="start|center_vertical">
-    <Chronometer android:id="@+id/hw_timer_0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="#22C55E" android:textSize="10.0sp" android:textStyle="bold" />
-<FrameLayout
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:paddingStart="4.0dp" android:paddingEnd="0.0dp"
-    android:paddingTop="0.0dp" android:paddingBottom="0.0dp">
-    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="LIVE" android:textColor="#94A3B8" android:textSize="10.0sp" android:textStyle="bold" />
-</FrameLayout>
-</LinearLayout>
+<TextView android:id="@+id/hw_text_news_updated" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#94A3B8" android:textSize="10.0sp" android:textStyle="normal" />
 </LinearLayout>
 <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
-<TextView android:id="@+id/hw_text_news_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="14.0sp" android:textStyle="bold" />
+<ViewFlipper
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:flipInterval="6000"
+    android:autoStart="true"
+    android:measureAllChildren="false">
+<TextView android:id="@+id/hw_text_news_title" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="14.0sp" android:textStyle="bold" android:maxLines="2" android:ellipsize="end" />
+<TextView android:id="@+id/hw_text_news_title_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="14.0sp" android:textStyle="bold" android:maxLines="2" android:ellipsize="end" />
+</ViewFlipper>
 <FrameLayout android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" />
 <LinearLayout
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="start|center_vertical">
-    <LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="top|start">
-    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="World News • Just now" android:textColor="#64748B" android:textSize="10.0sp" android:textStyle="normal" />
-</LinearLayout>
+    <TextView android:id="@+id/hw_text_news_source" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#64748B" android:textSize="10.0sp" android:textStyle="normal" android:maxLines="1" android:ellipsize="end" />
 <FrameLayout android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" />
 <FrameLayout
     android:id="@+id/hw_button_main"
-    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
     android:clickable="true" android:focusable="true">
-    <FrameLayout
+    <FrameLayout android:id="@+id/hw_clip__80_null_null"
     android:layout_width="wrap_content" android:layout_height="wrap_content"
      android:background="@drawable/hw_bg_1358212893"
     >
@@ -79,7 +80,7 @@
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:paddingStart="10.0dp" android:paddingEnd="10.0dp"
     android:paddingTop="4.0dp" android:paddingBottom="4.0dp">
-    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="READ" android:textColor="#F43F5E" android:textSize="10.0sp" android:textStyle="bold" />
+    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/mosaic_s_read_action" android:textColor="#F43F5E" android:textSize="10.0sp" android:textStyle="bold" />
 </FrameLayout>
 </FrameLayout>
 </FrameLayout>

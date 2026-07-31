@@ -43,6 +43,9 @@ Future<GenResult> runIos(
     p.join(dir.path, 'ios', 'HomeWidgetExtension'),
   ).create(recursive: true);
 
+  // Real projects always have ios/Runner; the host-side plugin is emitted there.
+  await Directory(p.join(dir.path, 'ios', 'Runner')).create(recursive: true);
+
   // When skipConfigWidget == true, use a non-matching widget name so the
   // generator's firstWhere lookup (config.widgets.firstWhere((w) => w.name == def.name))
   // throws a StateError — this exercises the missing-entry error path.

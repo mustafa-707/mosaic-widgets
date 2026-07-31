@@ -19,13 +19,23 @@ struct NewsWidgetProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> ()) {
-        let entry = NewsWidgetEntry(date: Date(), data: loadData())
-        
-                let nextUpdate = Calendar.current.date(byAdding: .second, value: 900, to: Date())!
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-        
-        
-        completion(timeline)
+        // Fetch, then complete. WidgetKit waits for `completion`, so the fresh
+        // values render on this pass. Completing first and reloading afterwards
+        // would depend on a second reload, which the system may throttle away.
+        Task {
+            await MosaicRefreshSources.run(keys: ["global_url", "news_image", "news_source", "news_title", "news_title_2", "news_updated"])
+            // Network images: download after the refresh, so a URL that arrived
+            // in this same pass is fetched immediately rather than one timeline
+            // later. Cached URLs cost nothing.
+            await MosaicImageCache.prefetch([mosaicStr(loadData()["news_image"])].compactMap { $0 })
+            let entry = NewsWidgetEntry(date: Date(), data: loadData())
+
+                        let nextUpdate = Calendar.current.date(byAdding: .second, value: 900, to: Date())!
+            let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
+            
+
+            completion(timeline)
+        }
     }
 
     // The App Group container path, used to resolve relative image file paths.
@@ -36,7 +46,14 @@ struct NewsWidgetProvider: TimelineProvider {
         guard let defaults = UserDefaults(suiteName: NewsWidgetProvider.appGroup) else {
             return ["btc_price": "GRP ERR", "battery_level": "ERR", "news_title": "App Group Config Error"]
         }
-        for k in ["global_url", "news_title"] {
+        // Refresh native device metrics first, so bindings read current values
+        // rather than whatever the app last stored.
+        MosaicDevice.populate()
+        // Re-read from disk: the app and the refresh code write through other
+        // UserDefaults instances, and without this the widget can render a
+        // snapshot taken before those writes.
+        defaults.synchronize()
+        for k in ["global_url", "news_image", "news_source", "news_title", "news_title_2", "news_updated"] {
             if let v = defaults.object(forKey: k) {
                 data[k] = v
             }
@@ -56,41 +73,50 @@ struct NewsWidgetView: View {
     .background(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0))
     .clipped()
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
+Group {
+    if let _img = MosaicImageCache.cached(mosaicStr(entry.data["news_image"])) {
+        Image(uiImage: _img).resizable().mosaicAccentedRendering("fullColor").aspectRatio(contentMode: .fill).clipShape(RoundedRectangle(cornerRadius: 16.0))
+    } else {
+        Color(red: 0.11764705882352941, green: 0.1607843137254902, blue: 0.23137254901960785, opacity: 1.0).clipShape(RoundedRectangle(cornerRadius: 16.0))
+    }
+}
+    .frame(width: 88.0)
+    .clipped()
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
 VStack(alignment: .leading, spacing: 0) {
     HStack(alignment: .center, spacing: 0) {
-    Text("TRENDING NOW").bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
+    Text(LocalizedStringKey("trending_now")).bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
+Spacer()
+Text(Date(timeIntervalSince1970: (mosaicNum(entry.data["news_updated"]) ?? 0) / 1000.0), style: .relative).foregroundColor(Color(red: 0.5803921568627451, green: 0.6392156862745098, blue: 0.7215686274509804, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
+}
+Spacer()
+// MFlipper cycles on Android only; showing the first child.
+Text("\(mosaicStr(entry.data["news_title"]) ?? "--")").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 14.0)).lineLimit(2).dynamicTypeSize(.large)
 Spacer()
 HStack(alignment: .center, spacing: 0) {
-    Text(Date(timeIntervalSince1970: 1780947143.206), style: .timer).bold().foregroundColor(Color(red: 0.13333333333333333, green: 0.7725490196078432, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).monospacedDigit()
-Text("LIVE").bold().foregroundColor(Color(red: 0.5803921568627451, green: 0.6392156862745098, blue: 0.7215686274509804, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 0.0, leading: 4.0, bottom: 0.0, trailing: 0.0))
-}
-}
+    Text("\(mosaicStr(entry.data["news_source"]) ?? "--")").foregroundColor(Color(red: 0.39215686274509803, green: 0.4549019607843137, blue: 0.5450980392156862, opacity: 1.0)).font(.system(size: 10.0)).lineLimit(1).dynamicTypeSize(.large)
 Spacer()
-Text("\(entry.data["news_title"] as? String ?? String(describing: entry.data["news_title"] ?? "--"))").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 14.0)).dynamicTypeSize(.large)
-Spacer()
-HStack(alignment: .center, spacing: 0) {
-    VStack(alignment: .leading, spacing: 0) {
-    Text("World News • Just now").foregroundColor(Color(red: 0.39215686274509803, green: 0.4549019607843137, blue: 0.5450980392156862, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large)
-}
-Spacer()
-if #available(iOS 17.0, *) {
-    Button(intent: MosaicCallbackIntent(callbackName: "refresh_news")) {
-        Text("READ").bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 4.0, leading: 10.0, bottom: 4.0, trailing: 10.0))
-    .background(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 0.1))
-    .clipShape(RoundedRectangle(cornerRadius: 8.0))
-    }
-    .buttonStyle(.plain)
-} else if let _encoded = "refresh_news".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
-          let _u = URL(string: "mosaic-callback://\(_encoded)") {
-    Link(destination: _u) {
-        Text("READ").bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 4.0, leading: 10.0, bottom: 4.0, trailing: 10.0))
-    .background(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 0.1))
-    .clipShape(RoundedRectangle(cornerRadius: 8.0))
+Group {
+    if #available(iOS 17.0, *) {
+        Button(intent: MosaicCallbackIntent(callbackName: "refresh_news")) {
+            Text(LocalizedStringKey("read_action")).bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 4.0, leading: 10.0, bottom: 4.0, trailing: 10.0))
+        .background(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8.0))
+        }
+        .buttonStyle(.plain)
+    } else if let _encoded = "refresh_news".addingPercentEncoding(withAllowedCharacters: .urlPathAllowed),
+              let _u = URL(string: "mosaic-callback://\(_encoded)") {
+        Link(destination: _u) {
+            Text(LocalizedStringKey("read_action")).bold().foregroundColor(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 1.0)).font(.system(size: 10.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 4.0, leading: 10.0, bottom: 4.0, trailing: 10.0))
+        .background(Color(red: 0.9568627450980393, green: 0.24705882352941178, blue: 0.3686274509803922, opacity: 0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 8.0))
+        }
     }
 }
 }
-}.padding(EdgeInsets(top: 16.0, leading: 16.0, bottom: 16.0, trailing: 16.0))
+}.padding(EdgeInsets(top: 16.0, leading: 16.0, bottom: 16.0, trailing: 104.0))
 }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
     .background(LinearGradient(gradient: Gradient(colors: [Color(red: 0.058823529411764705, green: 0.09019607843137255, blue: 0.16470588235294117, opacity: 1.0), Color(red: 0.11764705882352941, green: 0.1607843137254902, blue: 0.23137254901960785, opacity: 1.0)]), startPoint: UnitPoint(x: 0.0, y: 0.5), endPoint: UnitPoint(x: 1.0, y: 0.5)))
     .clipShape(RoundedRectangle(cornerRadius: 24.0))
     .overlay(RoundedRectangle(cornerRadius: 24.0).stroke(Color(red: 0.2, green: 0.2549019607843137, blue: 0.3333333333333333, opacity: 1.0), lineWidth: 1.0))
@@ -125,8 +151,8 @@ struct NewsWidgetWidget: Widget {
                 .mosaicContainerBackground(.clear)
                 .widgetAccentable()
         }
-        .configurationDisplayName("NewsWidget")
-        .description("This is an auto-generated home widget.")
+        .configurationDisplayName("Top Headline")
+        .description("The latest space and science headline.")
         .supportedFamilies(families)
         .contentMarginsDisabled()
     }

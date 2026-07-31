@@ -47,5 +47,20 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- MOSAIC-GENERATED -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.example.demo_app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>hwdemo</string>
+			</array>
+		</dict>
+	</array>
+	<!-- /MOSAIC-GENERATED -->
 </dict>
 </plist>

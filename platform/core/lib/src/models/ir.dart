@@ -16,7 +16,17 @@ class IRDefinition {
   /// The root node of the IR node tree.
   final IRNode root;
 
-  /// Optional polling interval in seconds. `null` means no automatic update.
+  /// Alternate tree for the smallest size, when the definition declares one.
+  /// Null means every size renders [root].
+  final IRNode? compactRoot;
+
+  /// Optional polling interval in **milliseconds** — the DSL emits
+  /// `Duration.inMilliseconds`. `null` means no automatic update.
+  ///
+  /// Android clamps the manifest's `updatePeriodMillis` to the platform's
+  /// 30-minute floor and drives anything shorter with its own alarm; iOS
+  /// converts to seconds for the timeline refresh date. WidgetKit treats the
+  /// date as a hint and may deliver later.
   final int? updateInterval;
 
   /// Grid columns occupied by this widget in its default size. Defaults to 2.
@@ -44,6 +54,7 @@ class IRDefinition {
   IRDefinition({
     required this.name,
     required this.root,
+    this.compactRoot,
     this.updateInterval,
     this.width = 2,
     this.height = 2,

@@ -53,8 +53,11 @@ MosaicDefinition buildCryptoWidget() {
             width: 100,
             height: 100,
             radius: 50,
-            // Runtime-bound accent color (app pushes an "accent" hex).
-            background: MColor.bind("accent"),
+            // Runtime-bound accent colour: the app pushes green or red for the
+            // day's direction. Held at low opacity so it tints the corner
+            // rather than competing with the price — at full strength it read
+            // as a solid blob.
+            background: MColor.bind("accent", opacity: 0.28),
             child: MSpacer(),
           ),
         ),
@@ -93,7 +96,12 @@ MosaicDefinition buildCryptoWidget() {
                   radius: 8,
                   background: MColor.hex("#FFFFFF", opacity: 0.2),
                   child: MCenter(
-                    child: MIcon(sfSymbol: "bitcoinsign", androidDrawable: "ic_bitcoin", size: 18, color: MColor.hex("#FFFFFF")),
+                    child: MIcon(
+                      sfSymbol: "bitcoinsign",
+                      androidDrawable: "ic_bitcoin",
+                      size: 18,
+                      color: MColor.hex("#FFFFFF"),
+                    ),
                   ),
                 ),
               ]),
@@ -102,8 +110,15 @@ MosaicDefinition buildCryptoWidget() {
               MColumn(crossAxisAlignment: MCrossAxisAlignment.start, [
                 MText(
                   MBind("btc_price"),
-                  // Locale-aware currency formatting of the bound numeric value.
+                  // The pair is BTC/USD, so the amount is dollars regardless of
+                  // where the phone is. Without the code it rendered in the
+                  // device currency — "JOD 64,510.000" on a phone set to
+                  // Jordan, relabelling the number without converting it.
                   format: MFormat.currency,
+                  currencyCode: 'USD',
+                  // Digits roll when the price changes (iOS 17+; a no-op on
+                  // Android, which has no equivalent).
+                  contentTransition: MContentTransition.numericText,
                   style: const MTextStyle(
                     color: MColor.hex("#FFFFFF"),
                     size: 20,
@@ -113,6 +128,11 @@ MosaicDefinition buildCryptoWidget() {
                 MRow([
                   MText(
                     MBind("btc_change"),
+                    // The native refresh source writes CoinGecko's raw
+                    // usd_24h_change (1.327679510905918); this is what turns it
+                    // into "+1.33%". Without it the widget showed the full
+                    // double, which is what the screenshot caught.
+                    format: MFormat.signedPercent,
                     style: const MTextStyle(
                       color: MColor.hex("#4ADE80"),
                       size: 12,
@@ -123,14 +143,23 @@ MosaicDefinition buildCryptoWidget() {
                     MInsets.only(left: 4),
                     MText(
                       "24h",
-                      style: MTextStyle(
-                        color: MColor.hex("#93C5FD"),
-                        size: 12,
-                      ),
+                      style: MTextStyle(color: MColor.hex("#93C5FD"), size: 12),
                     ),
                   ),
                 ]),
               ]),
+
+              // 7-day price trend, directly under the figure it explains.
+              // Rasterised natively on Android; a SwiftUI Path on iOS.
+              MSizedBox(
+                height: 26,
+                child: MSparkline(
+                  bind: MBind('btc_series'),
+                  color: const MColor.hex('#7DD3FC'),
+                  strokeWidth: 2,
+                  fill: true,
+                ),
+              ),
 
               // Footer
               MRow(mainAxisAlignment: MMainAxisAlignment.spaceBetween, [

@@ -14,7 +14,7 @@ void main() {
   // Combined generated Kotlin (provider routing + MosaicData formatting). The
   // spec asserts "provider Kotlin contains getCurrencyInstance"; the actual
   // format call lives in MosaicData.formatValue which the provider invokes.
-  String kotlin(r) => provider(r) + '\n' + mosaicData(r);
+  String kotlin(r) => '${provider(r)}\n${mosaicData(r)}';
 
   Map<String, dynamic> fmtText(String key, String format) => {
         '__type': 'HWText',

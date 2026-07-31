@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOSAIC-GENERATED -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout android:id="@+id/hw_clip__240_null_null"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+     android:background="@drawable/hw_gradient_43560268"
+    >
+    <FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:paddingStart="14.0dp" android:paddingEnd="14.0dp"
+    android:paddingTop="14.0dp" android:paddingBottom="14.0dp">
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="top|start">
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="start|center_vertical">
+    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="USED" android:textColor="@color/mosaic_sys_1541652284" android:textSize="9.0sp" android:textStyle="bold" />
+<FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
+<FrameLayout
+    android:layout_width="wrap_content" android:layout_height="wrap_content">
+    <FrameLayout
+        android:id="@+id/hw_visibility_mosaic_refreshing"
+        android:layout_width="match_parent" android:layout_height="match_parent">
+        <ProgressBar style="?android:attr/progressBarStyleSmall" android:indeterminate="true" android:layout_width="12.0dp" android:layout_height="12.0dp" />
+    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/hw_visibility_mosaic_refreshing_alt"
+        android:layout_width="match_parent" android:layout_height="match_parent">
+        <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"
+    android:orientation="horizontal"
+    android:gravity="start|center_vertical">
+    <TextView android:id="@+id/hw_text_mosaic_memory_used_percent" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#94A3B8" android:textSize="9.0sp" android:textStyle="bold" />
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="%" android:textColor="#64748B" android:textSize="9.0sp" android:textStyle="normal" />
+</LinearLayout>
+    </FrameLayout>
+</FrameLayout>
+</LinearLayout>
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="8.0dp" />
+<FrameLayout android:contentDescription="Free memory" android:importantForAccessibility="noHideDescendants"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"
+    android:orientation="horizontal"
+    android:gravity="start|bottom">
+    <TextView android:id="@+id/hw_text_mosaic_memory_free_mb" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="30.0sp" android:textStyle="bold" />
+<FrameLayout
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:paddingStart="3.0dp" android:paddingEnd="0.0dp"
+    android:paddingTop="0.0dp" android:paddingBottom="5.0dp">
+    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="MB free" android:textColor="#94A3B8" android:textSize="11.0sp" android:textStyle="normal" />
+</FrameLayout>
+</LinearLayout>
+</FrameLayout>
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="8.0dp" />
+<FrameLayout android:contentDescription="Memory in use"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="top|start">
+    <ProgressBar android:id="@+id/hw_progress_mosaic_memory_used_percent" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="100" android:progressTint="#34D399" />
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="5.0dp" />
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="start|center_vertical">
+    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="in use" android:textColor="#64748B" android:textSize="10.0sp" android:textStyle="normal" />
+<FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
+<LinearLayout
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="start|center_vertical">
+    <TextView android:id="@+id/hw_text_mosaic_memory_total_mb" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#94A3B8" android:textSize="10.0sp" android:textStyle="normal" />
+<TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text=" MB total" android:textColor="#64748B" android:textSize="10.0sp" android:textStyle="normal" />
+</LinearLayout>
+</LinearLayout>
+</LinearLayout>
+</FrameLayout>
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="10.0dp" />
+<FrameLayout
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <FrameLayout
+        android:id="@+id/hw_visibility_mosaic_refreshing_2"
+        android:layout_width="match_parent" android:layout_height="match_parent">
+        <FrameLayout android:id="@+id/hw_clip__80_null_null"
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+     android:background="@drawable/hw_bg_1769503129"
+    >
+    <FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:paddingStart="10.0dp" android:paddingEnd="10.0dp"
+    android:paddingTop="7.0dp" android:paddingBottom="7.0dp">
+    <FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <FrameLayout
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="center">
+        <ProgressBar style="?android:attr/progressBarStyleSmall" android:indeterminate="true" android:layout_width="14.0dp" android:layout_height="14.0dp" />
+    </FrameLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>
+    </FrameLayout>
+    <FrameLayout
+        android:id="@+id/hw_visibility_mosaic_refreshing_2_alt"
+        android:layout_width="match_parent" android:layout_height="match_parent">
+        <FrameLayout
+    android:id="@+id/hw_button_main"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:clickable="true" android:focusable="true">
+    <FrameLayout android:id="@+id/hw_clip__80_null_null_2"
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+     android:background="@drawable/hw_bg_1973432212"
+    >
+    <FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:paddingStart="10.0dp" android:paddingEnd="10.0dp"
+    android:paddingTop="6.0dp" android:paddingBottom="6.0dp">
+    <FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent">
+    <FrameLayout
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_gravity="center">
+        <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Optimize" android:textColor="#06281D" android:textSize="11.0sp" android:textStyle="bold" />
+    </FrameLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>
+    </FrameLayout>
+</FrameLayout>
+</LinearLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>

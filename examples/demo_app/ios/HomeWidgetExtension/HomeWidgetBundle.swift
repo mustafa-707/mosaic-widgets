@@ -11,7 +11,11 @@ struct HomeWidgetBundle: WidgetBundle {
             CryptoWidgetWidget()
         }
         WeatherWidget()
-        if #available(iOS 16.1, *) {
+        SearchBarWidget()
+        TasksWidget()
+        FlashlightWidget()
+        MemoryWidget()
+        if #available(iOS 18.0, *) {
             OrderTrackerLiveActivity()
         }
         if #available(iOS 18.0, *) {

@@ -1,7 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="demo_app"
         android:name="${applicationName}"
+        android:supportsRtl="true"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -12,11 +14,11 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-            <intent-filter>
+            <intent-filter> <!-- MOSAIC-GENERATED -->
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="mosaic" />
+                <data android:scheme="hwdemo" />
             </intent-filter>
             <!-- Specifies an Android theme to apply to this Activity as soon as
                  the Android process has started. This theme is visible to the user
@@ -36,7 +38,7 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-            <receiver android:name="com.example.demo_app.hw_generated.ProfileVPProvider" android:exported="true">
+            <receiver android:name="com.example.demo_app.mosaic_generated.ProfileVPProvider" android:exported="true" android:label="System Status">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -44,7 +46,7 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/hw_profilevp_info" />
         </receiver>
-            <receiver android:name="com.example.demo_app.hw_generated.NewsWidgetProvider" android:exported="true">
+            <receiver android:name="com.example.demo_app.mosaic_generated.NewsWidgetProvider" android:exported="true" android:label="Top Headline">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -52,31 +54,7 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/hw_newswidget_info" />
         </receiver>
-            <receiver android:name="com.example.demo_app.hw_generated.CryptoWidgetProvider" android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/hw_cryptowidget_info" />
-        </receiver>
-            <receiver android:name="com.example.demo_app.mosaic_generated.ProfileVPProvider" android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/hw_profilevp_info" />
-        </receiver>
-            <receiver android:name="com.example.demo_app.mosaic_generated.NewsWidgetProvider" android:exported="true">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data
-                android:name="android.appwidget.provider"
-                android:resource="@xml/hw_newswidget_info" />
-        </receiver>
-            <receiver android:name="com.example.demo_app.mosaic_generated.CryptoWidgetProvider" android:exported="true">
+            <receiver android:name="com.example.demo_app.mosaic_generated.CryptoWidgetProvider" android:exported="true" android:label="Bitcoin Price">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -89,7 +67,7 @@
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
             </intent-filter>
         </activity>
-            <receiver android:name="com.example.demo_app.mosaic_generated.WeatherProvider" android:exported="true">
+            <receiver android:name="com.example.demo_app.mosaic_generated.WeatherProvider" android:exported="true" android:label="Weather">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
@@ -97,6 +75,42 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/hw_weather_info" />
         </receiver>
+            <receiver android:name="com.example.demo_app.mosaic_generated.SearchBarProvider" android:exported="true" android:label="Search">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hw_searchbar_info" />
+        </receiver>
+            <receiver android:name="com.example.demo_app.mosaic_generated.TasksProvider" android:exported="true" android:label="Tasks">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hw_tasks_info" />
+        </receiver>
+            <receiver android:name="com.example.demo_app.mosaic_generated.FlashlightProvider" android:exported="true" android:label="Flashlight">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hw_flashlight_info" />
+        </receiver>
+            <receiver android:name="com.example.demo_app.mosaic_generated.MemoryProvider" android:exported="true" android:label="Memory">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/hw_memory_info" />
+        </receiver>
+            <service
+            android:name="com.example.demo_app.mosaic_generated.MosaicListService"
+            android:exported="false"
+            android:permission="android.permission.BIND_REMOTEVIEWS" />
             <service
             android:name="com.example.demo_app.mosaic_generated.TorchTileService"
             android:exported="true"

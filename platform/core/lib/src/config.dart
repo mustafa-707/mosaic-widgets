@@ -31,14 +31,53 @@ class MosaicConfig {
   @JsonKey(name: 'controls', defaultValue: <MosaicControlConfig>[])
   final List<MosaicControlConfig> controls;
 
+  /// Network sources a widget's refresh button may fetch directly, keyed by
+  /// callback name (the `MActionCallback` / `MRefreshAction` name).
+  ///
+  /// Widget-extension AppIntents cannot run Dart, so without a source here a
+  /// refresh button can only re-render already-stored data and defer the real
+  /// work to the host app's next foreground. Declaring a source lets the
+  /// generated intent fetch and store the data itself, so the button works
+  /// while the app is closed. Defaults to an empty map when absent.
+  /// A callback may declare a single source or a list of them — a list lets one
+  /// button fetch several endpoints (e.g. the same reading in two units, or a
+  /// "refresh everything" button).
+  @JsonKey(name: 'refresh', fromJson: _refreshFromJson, toJson: _refreshToJson)
+  final Map<String, List<MosaicRefreshSourceConfig>> refresh;
+
+  /// Widget text by locale, keyed `locale → (key → value)`.
+  ///
+  /// A widget renders outside the Flutter engine, so Dart's localization stack
+  /// is unavailable to it. These become real platform string resources —
+  /// `Localizable.strings` and `values-<locale>/` — which the OS selects using
+  /// the device language.
+  ///
+  /// The first locale listed is the default, used when the device language has
+  /// no entry.
+  @JsonKey(name: 'strings', defaultValue: <String, Map<String, String>>{})
+  final Map<String, Map<String, String>> strings;
+
   /// Creates a [MosaicConfig] with the given [app] settings, [widgets], and
-  /// optional [liveActivities] and [controls].
+  /// optional [liveActivities], [controls], and [refresh] sources.
   MosaicConfig({
     required this.app,
     required this.widgets,
     this.liveActivities = const [],
     this.controls = const [],
+    this.refresh = const {},
+    this.strings = const {},
   });
+
+  /// The default locale for widget text — the first entry under `strings:`.
+  String? get defaultLocale => strings.keys.isEmpty ? null : strings.keys.first;
+
+  /// Every localization key declared, across all locales.
+  Set<String> get stringKeys =>
+      {for (final table in strings.values) ...table.keys};
+
+  /// All refresh sources declared for [callback], in declaration order.
+  List<MosaicRefreshSourceConfig> sourcesFor(String callback) =>
+      refresh[callback] ?? const [];
 
   /// Parses a [MosaicConfig] from a YAML string (e.g. the contents of
   /// `mosaic.yaml`).
@@ -121,19 +160,61 @@ class MosaicWidgetConfig {
   /// widget. May be absolute or relative to the project root.
   final String entry;
 
-  /// Android-specific configuration for this widget.
-  final MosaicAndroidWidgetConfig android;
+  /// Opts this widget into WidgetKit push updates (iOS 26+).
+  ///
+  /// The extension receives an APNs token and forwards it to the app, which
+  /// registers it with your server; the server then pushes
+  /// `{"aps":{"content-changed":true}}` to reload the timeline with the app
+  /// closed. Off by default — it only earns its keep when a server actually
+  /// drives the data.
+  @JsonKey(name: 'push', defaultValue: false)
+  final bool push;
 
-  /// iOS-specific configuration for this widget.
-  final MosaicIosWidgetConfig ios;
+  /// The title shown in the OS widget picker. Defaults to [name].
+  ///
+  /// Without it Android falls back to the application label and icon, which is
+  /// why an unconfigured Flutter project lists every widget under the Flutter
+  /// logo.
+  final String? label;
+
+  /// One-line explanation shown under the title in the widget picker
+  /// (Android 12+ / iOS widget gallery).
+  final String? description;
+
+  /// Android-specific configuration for this widget.
+  ///
+  /// Optional: every field it carries is reserved, so omitting the whole
+  /// `android:` block changes nothing about the generated output.
+  @JsonKey(name: 'android', defaultValue: null)
+  final MosaicAndroidWidgetConfig? androidOrNull;
+
+  /// iOS-specific configuration for this widget. Optional; defaults to
+  /// [MosaicIosWidgetConfig.defaults] when the `ios:` block is omitted.
+  @JsonKey(name: 'ios', defaultValue: null)
+  final MosaicIosWidgetConfig? iosOrNull;
+
+  /// Android configuration, or the defaults when none was declared.
+  MosaicAndroidWidgetConfig get android =>
+      androidOrNull ?? MosaicAndroidWidgetConfig();
+
+  /// iOS configuration, or the defaults when none was declared.
+  MosaicIosWidgetConfig get ios =>
+      iosOrNull ?? MosaicIosWidgetConfig.defaults();
 
   /// Creates a [MosaicWidgetConfig].
   MosaicWidgetConfig({
     required this.name,
     required this.entry,
-    required this.android,
-    required this.ios,
-  });
+    MosaicAndroidWidgetConfig? android,
+    MosaicIosWidgetConfig? ios,
+    this.label,
+    this.description,
+    this.push = false,
+  })  : androidOrNull = android,
+        iosOrNull = ios;
+
+  /// The picker title: [label] when given, otherwise [name].
+  String get displayName => label ?? name;
 
   /// Deserializes a [MosaicWidgetConfig] from a JSON map.
   factory MosaicWidgetConfig.fromJson(Map<String, dynamic> json) =>
@@ -157,8 +238,22 @@ class MosaicLiveActivityConfig {
   /// live activity. May be absolute or relative to the project root.
   final String entry;
 
+  /// Whether this activity should also appear on a paired Apple Watch's
+  /// Smart Stack (and in CarPlay), via `supplementalActivityFamilies`.
+  ///
+  /// Off by default because the API is iOS 18+, while Live Activities
+  /// themselves work from 16.1. Turning it on raises *this activity's*
+  /// minimum to iOS 18 — on 16.1–17 it is not registered at all. Nothing else
+  /// in the project is affected.
+  @JsonKey(name: 'watch', defaultValue: false)
+  final bool watch;
+
   /// Creates a [MosaicLiveActivityConfig].
-  MosaicLiveActivityConfig({required this.name, required this.entry});
+  MosaicLiveActivityConfig({
+    required this.name,
+    required this.entry,
+    this.watch = false,
+  });
 
   /// Deserializes a [MosaicLiveActivityConfig] from a JSON map.
   factory MosaicLiveActivityConfig.fromJson(Map<String, dynamic> j) =>
@@ -194,19 +289,92 @@ class MosaicControlConfig {
   Map<String, dynamic> toJson() => _$MosaicControlConfigToJson(this);
 }
 
+/// Normalizes `refresh:` entries, accepting either a single source map or a
+/// list of them so both spellings are valid YAML.
+Map<String, List<MosaicRefreshSourceConfig>> _refreshFromJson(Object? json) {
+  if (json is! Map) return const {};
+  return json.map((key, value) {
+    final sources = value is List ? value : [value];
+    return MapEntry(
+      key as String,
+      sources
+          .whereType<Map>()
+          .map((e) =>
+              MosaicRefreshSourceConfig.fromJson(e.cast<String, dynamic>()))
+          .toList(),
+    );
+  });
+}
+
+Map<String, dynamic> _refreshToJson(
+  Map<String, List<MosaicRefreshSourceConfig>> refresh,
+) =>
+    refresh.map((key, value) =>
+        MapEntry(key, value.map((e) => e.toJson()).toList()));
+
+/// A network source a refresh button fetches directly from the widget
+/// extension, declared under the `refresh` key in `mosaic.yaml`.
+///
+/// The response is parsed as JSON and each entry in [map] stores one value in
+/// the App Group under its key, where the widget's bindings already read it.
+@JsonSerializable()
+class MosaicRefreshSourceConfig {
+  /// The absolute URL to fetch.
+  final String url;
+
+  /// The HTTP method. Defaults to `GET`.
+  @JsonKey(defaultValue: 'GET')
+  final String method;
+
+  /// Extra HTTP headers to send. Defaults to none.
+  @JsonKey(defaultValue: <String, String>{})
+  final Map<String, String> headers;
+
+  /// Maps an App Group key to a path into the JSON response.
+  ///
+  /// Paths are dot-separated with optional `[n]` array indices and an optional
+  /// leading `$.`, e.g. `articles[0].title` or `$.current.temp_f`.
+  final Map<String, String> map;
+
+  /// Creates a [MosaicRefreshSourceConfig].
+  MosaicRefreshSourceConfig({
+    required this.url,
+    this.method = 'GET',
+    this.headers = const {},
+    required this.map,
+  });
+
+  /// Deserializes a [MosaicRefreshSourceConfig] from a JSON map.
+  factory MosaicRefreshSourceConfig.fromJson(Map<String, dynamic> j) =>
+      _$MosaicRefreshSourceConfigFromJson(j);
+
+  /// Serializes this config to a JSON map.
+  Map<String, dynamic> toJson() => _$MosaicRefreshSourceConfigToJson(this);
+}
+
 /// Android-specific configuration for a Mosaic home-screen widget.
 @JsonSerializable()
 class MosaicAndroidWidgetConfig {
-  /// The minimum Android SDK version required by this widget
-  /// (maps to the `min_sdk` YAML key).
+  /// Reserved: the minimum Android SDK this widget needs (`min_sdk` in YAML).
+  ///
+  /// Accepted for forward compatibility but **not currently applied** — the
+  /// app module's own `minSdk` governs, and the generator emits no per-widget
+  /// gate. Optional; omit it unless you are tracking the intent.
   @JsonKey(name: 'min_sdk')
   final int minSdk;
 
-  /// The supported widget sizes as strings (e.g. `['1x1', '2x2']`).
+  /// Reserved: informational size labels.
+  ///
+  /// **Not used by the generator.** A widget's grid footprint comes from
+  /// `MosaicDefinition(width:, height:)` in the DSL, and its resize behaviour
+  /// from `resizeMode` — so this list has no effect on output. Optional.
   final List<String> sizes;
 
   /// Creates a [MosaicAndroidWidgetConfig].
-  MosaicAndroidWidgetConfig({required this.minSdk, required this.sizes});
+  ///
+  /// Both fields are optional: neither reaches the generated output, so
+  /// requiring them only made every widget's config longer.
+  MosaicAndroidWidgetConfig({this.minSdk = 21, this.sizes = const []});
 
   /// Deserializes a [MosaicAndroidWidgetConfig] from a JSON map.
   factory MosaicAndroidWidgetConfig.fromJson(Map<String, dynamic> json) =>
@@ -225,6 +393,11 @@ class MosaicIosWidgetConfig {
 
   /// Creates a [MosaicIosWidgetConfig].
   MosaicIosWidgetConfig({required this.families});
+
+  /// The families used when a widget declares no `ios:` block: the two
+  /// home-screen sizes every widget can render at.
+  factory MosaicIosWidgetConfig.defaults() =>
+      MosaicIosWidgetConfig(families: const ['systemSmall', 'systemMedium']);
 
   /// Deserializes a [MosaicIosWidgetConfig] from a JSON map.
   factory MosaicIosWidgetConfig.fromJson(Map<String, dynamic> json) =>

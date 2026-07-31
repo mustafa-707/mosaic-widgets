@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MOSAIC-GENERATED -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <FrameLayout android:id="@+id/hw_clip__280_null_null_2"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+     android:background="@drawable/hw_gradient_153508367"
+    >
+    <FrameLayout
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:paddingStart="14.0dp" android:paddingEnd="14.0dp"
+    android:paddingTop="14.0dp" android:paddingBottom="14.0dp">
+    <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center_vertical|start">
+    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="BATTERY" android:textColor="#38BDF8" android:textSize="9.0sp" android:textStyle="bold" />
+<FrameLayout android:contentDescription="Battery level"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_gravity="center_vertical"
+    android:orientation="horizontal"
+    android:gravity="start|bottom">
+    <TextView android:id="@+id/hw_text_mosaic_battery_level_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textColor="#FFFFFF" android:textSize="34.0sp" android:textStyle="bold" />
+<FrameLayout
+    android:layout_width="wrap_content" android:layout_height="wrap_content"
+    android:paddingStart="2.0dp" android:paddingEnd="0.0dp"
+    android:paddingTop="0.0dp" android:paddingBottom="5.0dp">
+    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="%" android:textColor="#94A3B8" android:textSize="13.0sp" android:textStyle="normal" />
+</FrameLayout>
+</LinearLayout>
+</FrameLayout>
+<ProgressBar android:id="@+id/hw_progress_mosaic_battery_level_2" style="?android:attr/progressBarStyleHorizontal" android:layout_width="match_parent" android:layout_height="wrap_content" android:max="100" android:progressTint="#38BDF8" />
+</LinearLayout>
+</FrameLayout>
+</FrameLayout>
+</FrameLayout>

@@ -5,6 +5,6 @@
     android:minHeight="143dp"
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/hw_profilevp"
-     android:resizeMode="horizontal|vertical"
+     android:resizeMode="horizontal|vertical" android:previewLayout="@layout/hw_profilevp" android:description="@string/mosaic_desc_profilevp"
     >
 </appwidget-provider>
