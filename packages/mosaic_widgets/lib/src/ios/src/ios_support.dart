@@ -5,6 +5,26 @@ part of '../ios.dart';
 /// The CLI `clean` command checks the first line for this marker.
 const String kGeneratedSentinel = '// MOSAIC-GENERATED — do not edit';
 
+/// Wraps [content] in `#if os(iOS)` while keeping [kGeneratedSentinel] on the
+/// first line.
+///
+/// Used for the frameworks that have no macOS counterpart — ActivityKit and
+/// ControlWidget. A shared widget-extension target can be built for both
+/// platforms, so those files still have to compile on macOS even though the
+/// feature cannot ship there; fencing beats omitting the file, which would
+/// leave the bundle referencing a type that does not exist.
+///
+/// The fence must come *after* the sentinel: `clean` and orphan pruning
+/// recognise generated files by that first line, and putting `#if` above it
+/// made them look hand-written.
+String fenceIOSOnly(String content) {
+  final lines = content.split('\n');
+  if (lines.isNotEmpty && lines.first.contains('MOSAIC-GENERATED')) {
+    return '${lines.first}\n#if os(iOS)\n${lines.skip(1).join('\n')}\n#endif\n';
+  }
+  return '#if os(iOS)\n$content\n#endif\n';
+}
+
 /// Tags the `CFBundleURLTypes` block Mosaic writes into the host `Info.plist`,
 /// so a changed `deep_link_scheme` replaces it instead of accumulating.
 const String plistUrlTypesMarker = 'MOSAIC-GENERATED';

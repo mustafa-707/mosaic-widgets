@@ -38,7 +38,7 @@ void main() {
     ]);
     final s = r.swiftForTestW();
     expect(s, contains('resolveFileImage("/tmp/pic.jpg")'));
-    expect(s, contains('Image(uiImage:'));
+    expect(s, contains('Image(mosaic:'));
   });
 
   test('bound file image reads entry data', () async {

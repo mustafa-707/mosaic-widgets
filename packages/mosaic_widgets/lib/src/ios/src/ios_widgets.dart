@@ -133,7 +133,8 @@ class ImageHandler extends IosNodeHandler {
           : '"${swiftEscape(path.toString())}"';
       // Resolve the file via the shared helper (absolute paths used as-is,
       // relative paths resolved against the App Group container). Nil-safe.
-      imageCode = 'Image(uiImage: resolveFileImage($pathValue) ?? UIImage())';
+      imageCode =
+          'Image(mosaic: resolveFileImage($pathValue) ?? MosaicImage())';
     } else {
       return '// Unsupported Image Source';
     }
@@ -289,7 +290,7 @@ class NetworkImageHandler extends IosNodeHandler {
     return '''
 Group {
     if let _img = MosaicImageCache.cached($urlExpr) {
-        Image(uiImage: _img)${parts.image}${iosAccentedRendering(node)}${parts.view}$clip
+        Image(mosaic: _img)${parts.image}${iosAccentedRendering(node)}${parts.view}$clip
     } else {
         $placeholderView$clip
     }

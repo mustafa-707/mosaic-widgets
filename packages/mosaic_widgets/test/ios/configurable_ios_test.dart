@@ -44,10 +44,10 @@ void main() {
       expect(s, contains('data["compact"]'));
 
       // 3. Availability gating: widget struct + registration.
-      expect(s, contains('@available(iOS 17.0, *)'));
+      expect(s, contains('@available(iOS 17.0, macOS 14.0, *)'));
       final bundle =
           readFile(r.file('ios/HomeWidgetExtension/HomeWidgetBundle.swift'));
-      expect(bundle, contains('if #available(iOS 17.0, *)'));
+      expect(bundle, contains('if #available(iOS 17.0, macOS 14.0, *)'));
       expect(bundle, contains('TestWWidget()'));
     });
 

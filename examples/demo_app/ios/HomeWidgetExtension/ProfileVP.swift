@@ -68,7 +68,7 @@ struct ProfileVPView: View {
     var body: some View {
         GeometryReader { geometry in
             Group {
-                if family == .systemSmall || family == .accessoryCircular || family == .accessoryInline {
+                if mosaicPrefersCompact(family) {
                     VStack(alignment: .leading, spacing: 0) {
     Spacer()
 Text("BATTERY").bold().foregroundColor(Color(red: 0.2196078431372549, green: 0.7411764705882353, blue: 0.9725490196078431, opacity: 1.0)).font(.system(size: 9.0)).dynamicTypeSize(.large)

@@ -11,11 +11,17 @@ extension IosControlEmitters on IosGenerator {
     for (final c in controls) {
       final name = c['name'] as String;
       final file = File(p.join(iosDir.path, '${name}Control.swift'));
-      await file.writeAsString(_generateControl(c));
+      // ControlWidget does not exist on macOS. A shared widget extension can target
+      // both, so the file has to compile there even though the feature
+      // cannot ship — guarding beats omitting, which would break the bundle
+      // reference.
+      await file.writeAsString(fenceIOSOnly(_generateControl(c)));
     }
 
     final intentsFile = File(p.join(iosDir.path, 'MosaicControlIntents.swift'));
-    await intentsFile.writeAsString(_generateControlIntents());
+    // ControlCenter arrived on macOS only in 26; the controls themselves are
+    // iOS-only anyway, so the whole file is fenced with the widgets it serves.
+    await intentsFile.writeAsString(fenceIOSOnly(_generateControlIntents()));
   }
 
   /// The `SetValueIntent` struct name for a toggle control of the given [name].

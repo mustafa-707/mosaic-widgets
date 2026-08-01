@@ -1,4 +1,5 @@
 // MOSAIC-GENERATED — do not edit
+#if os(iOS)
 import ActivityKit
 import Foundation
 
@@ -186,3 +187,5 @@ enum MosaicActivityController {
         return Activity<MosaicActivityAttributes>.activities.map { $0.id }
     }
 }
+
+#endif

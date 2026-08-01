@@ -20,12 +20,19 @@ struct MosaicActivityAttributes: ActivityAttributes {
 ''';
     final attrsFile =
         File(p.join(iosDir.path, 'MosaicActivityAttributes.swift'));
-    await attrsFile.writeAsString(attrsContent);
+    // Same fence as the activities themselves: ActivityAttributes is an
+    // ActivityKit type, and a shared extension target must still compile for
+    // macOS where that framework is absent.
+    await attrsFile.writeAsString(fenceIOSOnly(attrsContent));
 
     for (final la in liveActivities) {
       final name = la['name'] as String;
       final file = File(p.join(iosDir.path, '${name}LiveActivity.swift'));
-      await file.writeAsString(_generateLiveActivity(la));
+      // ActivityKit does not exist on macOS. A shared widget extension can target
+      // both, so the file has to compile there even though the feature
+      // cannot ship — guarding beats omitting, which would break the bundle
+      // reference.
+      await file.writeAsString(fenceIOSOnly(_generateLiveActivity(la)));
     }
 
     // Lifecycle controller the host app's AppDelegate routes channel methods
@@ -33,7 +40,7 @@ struct MosaicActivityAttributes: ActivityAttributes {
     final controllerContent = _generateActivityController();
     final controllerFile =
         File(p.join(iosDir.path, 'MosaicActivityController.swift'));
-    await controllerFile.writeAsString(controllerContent);
+    await controllerFile.writeAsString(fenceIOSOnly(controllerContent));
 
     // The host app's AppDelegate references MosaicActivityController and
     // MosaicActivityAttributes. These live in the extension folder which
@@ -43,9 +50,9 @@ struct MosaicActivityAttributes: ActivityAttributes {
     final runnerDir = Directory(p.join(projectRoot, 'ios', 'Runner'));
     if (runnerDir.existsSync()) {
       await File(p.join(runnerDir.path, 'MosaicActivityAttributes.swift'))
-          .writeAsString(attrsContent);
+          .writeAsString(fenceIOSOnly(attrsContent));
       await File(p.join(runnerDir.path, 'MosaicActivityController.swift'))
-          .writeAsString(controllerContent);
+          .writeAsString(fenceIOSOnly(controllerContent));
     }
   }
 

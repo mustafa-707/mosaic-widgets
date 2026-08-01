@@ -1,4 +1,5 @@
 // MOSAIC-GENERATED — do not edit
+#if os(iOS)
 import AppIntents
 import SwiftUI
 import WidgetKit
@@ -32,3 +33,5 @@ struct TorchValueProvider: ControlValueProvider {
         UserDefaults(suiteName: kMosaicAppGroup)?.bool(forKey: "torch_on") ?? false
     }
 }
+
+#endif

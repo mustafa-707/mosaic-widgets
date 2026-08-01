@@ -10,7 +10,7 @@ import Foundation
 // resume to fire the Dart backgroundCallback. See generateIntents() docs.
 
 /// Reloads all widget timelines. Used by MRefreshAction buttons on iOS 17+.
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 14.0, *)
 struct MosaicRefreshIntent: AppIntent {
     static let title: LocalizedStringResource = "Refresh Widget"
     static let isDiscoverable: Bool = false
@@ -35,7 +35,7 @@ struct MosaicRefreshIntent: AppIntent {
 /// Flips a boolean in the App Group and redraws. Used by MToggleAction buttons
 /// on iOS 17+. Runs entirely in the extension — no app launch, no network — so
 /// in-widget state like a unit switch responds immediately.
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 14.0, *)
 struct MosaicToggleIntent: AppIntent {
     static let title: LocalizedStringResource = "Toggle Value"
     static let isDiscoverable: Bool = false
@@ -62,7 +62,7 @@ struct MosaicToggleIntent: AppIntent {
 /// Records a pending Mosaic callback into the App Group so the host app can
 /// pick it up on next foreground, then reloads timelines. Used by
 /// MActionCallback buttons on iOS 17+.
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 14.0, *)
 struct MosaicCallbackIntent: AppIntent {
     static let title: LocalizedStringResource = "Mosaic Callback"
     static let isDiscoverable: Bool = false

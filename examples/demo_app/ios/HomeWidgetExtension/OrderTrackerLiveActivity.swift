@@ -1,4 +1,5 @@
 // MOSAIC-GENERATED — do not edit
+#if os(iOS)
 import ActivityKit
 import WidgetKit
 import SwiftUI
@@ -43,3 +44,5 @@ Text("\(mosaicStr(context.state.data["eta"]) ?? "--")").bold().foregroundColor(C
     .supplementalActivityFamilies([.small, .medium])
   }
 }
+
+#endif

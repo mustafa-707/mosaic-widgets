@@ -75,7 +75,7 @@ void main() {
     final core =
         readFile(r.file('ios/HomeWidgetExtension/HomeWidgetCore.swift'));
     expect(core, contains('extension Image {'));
-    expect(core, contains('if #available(iOS 18.0, *)'));
+    expect(core, contains('if #available(iOS 18.0, macOS 15.0, *)'));
     expect(core, contains('widgetAccentedRenderingMode(.fullColor)'));
     // An unknown mode must fall through rather than fail to compile.
     expect(core, contains('default:'));

@@ -1,4 +1,5 @@
 // MOSAIC-GENERATED — do not edit
+#if os(iOS)
 import AppIntents
 import WidgetKit
 import Foundation
@@ -32,3 +33,5 @@ struct TorchSetValueIntent: SetValueIntent {
         return .result()
     }
 }
+
+#endif

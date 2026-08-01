@@ -22,7 +22,9 @@ extension IosWidgetViews on IosGenerator {
 
     if (!_pushEnabled(def)) return '        $base';
 
-    return '''        if #available(iOS 26.0, *) {
+    // The handler type carries macOS 26 too, so the call site must match or it
+    // will not resolve on a macOS target.
+    return '''        if #available(iOS 26.0, macOS 26.0, *) {
             return $base
                 .pushHandler(${def.name}PushHandler.self)
         } else {
@@ -45,7 +47,7 @@ extension IosWidgetViews on IosGenerator {
 /// Send `{"aps":{"content-changed":true}}` to that token with
 /// `apns-push-type: widgets` and topic `<bundle-id>.push-type.widgets` to
 /// reload the timeline with the app closed.
-@available(iOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, *)
 struct ${def.name}PushHandler: WidgetPushHandler {
     init() {}
 
@@ -283,7 +285,7 @@ ${_pushConfiguration(def)}
   }
 
   /// Generates an iOS 17+ configurable widget for a definition carrying
-  /// `params`. Produces, all gated `@available(iOS 17.0, *)`:
+  /// `params`. Produces, all gated `@available(iOS 17.0, macOS 14.0, *)`:
   ///  - a `<Name>ConfigIntent: WidgetConfigurationIntent` with one `@Parameter`
   ///    per param,
   ///  - a `<Name>Provider: AppIntentTimelineProvider` whose
@@ -292,7 +294,7 @@ ${_pushConfiguration(def)}
   ///    (`entry.data[key]`) shows the chosen value, and
   ///  - an `AppIntentConfiguration`-based `<Name>Widget`.
   ///
-  /// The whole struct family is `@available(iOS 17.0, *)` because
+  /// The whole struct family is `@available(iOS 17.0, macOS 14.0, *)` because
   /// `AppIntentConfiguration`/`AppIntentTimelineProvider`/
   /// `WidgetConfigurationIntent` are iOS-17 APIs; the WidgetBundle registers it
   /// under `if #available(iOS 17.0, *)`.
@@ -344,7 +346,7 @@ struct ${def.name}Entry: TimelineEntry {
 // The chosen values are copied into the timeline entry's `data` dict by the
 // provider so the widget tree's existing bind resolution (entry.data[key])
 // renders them.
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 14.0, *)
 struct ${def.name}ConfigIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "${swiftEscape(def.name)}"
     static let description = IntentDescription("Configure this widget.")
@@ -354,7 +356,7 @@ $paramDecls
     init() {}
 }
 
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 14.0, *)
 struct ${def.name}Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> ${def.name}Entry {
         ${def.name}Entry(date: Date(), data: [:])
@@ -402,7 +404,7 @@ $copyLines
     }
 }
 
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 14.0, *)
 struct ${def.name}View: View {
     var entry: ${def.name}Entry
 
@@ -421,7 +423,7 @@ struct ${def.name}View: View {
 
 // NOTE: width=${def.width}, height=${def.height}, previewImage and resizeMode=${def.resizeMode}
 // are advisory on iOS; WidgetKit sizes by family.
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 14.0, *)
 struct ${def.name}Widget: Widget {
     let kind: String = "${def.name}"
 
@@ -476,8 +478,11 @@ ${_pushConfiguration(def, configurable: true)}
   String _rootForFamily(IRDefinition def) {
     final compact = def.compactRoot;
     if (compact == null) return renderRoot(def.root);
+    // The decision goes through a helper rather than naming the accessory cases
+    // inline: those enum cases do not exist on macOS, and a view body is an
+    // awkward place to put a compile fence.
     return '''Group {
-                if family == .systemSmall || family == .accessoryCircular || family == .accessoryInline {
+                if mosaicPrefersCompact(family) {
                     ${renderRoot(compact)}
                 } else {
                     ${renderRoot(def.root)}
@@ -537,10 +542,15 @@ ${_pushConfiguration(def, configurable: true)}
     }
 
     final accessoryList = accessorySel.map((f) => '.$f').join(', ');
+    // Accessory families are lock-screen/watch surfaces; the enum cases do not
+    // exist on macOS at all, so this is a compile fence rather than a runtime
+    // availability check.
     return '''var f: [WidgetFamily] = [$systemList]
+        #if os(iOS)
         if #available(iOS 16.0, *) {
             f.append(contentsOf: [$accessoryList])
         }
+        #endif
         return f''';
   }
 

@@ -37,17 +37,23 @@ void main() {
     expect(s, contains('@Environment(\\.widgetFamily) private var family'));
     expect(s, contains('tiny'));
     expect(s, contains('the full layout'));
-    expect(s, contains('family == .systemSmall'));
+    // The decision moved into mosaicPrefersCompact so the accessory cases,
+    // which do not exist on macOS, can be fenced in one place.
+    expect(s, contains('mosaicPrefersCompact(family)'));
   });
 
   test('the accessory families that have no room take the compact tree', () {
     // Circular and inline are a lock-screen glyph and a single line of text.
     // Rectangular is wide enough for the full tree, so it must not be listed.
     return runIos([_def(compact: _compact())]).then((r) {
-      final s = r.swiftForTestW();
-      expect(s, contains('.accessoryCircular'));
-      expect(s, contains('.accessoryInline'));
-      expect(s, isNot(contains('family == .accessoryRectangular')));
+      // Asserted on the helper in the shared core, where the cases now live.
+      final core =
+          readFile(r.file('ios/HomeWidgetExtension/HomeWidgetCore.swift'));
+      expect(core, contains('.accessoryCircular'));
+      expect(core, contains('.accessoryInline'));
+      expect(core, isNot(contains('family == .accessoryRectangular')));
+      // ...and fenced, since macOS has no accessory families at all.
+      expect(core, contains('#if os(iOS)'));
     });
   });
 

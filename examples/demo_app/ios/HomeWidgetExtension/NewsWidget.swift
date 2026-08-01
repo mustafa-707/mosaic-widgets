@@ -75,7 +75,7 @@ struct NewsWidgetView: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomLeading)
 Group {
     if let _img = MosaicImageCache.cached(mosaicStr(entry.data["news_image"])) {
-        Image(uiImage: _img).resizable().mosaicAccentedRendering("fullColor").aspectRatio(contentMode: .fill).clipShape(RoundedRectangle(cornerRadius: 16.0))
+        Image(mosaic: _img).resizable().mosaicAccentedRendering("fullColor").aspectRatio(contentMode: .fill).clipShape(RoundedRectangle(cornerRadius: 16.0))
     } else {
         Color(red: 0.11764705882352941, green: 0.1607843137254902, blue: 0.23137254901960785, opacity: 1.0).clipShape(RoundedRectangle(cornerRadius: 16.0))
     }

@@ -20,7 +20,7 @@ import Foundation
 // resume to fire the Dart backgroundCallback. See generateIntents() docs.
 
 /// Reloads all widget timelines. Used by MRefreshAction buttons on iOS 17+.
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 14.0, *)
 struct MosaicRefreshIntent: AppIntent {
     static let title: LocalizedStringResource = "Refresh Widget"
     static let isDiscoverable: Bool = false
@@ -45,7 +45,7 @@ struct MosaicRefreshIntent: AppIntent {
 /// Flips a boolean in the App Group and redraws. Used by MToggleAction buttons
 /// on iOS 17+. Runs entirely in the extension — no app launch, no network — so
 /// in-widget state like a unit switch responds immediately.
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 14.0, *)
 struct MosaicToggleIntent: AppIntent {
     static let title: LocalizedStringResource = "Toggle Value"
     static let isDiscoverable: Bool = false
@@ -72,7 +72,7 @@ struct MosaicToggleIntent: AppIntent {
 /// Records a pending Mosaic callback into the App Group so the host app can
 /// pick it up on next foreground, then reloads timelines. Used by
 /// MActionCallback buttons on iOS 17+.
-@available(iOS 17.0, *)
+@available(iOS 17.0, macOS 14.0, *)
 struct MosaicCallbackIntent: AppIntent {
     static let title: LocalizedStringResource = "Mosaic Callback"
     static let isDiscoverable: Bool = false
@@ -333,12 +333,12 @@ $table
 
   String _generateWidgetBundle() {
     // Configurable widgets (params.isNotEmpty) are iOS-17 AppIntentConfiguration
-    // widgets, so their struct is @available(iOS 17.0, *) and must be registered
-    // under an `if #available(iOS 17.0, *)` gate. Non-configurable widgets stay
+    // widgets, so their struct is @available(iOS 17.0, macOS 14.0, *) and must be registered
+    // under an `if #available(iOS 17.0, macOS 14.0, *)` gate. Non-configurable widgets stay
     // available on iOS 16 and register unconditionally.
     final lines = <String>[
       ...definitions.map((def) => def.params.isNotEmpty
-          ? '''        if #available(iOS 17.0, *) {
+          ? '''        if #available(iOS 17.0, macOS 14.0, *) {
             ${def.name}Widget()
         }'''
           : '        ${def.name}Widget()'),
@@ -353,18 +353,24 @@ $table
       // watch presentation is an iOS 18 type, and referencing it from an
       // iOS 16.1 gate would not compile.
       final min = liveActivityWantsWatch(name) ? '18.0' : '16.1';
-      lines.add('''        if #available(iOS $min, *) {
+      // Also fenced on os(iOS): the struct itself is, since ActivityKit has no
+      // macOS counterpart, so a bare reference would not resolve there.
+      lines.add('''        #if os(iOS)
+        if #available(iOS $min, *) {
             ${name}LiveActivity()
-        }''');
+        }
+        #endif''');
     }
 
     // iOS 18 Control Widgets are WidgetBundle members; register each under an
     // `if #available(iOS 18.0, *)` gate so the bundle still builds on older iOS.
     for (final c in controls) {
       final name = c['name'] as String;
-      lines.add('''        if #available(iOS 18.0, *) {
+      lines.add('''        #if os(iOS)
+        if #available(iOS 18.0, *) {
             ${name}Control()
-        }''');
+        }
+        #endif''');
     }
 
     return '''$kGeneratedSentinel
@@ -408,6 +414,11 @@ ${lines.join('\n')}
         // MosaicPlugin.startBatteryPublishing); this only fills in on the
         // chance the extension does have it, and never overwrites a good value
         // with the -1 placeholder.
+        //
+        // UIDevice is iOS/watchOS only. On macOS the value comes from the host
+        // app the same way it does on iOS, so the widget simply reads whatever
+        // is in the App Group.
+        #if canImport(UIKit)
         UIDevice.current.isBatteryMonitoringEnabled = true
         let level = UIDevice.current.batteryLevel
         if level >= 0 {
@@ -416,7 +427,8 @@ ${lines.join('\n')}
             let state = UIDevice.current.batteryState
             defaults.set(state == .charging || state == .full,
                          forKey: "${MosaicDeviceMetric.batteryCharging.key}")
-        }''');
+        }
+        #endif''');
     }
     if (needsStorage) {
       deviceParts.add('''
@@ -466,11 +478,17 @@ ${lines.join('\n')}
                 defaults.set(String(format: "%.0f", usedPercent),
                              forKey: "${MosaicDeviceMetric.memoryUsedPercent.key}")
             }
-        } else if #available(iOS 13.0, *) {
+        } else {
             // Mach call refused: fall back to this process's own headroom, which
             // is a gauge rather than the device figure, but beats showing zero.
-            defaults.set(String(os_proc_available_memory() / 1_048_576),
-                         forKey: "${MosaicDeviceMetric.memoryFreeMb.key}")
+            // os_proc_available_memory is iOS-only, so macOS simply reports
+            // nothing here rather than a number it cannot obtain.
+            #if os(iOS)
+            if #available(iOS 13.0, *) {
+                defaults.set(String(os_proc_available_memory() / 1_048_576),
+                             forKey: "${MosaicDeviceMetric.memoryFreeMb.key}")
+            }
+            #endif
         }''');
     }
     final deviceBody = deviceParts.isEmpty
@@ -480,25 +498,61 @@ ${lines.join('\n')}
     final coreFile = File(p.join(iosDir.path, 'HomeWidgetCore.swift'));
     await coreFile.writeAsString('''$kGeneratedSentinel
 import SwiftUI
-import UIKit
 import WidgetKit
+
+// WidgetKit is shared across iOS, macOS and watchOS, but the image and device
+// types are not: UIKit does not exist on the Mac. Aliasing here keeps every
+// generated view free of platform conditionals.
+#if canImport(UIKit)
+import UIKit
+typealias MosaicImage = UIImage
+#elseif canImport(AppKit)
+import AppKit
+typealias MosaicImage = NSImage
+#endif
+
+extension Image {
+    /// Builds an `Image` from whichever native image type this platform has.
+    init(mosaic image: MosaicImage) {
+        #if canImport(UIKit)
+        self.init(uiImage: image)
+        #else
+        self.init(nsImage: image)
+        #endif
+    }
+}
+
+/// Whether [family] should render a definition's `compactRoot` instead of its
+/// main tree.
+///
+/// systemSmall everywhere, plus the circular and inline lock-screen accessories
+/// where they exist — those cases are absent on macOS, so the check is fenced
+/// rather than written inline in each view body.
+func mosaicPrefersCompact(_ family: WidgetFamily) -> Bool {
+    #if os(iOS)
+    if #available(iOS 16.0, *) {
+        if family == .accessoryCircular || family == .accessoryInline { return true }
+    }
+    #endif
+    return family == .systemSmall
+}
 
 let kMosaicAppGroup = "${config.app.iosAppGroup}"
 
-/// Resolves a file-image path to a UIImage. Absolute paths are loaded directly;
+/// Resolves a file-image path to a native image. Absolute paths are loaded directly;
 /// relative paths are resolved against the App Group container. Returns nil when
 /// the path is nil/empty or no image could be loaded.
-func resolveFileImage(_ path: String?) -> UIImage? {
+func resolveFileImage(_ path: String?) -> MosaicImage? {
     guard let path = path, !path.isEmpty else { return nil }
     if path.hasPrefix("/") {
-        return UIImage(contentsOfFile: path)
+        return MosaicImage(contentsOfFile: path)
     }
     if let container = FileManager.default
         .containerURL(forSecurityApplicationGroupIdentifier: kMosaicAppGroup) {
         let full = container.appendingPathComponent(path).path
-        if let img = UIImage(contentsOfFile: full) { return img }
+        if let img = MosaicImage(contentsOfFile: full) { return img }
     }
-    return UIImage(contentsOfFile: path)
+    return MosaicImage(contentsOfFile: path)
 }
 
 /// Device metrics read inside the widget extension, so they are correct even
@@ -533,11 +587,11 @@ enum MosaicImageCache {
         return dir.appendingPathComponent(String(abs(url.hashValue)) + ".img")
     }
 
-    static func cached(_ url: String?) -> UIImage? {
+    static func cached(_ url: String?) -> MosaicImage? {
         guard let url = url, !url.isEmpty, let file = fileURL(for: url) else {
             return nil
         }
-        return UIImage(contentsOfFile: file.path)
+        return MosaicImage(contentsOfFile: file.path)
     }
 
     /// Downloads any of [urls] not already cached. Safe to call on every
@@ -648,9 +702,19 @@ extension Color {
     /// Builds a color that resolves at render time to [light] or [dark] based on
     /// the current interface style. Used for adaptive (dark-mode) MColors.
     init(light: Color, dark: Color) {
+        #if canImport(UIKit)
         self.init(UIColor { traits in
             traits.userInterfaceStyle == .dark ? UIColor(dark) : UIColor(light)
         })
+        #else
+        // AppKit resolves appearance through NSColor rather than a trait
+        // closure; asking the current appearance which of the two names it
+        // matches gives the same result without a UIKit type.
+        self.init(nsColor: NSColor(name: nil) { appearance in
+            let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+            return NSColor(isDark ? dark : light)
+        })
+        #endif
     }
 }
 
@@ -662,7 +726,7 @@ extension Image {
     /// after `.resizable()` (Image → Image) and before any View modifiers —
     /// see iosImageFitParts.
     @ViewBuilder func mosaicAccentedRendering(_ mode: String) -> some View {
-        if #available(iOS 18.0, *) {
+        if #available(iOS 18.0, macOS 15.0, *) {
             switch mode {
             case "accented":
                 self.widgetAccentedRenderingMode(.accented)
@@ -685,7 +749,7 @@ extension View {
     /// Rolls digits when a value changes. `contentTransition` is iOS 17+, so
     /// older systems fall through to a plain swap.
     @ViewBuilder func mosaicNumericTransition() -> some View {
-        if #available(iOS 17.0, *) {
+        if #available(iOS 17.0, macOS 14.0, *) {
             self.contentTransition(.numericText())
         } else {
             self
@@ -696,7 +760,7 @@ extension View {
     /// On iOS 17+ uses .containerBackground(for: .widget); on iOS 16 falls back
     /// to .background(_:) so the widget extension compiles at both targets.
     @ViewBuilder func mosaicContainerBackground<S: ShapeStyle>(_ style: S) -> some View {
-        if #available(iOS 17.0, *) {
+        if #available(iOS 17.0, macOS 14.0, *) {
             self.containerBackground(style, for: .widget)
         } else {
             self.background(style)
