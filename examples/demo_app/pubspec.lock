@@ -163,41 +163,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.18.0"
-  mosaic_android:
-    dependency: "direct overridden"
-    description:
-      path: "../../platform/android"
-      relative: true
-    source: path
-    version: "1.0.0"
-  mosaic_cli:
-    dependency: "direct dev"
-    description:
-      path: "../../platform/cli"
-      relative: true
-    source: path
-    version: "1.0.0"
-  mosaic_core:
-    dependency: "direct main"
-    description:
-      path: "../../platform/core"
-      relative: true
-    source: path
-    version: "1.0.0"
-  mosaic_ios:
-    dependency: "direct overridden"
-    description:
-      path: "../../platform/ios"
-      relative: true
-    source: path
-    version: "1.0.0"
   mosaic_widgets:
     dependency: "direct main"
     description:
-      path: "../../platform/flutter"
+      path: "../../packages/mosaic_widgets"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   path:
     dependency: transitive
     description:

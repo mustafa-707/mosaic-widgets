@@ -7,15 +7,11 @@ on:
 
 jobs:
   dart:
-    name: ${{ matrix.package }} (dart)
+    name: mosaic_widgets (analyze + test)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        package: [core, cli, android, ios]
     defaults:
       run:
-        working-directory: platform/${{ matrix.package }}
+        working-directory: packages/mosaic_widgets
     steps:
       - uses: actions/checkout@v4
       - uses: dart-lang/setup-dart@v1
@@ -26,17 +22,12 @@ jobs:
       - run: dart test
 
   flutter:
-    name: ${{ matrix.package }} (flutter)
+    name: mosaic_widgets (flutter test)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - package: platform/flutter
           - package: examples/demo_app
     defaults:
       run:
-        working-directory: ${{ matrix.package }}
+        working-directory: packages/mosaic_widgets
     steps:
       - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2
@@ -100,8 +91,7 @@ jobs:
         run: |
           flutter create --org com.acme --project-name gf greenfield
           cd greenfield
-          flutter pub add mosaic_widgets --path "$GITHUB_WORKSPACE/mosaic/platform/flutter"
-          flutter pub add dev:mosaic_cli --path "$GITHUB_WORKSPACE/mosaic/platform/cli"
+          flutter pub add mosaic_widgets --path "$GITHUB_WORKSPACE/mosaic/packages/mosaic_widgets"
 
       - name: Scaffold one of every entry type
         working-directory: greenfield
@@ -142,7 +132,7 @@ jobs:
         with:
           sdk: "3.12.2"
       - name: Generate a widget exercising the component pack
-        working-directory: platform/ios
+        working-directory: packages/mosaic_widgets
         run: |
           dart pub get
           echo "GEN_DIR=$(dart run test/support/verify_typecheck.dart | tail -1)" >> "$GITHUB_ENV"
