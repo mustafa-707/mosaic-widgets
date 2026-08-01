@@ -164,7 +164,7 @@ packages:
     source: hosted
     version: "1.18.0"
   mosaic_android:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       path: "../../platform/android"
       relative: true
@@ -185,7 +185,7 @@ packages:
     source: path
     version: "1.0.0"
   mosaic_ios:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       path: "../../platform/ios"
       relative: true

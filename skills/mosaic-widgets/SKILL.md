@@ -76,15 +76,17 @@ MosaicDefinition buildNews() => MosaicDefinition(
 
 ## Quick reference
 
-**Definition:** `MosaicDefinition({required name, required root, Duration? updateInterval, int width=2, int height=2, String? previewImage, MResizeMode resizeMode, List<MParam> params})`.
+**Definition:** `MosaicDefinition({required name, required root, MNode? compactRoot, Duration? updateInterval, int width=2, int height=2, String? previewImage, MResizeMode resizeMode, List<MParam> params})`.
+
+`compactRoot` is a second tree for the smallest sizes, so a `systemSmall` tile is not the `systemLarge` layout squeezed down. iOS picks it via `@Environment(\.widgetFamily)` (`systemSmall`, `accessoryCircular`, `accessoryInline`); Android via `RemoteViews(Map<SizeF, RemoteViews>)` on API 31+, keyed on the widget's own declared minimum, falling back to `root` below 31.
 
 **Layout nodes:** `MContainer({required child, MColor? background, MLinearGradient? gradient, double radius, MBorder? border, double? width, double? height, MInsets? margin, MShadow? shadow, MRadius? corners})`, `MColumn(children, {mainAxisAlignment, crossAxisAlignment})`, `MRow(...)`, `MPadding(insets, child)`, `MStack(children)`, `MPositioned({required child, top,left,right,bottom})`, `MCenter({required child})`, `MSpacer()`, `MDivider({thickness, color, vertical, indent})`.
 
 **Content nodes:** `MText(textOrBind, {MTextStyle style, MFormat? format, int? maxLines, MTextAlign? align})`, `MImage(source, {MBoxFit fit})`, `MIcon({sfSymbol, androidDrawable, size, MColor? color})`, `MProgressBar({required value, double max, MColor color})`, `MGauge({required value, max, trackColor, fillColor, lineWidth})`, `MBadge({required child, required count, MColor? color})`, `MTimer({required target, bool countUp, MTextStyle style})`, `MButton({required child, required MAction action})`, `MVisibility({required bind, required child, MNode? replacement})`, `MListView({required bind, required itemTemplate})`.
 
-**Bindings:** `MBind('key')` anywhere a value is accepted (text, image path, progress value, visibility, timer target, gauge value, color). The app supplies values via `MosaicBridge`. `MText` `format:` (`MFormat.currency/decimal/percent/date/relativeTime`) formats a bound value in the device locale; `date`/`relativeTime` expect **epoch milliseconds**.
+**Bindings:** `MBind('key')` anywhere a value is accepted (text, image path, progress value, visibility, timer target, gauge value, color). The app supplies values via `MosaicBridge`. `MText` `format:` (`MFormat.currency/decimal/percent/signedPercent/date/relativeTime`) formats a bound value in the device locale; `date`/`relativeTime` expect **epoch milliseconds**. `percent` treats the value as a *fraction* (`0.15` → 15%); use `signedPercent` for a change already in percent units (`1.33` → `+1.33%`), which is what most APIs return — `percent` would render it 100x too large. Pass `currencyCode: 'USD'` with `MFormat.currency` when the amount is in a known currency: without it the value is formatted in the *device's* currency, relabelling the number without converting it.
 
-**Colors/theme:** `MColor.hex('#RRGGBB', {String? dark, double opacity})` (OS light/dark) or `MColor.bind('key')` (runtime). **Style:** `MTextStyle({double? size, MColor? color, double? opacity, bool? bold})`. **Insets:** `MInsets.all(v)` / `.symmetric(vertical:, horizontal:)` / `.only(...)`. **Gradient:** `MLinearGradient({required List<MColor> colors, List<double>? stops, double angle})`. **Shape:** `MBorder({required color, width})`, `MRadius({topLeft,topRight,bottomLeft,bottomRight})`/`MRadius.all(v)`, `MShadow({color, blur, dx, dy})`. Enums: `MBoxFit`, `MMainAxisAlignment`, `MCrossAxisAlignment`, `MTextAlign`, `MResizeMode`.
+**Colors/theme:** `MColor.hex('#RRGGBB', {String? dark, double opacity})` (OS light/dark), `MColor.bind('key')` (runtime), or `MColor.system(MSystemColor.accent, fallback: '#2563EB', fallbackDark: …)` — the user's Material You palette on Android 12+, the fallback everywhere else including all of iOS. Roles: `accent`, `accentMuted`, `surface`, `onSurface`, `onSurfaceMuted`. A bound colour on a container with a `radius` keeps its corners (the shape is tinted, not replaced; API 31+). **Style:** `MTextStyle({double? size, MColor? color, double? opacity, bool? bold})`. **Insets:** `MInsets.all(v)` / `.symmetric(vertical:, horizontal:)` / `.only(...)`. **Gradient:** `MLinearGradient({required List<MColor> colors, List<double>? stops, double angle})`. **Shape:** `MBorder({required color, width})`, `MRadius({topLeft,topRight,bottomLeft,bottomRight})`/`MRadius.all(v)`, `MShadow({color, blur, dx, dy})` — iOS `.shadow` honours `blur`; Android draws a `layer-list` offset silhouette matching the corner radius and ignores `blur`, since RemoteViews has no blur primitive. A container with no background casts nothing, as on iOS. Enums: `MBoxFit`, `MMainAxisAlignment`, `MCrossAxisAlignment`, `MTextAlign`, `MResizeMode`.
 
 **Actions (for MButton):** `MLaunchUrlAction('myapp://path')`, `MActionCallback('name')` (→ Dart `registerBackgroundCallback`, or a native fetch if listed under `refresh:`), `MRefreshAction()`, `MToggleAction('key')`. iOS buttons are real (AppIntent) on iOS 17+, deep-link on 14–16.
 
@@ -104,7 +106,7 @@ MButton(action: const MToggleAction('unit_f'), child: const MText('°C / °F')),
 
 **Tinted mode (iOS 18+):** from iOS 18 users can tint widgets, and the default tints images — right for glyphs, wrong for photos. `MImage`/`MNetworkImage` take `accentedMode:` (`MAccentedRendering.accented | accentedDesaturated | desaturated | fullColor`). `MNetworkImage` already defaults to `fullColor`; set it explicitly on any photo you draw via `MImage`. Ignored on Android.
 
-**Device metrics — no app required:** `MDeviceValue(MDeviceMetric.batteryLevel)` reads the device *in the widget process*, so it is correct when the app has not run for days (an app-supplied battery level is stale the moment the app backgrounds). It is an `MBind`, so it works anywhere a bound value does:
+**Device metrics:** `MDeviceValue(MDeviceMetric.x)` — `batteryLevel`, `batteryCharging`, `storageFreeGb`, `storageUsedPercent`, `memoryFreeMb`, `memoryTotalMb`, `memoryUsedPercent`. Read *in the widget process*, so they stay correct when the app has not run for days — **except battery on iOS**, where `isBatteryMonitoringEnabled` is a no-op inside an app extension and `batteryLevel` is always `-1` (on devices as well as the simulator). Mosaic publishes it from the app instead, so on iOS it appears once the app has run, and never resolves in the simulator at all. It is an `MBind`, so it works anywhere a bound value does:
 ```dart
 MText(MDeviceValue(MDeviceMetric.batteryLevel))
 MProgressBar(value: MDeviceValue(MDeviceMetric.batteryLevel), max: 100)
@@ -112,7 +114,7 @@ MVisibility(bind: MDeviceValue(MDeviceMetric.batteryCharging), child: boltIcon)
 ```
 `MDeviceMetric { batteryLevel, batteryCharging, storageFreeGb, storageUsedPercent }`. Only referenced metrics are collected.
 
-**Accessibility:** `MSemantics(label: labelOrBind, child: …, bool excludeChildren)` → iOS `.accessibilityLabel`, Android `contentDescription`. Without it a screen reader reads bare numbers with no unit or context. `excludeChildren` collapses the subtree to one element — **iOS only**; RemoteViews cannot mark descendants unimportant.
+**Accessibility:** `MSemantics(label: labelOrBind, child: …, bool excludeChildren)` → iOS `.accessibilityLabel`, Android `contentDescription`. Without it a screen reader reads bare numbers with no unit or context. `excludeChildren` collapses the subtree to one element on **both** platforms (iOS `.accessibilityElement(children: .ignore)`, Android `importantForAccessibility="noHideDescendants"` — a static layout attribute, so nothing crosses the RemoteViews boundary).
 
 **Motion — read the limits before reaching for these.** Widgets render static snapshots; there is no general animation on either platform and **Lottie is impossible** (it needs a live animation view, which neither WidgetKit nor RemoteViews provides).
 
@@ -188,6 +190,8 @@ await MosaicLiveActivities.update(id!, {'progress':'80'}, alert: const MActivity
 await MosaicLiveActivities.end(id, policy: MEndPolicy.afterDefault);
 MosaicLiveActivities.onPushToken.listen((t) { /* send t.token to your server for APNs push */ });
 ```
+
+`watch: true` adds `supplementalActivityFamilies([.small, .medium])`, putting the activity on a paired Apple Watch's Smart Stack and in CarPlay using the lock-screen layout you already wrote. The modifier is **iOS 18+** while Live Activities start at 16.1, and a `WidgetConfiguration` cannot branch on availability inside its own body — so opting in raises **that activity's** minimum to iOS 18 and it is not registered below that. Nothing else in the project is affected.
 iOS needs `NSSupportsLiveActivities=true` in Info.plist. Binds in a Live Activity resolve from its
 content-state (the Map passed to start/update), not the widget data store. Android renders a
 best-effort ongoing notification (no Dynamic Island; updates are local, no push token).
@@ -218,6 +222,7 @@ widgets:
 live_activities:
   - name: Order
     entry: lib/live_activities/order.live.dart
+    watch: true                     # optional — also show on Apple Watch / CarPlay
 refresh:                          # optional — see below
   refresh_crypto:
     url: https://api.example.com/price

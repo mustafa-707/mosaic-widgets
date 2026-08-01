@@ -38,9 +38,11 @@ MosaicDefinition buildNews() => MosaicDefinition(
 - ✅ Rich UI: gradients, borders, shadows, gauges, icons, dividers, badges, lists
 - ✅ **Refresh with the app closed** — declare an endpoint under `refresh:` and the widget fetches and stores it itself
 - ✅ **Network images**, cached on disk by the widget process; rounded or circular (`radius` / `circle`) for avatars
-- ✅ **Device metrics** — battery, charging, storage read *in the widget*, so they stay correct when the app has not run for days
+- ✅ **Device metrics** — battery, charging, storage and RAM, read *in the widget process*, so they stay correct when the app has not run for days ([one iOS exception](docs/DSL_REFERENCE.md#device-metrics))
 - ✅ **Accessibility** — `MSemantics` → VoiceOver / TalkBack labels
 - ✅ **Translated widget text** — `MLocalized` compiles to real `values-<locale>/` and `.lproj` resources, so the OS picks the language even though `intl` cannot reach the widget process
+- ✅ **Per-size layouts** — `compactRoot:` gives small tiles their own tree instead of a squeezed large one
+- ✅ **Material You** — `MColor.system(...)` picks up the user's wallpaper palette on Android 12+
 - ✅ **Tinted-mode aware** (iOS 18+) — photos keep their colour when users tint widgets
 - ✅ **Server-driven updates** — WidgetKit push (iOS 26+) reloads a widget's timeline remotely
 - ✅ **In-app "Add to Home Screen"** — `MosaicBridge.requestPinWidget()` opens the launcher's add-widget dialog (Android 8+), the single biggest lever on widget adoption
@@ -57,11 +59,13 @@ silently.
 
 ```yaml
 dependencies:
-  mosaic_widgets: { path: path/to/mosaic/platform/flutter }
-  mosaic_core: { path: path/to/mosaic/platform/core }
+  mosaic_widgets: ^1.0.0      # the DSL + the app-side bridge
 dev_dependencies:
-  mosaic_cli: { path: path/to/mosaic/platform/cli }
+  mosaic_cli: ^1.0.0          # the code generator, dev-only
 ```
+
+`mosaic_cli` is a `dev_dependency` on purpose: it generates native code at build
+time and ships nothing into your app.
 
 ## Use it in 4 steps
 

@@ -1,7 +1,6 @@
 name: mosaic_ios
 description: "iOS WidgetKit, Live Activity, and Dynamic Island (Swift) code generator for the Mosaic home-widget framework."
 version: 1.0.0
-publish_to: none
 repository: https://github.com/mustafa-707/mosaic-widgets
 homepage: https://github.com/mustafa-707/mosaic-widgets
 issue_tracker: https://github.com/mustafa-707/mosaic-widgets/issues
@@ -17,8 +16,7 @@ environment:
 
 # Add regular dependencies here.
 dependencies:
-  mosaic_core:
-    path: ../core
+  mosaic_core: ^1.0.0
   path: ^1.8.3
 
 dev_dependencies:

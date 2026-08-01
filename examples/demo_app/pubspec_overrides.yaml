@@ -1,0 +1,12 @@
+# Local monorepo wiring. Not published.
+dependency_overrides:
+  mosaic_core:
+    path: ../../platform/core
+  mosaic_widgets:
+    path: ../../platform/flutter
+  mosaic_android:
+    path: ../../platform/android
+  mosaic_ios:
+    path: ../../platform/ios
+  mosaic_cli:
+    path: ../../platform/cli

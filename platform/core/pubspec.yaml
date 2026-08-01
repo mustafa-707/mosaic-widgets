@@ -1,6 +1,5 @@
 name: mosaic_core
 description: "Platform-agnostic intermediate representation, configuration, and code-generation primitives for the Mosaic native home-widget framework."
-publish_to: none
 version: 1.0.0
 repository: https://github.com/mustafa-707/mosaic-widgets
 homepage: https://github.com/mustafa-707/mosaic-widgets

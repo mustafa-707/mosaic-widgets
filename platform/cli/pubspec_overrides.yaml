@@ -1,0 +1,11 @@
+# Local monorepo wiring. Not published — pub reads this only on disk,
+# so pubspec.yaml can carry the hosted versions users resolve against.
+dependency_overrides:
+  mosaic_core:
+    path: ../core
+  mosaic_android:
+    path: ../android
+  mosaic_ios:
+    path: ../ios
+  mosaic_widgets:
+    path: ../flutter

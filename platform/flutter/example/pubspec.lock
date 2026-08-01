@@ -47,7 +47,7 @@ packages:
     source: hosted
     version: "1.18.0"
   mosaic_core:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
       path: "../../core"
       relative: true

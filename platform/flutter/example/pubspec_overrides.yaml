@@ -1,0 +1,6 @@
+# Local monorepo wiring. Not published.
+dependency_overrides:
+  mosaic_core:
+    path: ../../core
+  mosaic_widgets:
+    path: ..
