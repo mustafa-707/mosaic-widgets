@@ -1,6 +1,6 @@
 name: mosaic_cli
 description: "Command-line tool to scaffold, generate, and manage native home widgets for the Mosaic framework."
-version: 1.0.0
+version: 0.1.0
 repository: https://github.com/mustafa-707/mosaic-widgets
 homepage: https://github.com/mustafa-707/mosaic-widgets
 issue_tracker: https://github.com/mustafa-707/mosaic-widgets/issues
@@ -18,9 +18,9 @@ environment:
 dependencies:
   args: ^2.4.2
   yaml: ^3.1.2
-  mosaic_core: ^1.0.0
-  mosaic_android: ^1.0.0
-  mosaic_ios: ^1.0.0
+  mosaic_core: ^0.1.0
+  mosaic_android: ^0.1.0
+  mosaic_ios: ^0.1.0
   path: ^1.8.3
 
 dev_dependencies:

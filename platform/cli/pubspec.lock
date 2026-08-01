@@ -204,28 +204,28 @@ packages:
       path: "../android"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   mosaic_core:
     dependency: "direct main"
     description:
       path: "../core"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   mosaic_ios:
     dependency: "direct main"
     description:
       path: "../ios"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   mosaic_widgets:
     dependency: "direct overridden"
     description:
       path: "../flutter"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   node_preamble:
     dependency: transitive
     description:

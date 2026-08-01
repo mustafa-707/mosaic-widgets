@@ -52,14 +52,14 @@ packages:
       path: "../../core"
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   mosaic_widgets:
     dependency: "direct main"
     description:
       path: ".."
       relative: true
     source: path
-    version: "1.0.0"
+    version: "0.1.0"
   path:
     dependency: transitive
     description:

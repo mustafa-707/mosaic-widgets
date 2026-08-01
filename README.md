@@ -59,9 +59,9 @@ silently.
 
 ```yaml
 dependencies:
-  mosaic_widgets: ^1.0.0      # the DSL + the app-side bridge
+  mosaic_widgets: ^0.1.0      # the DSL + the app-side bridge
 dev_dependencies:
-  mosaic_cli: ^1.0.0          # the code generator, dev-only
+  mosaic_cli: ^0.1.0          # the code generator, dev-only
 ```
 
 `mosaic_cli` is a `dev_dependency` on purpose: it generates native code at build

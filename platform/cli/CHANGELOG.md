@@ -46,7 +46,7 @@
 - Documentation links pointed at `DOCS/` where the directory is `docs/` — broken
   on case-sensitive filesystems.
 
-## 1.0.0 - 2026-06-01
+## 0.1.0 - 2026-08-01
 ### Added
 - Initial release: `init`, `add widget`, `build`, `doctor`, and `clean` for
   generating native home widgets across iOS and Android.
