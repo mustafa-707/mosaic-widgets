@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mustafa-707/mosaic-widgets/mosaic-rework/assets/mosaic_logo.png" alt="Mosaic — Flutter Widget Builder" width="320">
+  <img src="https://raw.githubusercontent.com/mustafa-707/mosaic-widgets/main/assets/mosaic_logo.png" alt="Mosaic — Flutter Widget Builder" width="320">
 </p>
 
 <p align="center">
@@ -56,8 +56,8 @@ await MosaicBridge.refreshAll();
 ```
 
 One-time native wiring (an Xcode Widget Extension target, one line in your
-`AppDelegate` / `MainActivity`) is in [iOS Setup](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/docs/IOS_SETUP.md) and
-[Android Setup](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/docs/ANDROID_SETUP.md). `doctor` tells you exactly what is missing.
+`AppDelegate` / `MainActivity`) is in [iOS Setup](https://github.com/mustafa-707/mosaic-widgets/blob/main/docs/IOS_SETUP.md) and
+[Android Setup](https://github.com/mustafa-707/mosaic-widgets/blob/main/docs/ANDROID_SETUP.md). `doctor` tells you exactly what is missing.
 
 ## What you get
 
@@ -83,11 +83,11 @@ documented with its limits rather than failing quietly.
 
 ## Docs
 
-**[DSL Reference](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/docs/DSL_REFERENCE.md)** — every node, with its platform notes
-· **[iOS Setup](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/docs/IOS_SETUP.md)** · **[Android Setup](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/docs/ANDROID_SETUP.md)**
-· **[Live Activities](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/docs/LIVE_ACTIVITIES.md)** · **[Roadmap](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/docs/ROADMAP.md)**
+**[DSL Reference](https://github.com/mustafa-707/mosaic-widgets/blob/main/docs/DSL_REFERENCE.md)** — every node, with its platform notes
+· **[iOS Setup](https://github.com/mustafa-707/mosaic-widgets/blob/main/docs/IOS_SETUP.md)** · **[Android Setup](https://github.com/mustafa-707/mosaic-widgets/blob/main/docs/ANDROID_SETUP.md)**
+· **[Live Activities](https://github.com/mustafa-707/mosaic-widgets/blob/main/docs/LIVE_ACTIVITIES.md)** · **[Roadmap](https://github.com/mustafa-707/mosaic-widgets/blob/main/docs/ROADMAP.md)**
 
-A runnable app using every feature lives in [`examples/demo_app`](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/examples/demo_app).
+A runnable app using every feature lives in [`examples/demo_app`](https://github.com/mustafa-707/mosaic-widgets/blob/main/examples/demo_app).
 
 ## Using an AI assistant?
 
@@ -99,7 +99,7 @@ cp -r skills/mosaic-widgets ~/.claude/skills/
 ```
 
 Assistants then load it automatically on seeing a `mosaic.yaml` or a
-`*.widget.dart` file. See also [`llms.txt`](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/llms.txt) and [`AGENTS.md`](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/AGENTS.md).
+`*.widget.dart` file. See also [`llms.txt`](https://github.com/mustafa-707/mosaic-widgets/blob/main/llms.txt) and [`AGENTS.md`](https://github.com/mustafa-707/mosaic-widgets/blob/main/AGENTS.md).
 
 ## Support
 
