@@ -1,12 +1,11 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mustafa-707/mosaic-widgets/mosaic-rework/assets/mosaic_logo.png" alt="Mosaic" width="320">
+  <img src="https://raw.githubusercontent.com/mustafa-707/mosaic-widgets/mosaic-rework/assets/mosaic_logo.png" alt="Mosaic — Flutter Widget Builder" width="320">
 </p>
 
 <p align="center">
-  <a href="https://pub.dev/packages/mosaic_widgets"><img src="https://img.shields.io/pub/v/mosaic_widgets.svg" alt="pub package"></a>
-  <a href="https://pub.dev/packages/mosaic_widgets/score"><img src="https://img.shields.io/pub/points/mosaic_widgets" alt="pub points"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT"></a>
   <a href="https://github.com/TheBSD/StandWithPalestine/blob/main/docs/README.md"><img src="https://raw.githubusercontent.com/TheBSD/StandWithPalestine/main/badges/StandWithPalestine.svg" alt="StandWithPalestine"></a>
+  <a href="https://pub.dev/packages/mosaic_widgets"><img src="https://img.shields.io/pub/v/mosaic_widgets.svg" alt="Pub Package"></a>
+  <a href="https://pub.dev/packages/mosaic_widgets/score"><img src="https://img.shields.io/pub/points/mosaic_widgets" alt="pub points"></a>
 </p>
 
 <p align="center"><b>Write a home-screen widget once in Dart. Ship it on iOS and Android.</b></p>
@@ -104,6 +103,6 @@ Assistants then load it automatically on seeing a `mosaic.yaml` or a
 
 ## Support
 
-If Mosaic saved you a week, [buy me a coffee](https://buymeacoffee.com/is10vmust).
+If Mosaic helped you, consider supporting the author:
 
-Licensed under the [MIT License](https://github.com/mustafa-707/mosaic-widgets/blob/mosaic-rework/LICENSE).
+[![Buy Me A Coffee](https://www.buymeacoffee.com/assets/img/guidelines/download-assets-sm-1.svg)](https://buymeacoffee.com/is10vmust)
