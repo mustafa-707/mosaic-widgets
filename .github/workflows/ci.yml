@@ -135,13 +135,24 @@ jobs:
         working-directory: packages/mosaic_widgets
         run: |
           dart pub get
-          echo "GEN_DIR=$(dart run test/support/verify_typecheck.dart | tail -1)" >> "$GITHUB_ENV"
+          echo "GEN_DIR=$(dart run test/ios/support/verify_typecheck.dart | tail -1)" >> "$GITHUB_ENV"
       - name: swiftc -typecheck at each gated iOS version
         run: |
           for target in 16.0 16.1 17.0 18.0; do
             echo "::group::iOS $target"
             xcrun --sdk iphoneos swiftc -typecheck \
               -target "arm64-apple-ios$target" \
+              "$GEN_DIR"/*.swift
+            echo "::endgroup::"
+          done
+      - name: swiftc -typecheck for macOS
+        # WidgetKit is shared with macOS, so the same output has to build there.
+        # Without this the UIKit-only regressions come straight back.
+        run: |
+          for target in 14.0 15.0; do
+            echo "::group::macOS $target"
+            xcrun --sdk macosx swiftc -typecheck \
+              -target "arm64-apple-macos$target" \
               "$GEN_DIR"/*.swift
             echo "::endgroup::"
           done
