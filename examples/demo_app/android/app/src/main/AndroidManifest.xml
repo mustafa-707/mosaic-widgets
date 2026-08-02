@@ -1,4 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="com.android.providers.tv.permission.WRITE_EPG_DATA" />
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="demo_app"
@@ -106,6 +107,14 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/hw_memory_info" />
+        </receiver>
+            <receiver
+            android:name="com.example.demo_app.mosaic_generated.MosaicTvInitReceiver"
+            android:exported="true"> <!-- MOSAIC-GENERATED -->
+            <intent-filter>
+                <action android:name="android.media.tv.action.INITIALIZE_PROGRAMS" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
         </receiver>
             <service
             android:name="com.example.demo_app.mosaic_generated.MosaicListService"

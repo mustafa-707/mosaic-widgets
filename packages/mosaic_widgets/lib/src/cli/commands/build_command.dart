@@ -567,6 +567,43 @@ class BuildCommand extends Command {
       }
     }
 
+    // Android TV channels need a provider permission and an install receiver.
+    // Only for projects that declared a channel: WRITE_EPG_DATA on a phone-only
+    // app is a permission the developer never asked for.
+    if (config.tvChannels.isNotEmpty) {
+      const perm = 'com.android.providers.tv.permission.WRITE_EPG_DATA';
+      if (!content.contains(perm)) {
+        final manifestOpen = RegExp(r'<manifest[^>]*>');
+        final match = manifestOpen.firstMatch(content);
+        if (match != null) {
+          content = content.replaceFirst(
+            match.group(0)!,
+            '${match.group(0)!}\n'
+            '    <uses-permission android:name="$perm" />',
+          );
+          print('Added WRITE_EPG_DATA permission to AndroidManifest.xml '
+              '(required by tv_channels:)');
+        }
+      }
+
+      final receiver = '$androidPackage.mosaic_generated.MosaicTvInitReceiver';
+      if (!content.contains(receiver) && content.contains('</application>')) {
+        content = content.replaceFirst(
+          '</application>',
+          '        <receiver\n'
+              '            android:name="$receiver"\n'
+              '            android:exported="true"> <!-- MOSAIC-GENERATED -->\n'
+              '            <intent-filter>\n'
+              '                <action android:name="android.media.tv.action.INITIALIZE_PROGRAMS" />\n'
+              '                <category android:name="android.intent.category.DEFAULT" />\n'
+              '            </intent-filter>\n'
+              '        </receiver>\n'
+              '    </application>',
+        );
+        print('Registered MosaicTvInitReceiver in AndroidManifest.xml');
+      }
+    }
+
     // Declare the shared RemoteViews collection service when any widget uses a
     // list. It needs BIND_REMOTEVIEWS or the system will not bind it.
     if (definitionsUseListView(definitions)) {

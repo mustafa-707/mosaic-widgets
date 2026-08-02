@@ -348,6 +348,43 @@ Widget families are declared per widget in `mosaic.yaml` under `ios.families`. I
 
 Accessory families are gated `if #available(iOS 16.0, watchOS 9.0, *)`. **Android skips accessory families** (with a build-time notice) — there are no general user Lock Screen widgets on Android.
 
+### Android TV and Google TV
+
+**Widgets do not exist on the TV home screen.** Neither launcher hosts
+AppWidgets, so a Mosaic widget never appears on a TV however it is declared —
+this is a platform limitation, not something a DSL can work around.
+
+What the TV home screen does show is *channels* of preview programs. The
+launcher draws those cards itself, so there is no layout to write:
+
+```yaml
+tv_channels:
+  - name: featured
+    display_name: Featured on Mosaic
+```
+
+```dart
+await MosaicTv.publish('featured', [
+  MosaicTvProgram(
+    title: 'Episode 1',
+    description: 'Pilot',
+    poster: posterUrl,              // or a renderFlutterWidget() path
+    link: 'myapp://episode/1',
+  ),
+]);
+```
+
+Declaring a channel generates the publisher, adds the `WRITE_EPG_DATA`
+permission and registers the receiver that creates the row on install. None of
+that is emitted for a project without `tv_channels:`, so a phone-only app never
+carries a TV permission it did not ask for.
+
+Written against the framework `TvContract`, so there is **no extra Gradle
+dependency** — `androidx.tvprovider` only wraps the same `ContentValues`.
+Preview programs are API 26+; below that, and on any device without a TV
+provider, publishing is a no-op rather than a crash. `MosaicTv.publish` returns
+`false` where the platform cannot support it, including all of iOS.
+
 ### Which platforms the generated Swift builds for
 
 One widget extension target can be built for more than iOS, and the generated

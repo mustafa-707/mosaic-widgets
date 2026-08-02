@@ -31,6 +31,16 @@ class MosaicConfig {
   @JsonKey(name: 'controls', defaultValue: <MosaicControlConfig>[])
   final List<MosaicControlConfig> controls;
 
+  /// Android TV home-screen channels, declared under `tv_channels:`.
+  ///
+  /// Not widgets. The Android TV and Google TV launchers host **no AppWidgets
+  /// at all** — a RemoteViews widget simply never appears there. What the TV
+  /// home screen does show is *channels* of preview programs, published through
+  /// `TvProvider`, and the launcher draws those cards itself. So a DSL tree has
+  /// nothing to render on TV; what a channel needs is content.
+  @JsonKey(name: 'tv_channels', defaultValue: <MosaicTvChannelConfig>[])
+  final List<MosaicTvChannelConfig> tvChannels;
+
   /// Network sources a widget's refresh button may fetch directly, keyed by
   /// callback name (the `MActionCallback` / `MRefreshAction` name).
   ///
@@ -64,6 +74,7 @@ class MosaicConfig {
     required this.widgets,
     this.liveActivities = const [],
     this.controls = const [],
+    this.tvChannels = const [],
     this.refresh = const {},
     this.strings = const {},
   });
@@ -261,6 +272,40 @@ class MosaicLiveActivityConfig {
 
   /// Serializes this config to a JSON map.
   Map<String, dynamic> toJson() => _$MosaicLiveActivityConfigToJson(this);
+}
+
+/// An Android TV home-screen channel.
+///
+/// A channel is a row on the TV home screen; the app fills it with preview
+/// programs at runtime via `MosaicTv.publish`. Declaring it here generates the
+/// provider plumbing, the manifest permission and the install receiver that
+/// creates the row.
+@JsonSerializable(explicitToJson: true)
+class MosaicTvChannelConfig {
+  /// Identifies the channel in code and in `MosaicTv.publish`.
+  final String name;
+
+  /// The row title the user sees on the home screen.
+  @JsonKey(name: 'display_name')
+  final String displayName;
+
+  /// Deep link opened when the user selects the channel itself. Optional.
+  @JsonKey(name: 'app_link')
+  final String? appLink;
+
+  /// Creates a [MosaicTvChannelConfig].
+  MosaicTvChannelConfig({
+    required this.name,
+    required this.displayName,
+    this.appLink,
+  });
+
+  /// Deserializes from JSON.
+  factory MosaicTvChannelConfig.fromJson(Map<String, dynamic> j) =>
+      _$MosaicTvChannelConfigFromJson(j);
+
+  /// Serializes to JSON.
+  Map<String, dynamic> toJson() => _$MosaicTvChannelConfigToJson(this);
 }
 
 /// Configuration for a single Mosaic Control.

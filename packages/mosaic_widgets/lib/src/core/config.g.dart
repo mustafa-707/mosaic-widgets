@@ -21,6 +21,11 @@ MosaicConfig _$MosaicConfigFromJson(Map<String, dynamic> json) => MosaicConfig(
                   MosaicControlConfig.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      tvChannels: (json['tv_channels'] as List<dynamic>?)
+              ?.map((e) =>
+                  MosaicTvChannelConfig.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
       refresh: json['refresh'] == null
           ? const {}
           : _refreshFromJson(json['refresh']),
@@ -36,6 +41,7 @@ Map<String, dynamic> _$MosaicConfigToJson(MosaicConfig instance) =>
       'widgets': instance.widgets,
       'live_activities': instance.liveActivities,
       'controls': instance.controls,
+      'tv_channels': instance.tvChannels,
       'refresh': _refreshToJson(instance.refresh),
       'strings': instance.strings,
     };
@@ -97,6 +103,22 @@ Map<String, dynamic> _$MosaicLiveActivityConfigToJson(
       'name': instance.name,
       'entry': instance.entry,
       'watch': instance.watch,
+    };
+
+MosaicTvChannelConfig _$MosaicTvChannelConfigFromJson(
+        Map<String, dynamic> json) =>
+    MosaicTvChannelConfig(
+      name: json['name'] as String,
+      displayName: json['display_name'] as String,
+      appLink: json['app_link'] as String?,
+    );
+
+Map<String, dynamic> _$MosaicTvChannelConfigToJson(
+        MosaicTvChannelConfig instance) =>
+    <String, dynamic>{
+      'name': instance.name,
+      'display_name': instance.displayName,
+      'app_link': instance.appLink,
     };
 
 MosaicControlConfig _$MosaicControlConfigFromJson(Map<String, dynamic> json) =>

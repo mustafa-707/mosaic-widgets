@@ -116,6 +116,8 @@ MVisibility(bind: MDeviceValue(MDeviceMetric.batteryCharging), child: boltIcon)
 ```
 `MDeviceMetric { batteryLevel, batteryCharging, storageFreeGb, storageUsedPercent }`. Only referenced metrics are collected.
 
+**Android TV / Google TV:** widgets do **not** exist on the TV home screen — neither launcher hosts AppWidgets. The equivalent is a channel of preview program cards, drawn by the launcher: declare `tv_channels: [{name, display_name}]` in `mosaic.yaml` and publish with `MosaicTv.publish('name', [MosaicTvProgram(title:, description:, poster:, link:)])`. Uses the framework `TvContract`, so no extra Gradle dependency; API 26+, a no-op elsewhere, and nothing is emitted unless a channel is declared.
+
 **Platforms the generated Swift builds for:** one extension target can serve iOS, macOS and watchOS. Family sets are disjoint — macOS has no accessory families, watchOS has no system families, and `accessoryCorner` is watchOS-only — so a `WidgetFamily` case is a *compile* error where it does not exist. Mosaic fences each; declare only what you want. Live Activities and Control Widgets are iOS-only and are compiled out elsewhere.
 
 **Accessibility:** `MSemantics(label: labelOrBind, child: …, bool excludeChildren)` → iOS `.accessibilityLabel`, Android `contentDescription`. Without it a screen reader reads bare numbers with no unit or context. `excludeChildren` collapses the subtree to one element on **both** platforms (iOS `.accessibilityElement(children: .ignore)`, Android `importantForAccessibility="noHideDescendants"` — a static layout attribute, so nothing crosses the RemoteViews boundary).

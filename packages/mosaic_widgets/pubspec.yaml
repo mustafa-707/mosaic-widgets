@@ -1,6 +1,6 @@
 name: mosaic_widgets
 description: "Build native iOS and Android home-screen widgets, lock-screen widgets, and Live Activities from a single Flutter-style Dart DSL."
-version: 0.1.0
+version: 0.2.0
 repository: https://github.com/mustafa-707/mosaic-widgets
 homepage: https://github.com/mustafa-707/mosaic-widgets
 issue_tracker: https://github.com/mustafa-707/mosaic-widgets/issues
@@ -33,6 +33,10 @@ dev_dependencies:
     sdk: flutter
   # The generator and CLI tests are pure Dart and use package:test directly.
   test: ^1.25.0
+  # The IR and config models are json_serializable; without these the checked-in
+  # .g.dart files cannot be regenerated when a field is added.
+  build_runner: ^2.4.0
+  json_serializable: ^6.7.0
   flutter_lints: ^6.0.0
 
 # For information on the generic Dart part of this file, see the

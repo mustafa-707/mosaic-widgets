@@ -81,6 +81,12 @@ live_activities:
     # CarPlay, reusing the lock-screen layout. iOS 18+ for this activity.
     watch: true
 
+# Android TV / Google TV home-screen rows. Not widgets: the TV launcher hosts
+# no AppWidgets, so this publishes preview-program cards it draws itself.
+tv_channels:
+  - name: featured
+    display_name: Featured on Mosaic
+
 controls:
   - name: Torch
     entry: lib/platform/controls/torch.control.dart

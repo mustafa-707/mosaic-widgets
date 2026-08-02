@@ -168,6 +168,83 @@ class MosaicWidgetInfo {
   String toString() => 'MosaicWidgetInfo($name, id: $id, family: $family)';
 }
 
+/// One card in an Android TV home-screen channel.
+class MosaicTvProgram {
+  /// The card's title. Required — a program without one is skipped.
+  final String title;
+
+  /// Secondary line under the title.
+  final String? description;
+
+  /// Poster artwork. Any URI the system can read: an `https://` URL, or a
+  /// `file://` path — including one produced by
+  /// [MosaicBridge.renderFlutterWidget].
+  final String? poster;
+
+  /// Deep link opened when the card is selected.
+  final String? link;
+
+  /// Creates a [MosaicTvProgram].
+  const MosaicTvProgram({
+    required this.title,
+    this.description,
+    this.poster,
+    this.link,
+  });
+
+  /// The wire form the platform expects.
+  Map<String, String> toMap() => {
+        'title': title,
+        if (description != null) 'description': description!,
+        if (poster != null) 'poster': poster!,
+        if (link != null) 'link': link!,
+      };
+}
+
+/// Android TV / Google TV home-screen channels.
+///
+/// **Not widgets.** The TV launchers host no AppWidgets at all, so a Mosaic
+/// widget never appears on a TV home screen however it is declared. What the TV
+/// home screen shows is channels of preview programs, and the launcher draws
+/// those cards itself — so there is no layout to write, only content.
+///
+/// Declare the channel in `mosaic.yaml` under `tv_channels:`, then fill it:
+///
+/// ```dart
+/// await MosaicTv.publish('featured', [
+///   MosaicTvProgram(title: 'Episode 1', poster: url, link: 'myapp://ep/1'),
+/// ]);
+/// ```
+///
+/// Android only. Every call is a no-op elsewhere.
+class MosaicTv {
+  MosaicTv._();
+
+  static const MethodChannel _channel = MethodChannel('mosaic_bridge');
+
+  /// Replaces the contents of [channel] with [programs].
+  ///
+  /// Replaces rather than merges, so the row always matches what the app just
+  /// published. Returns false when the platform has no TV channel support —
+  /// iOS, or an Android project that declared none.
+  static Future<bool> publish(
+    String channel,
+    List<MosaicTvProgram> programs,
+  ) async {
+    try {
+      await _channel.invokeMethod('publishTvChannel', {
+        'channel': channel,
+        'programs': programs.map((p) => p.toMap()).toList(),
+      });
+      return true;
+    } on PlatformException {
+      return false;
+    } on MissingPluginException {
+      return false;
+    }
+  }
+}
+
 class MosaicBridge {
   static const MethodChannel _channel = MethodChannel('mosaic_bridge');
   static final _onDeepLinkController = StreamController<String>.broadcast();

@@ -73,6 +73,9 @@ One-time native wiring (an Xcode Widget Extension target, one line in your
 | **Per-size layouts** | `compactRoot:` gives small tiles their own tree |
 | **Theming** | Light/dark, Material You (`MColor.system`), iOS tinted mode |
 | **Device metrics** | Battery, storage and RAM, read in the widget process |
+| **Render any Flutter widget** | `renderFlutterWidget` rasterises to a PNG for what the DSL cannot express |
+| **macOS & watchOS** | One extension target compiles for both, watch complications included |
+| **Android TV** | Home-screen channels of preview cards — TV hosts no widgets at all |
 | **Accessibility** | `MSemantics` → VoiceOver / TalkBack |
 | **Localised text** | Real `values-<locale>/` and `.lproj` resources |
 

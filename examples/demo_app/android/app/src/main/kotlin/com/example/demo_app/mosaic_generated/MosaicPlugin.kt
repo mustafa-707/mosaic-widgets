@@ -128,6 +128,19 @@ class MosaicPlugin {
                     }
                     result.success(out)
                 }
+                "publishTvChannel" -> {
+                    // Only meaningful where tv_channels: was declared; the
+                    // MosaicTv object does not exist otherwise.
+                    val channel = call.argument<String>("channel")
+                    val programs = call.argument<List<Map<String, String>>>("programs")
+                    if (channel == null || programs == null) {
+                        result.error("INVALID_ARGUMENTS",
+                            "channel and programs are required", null)
+                    } else {
+                        MosaicTv.publish(context, channel, programs)
+                        result.success(null)
+                    }
+                }
                 "refreshAll" -> {
                     HomeWidgetBridgeHelper.refreshAll(context)
                     result.success(null)

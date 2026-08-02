@@ -566,6 +566,7 @@ class AndroidGenerator {
     await _generateRefreshSources(projectRoot);
     await _generateDeviceMetrics(projectRoot);
     await _generateHostPlugin(projectRoot);
+    await _generateTvChannels(projectRoot);
 
     await _generateLiveActivityLayouts(layoutDir);
     await _generateLiveActivityManager(projectRoot);
