@@ -68,7 +68,7 @@ app:
   ios_app_group: group.$ios.widgets
 
 widgets:
-  # Add one entry per widget. `mosaic_cli add widget <Name>` does this for you.
+  # Add one entry per widget. `dart run mosaic_widgets:mosaic add widget <Name>` does this for you.
   #
   # - name: Profile
   #   entry: lib/home_widgets/profile.widget.dart
@@ -115,7 +115,8 @@ class InitCommand extends Command {
     }
 
     print('');
-    print('Next: `mosaic_cli add widget <Name>`, then `mosaic_cli build`.');
+    print(
+        'Next: `dart run mosaic_widgets:mosaic add widget <Name>`, then `dart run mosaic_widgets:mosaic build`.');
     print('iOS also needs a Widget Extension target — see docs/IOS_SETUP.md.');
   }
 }

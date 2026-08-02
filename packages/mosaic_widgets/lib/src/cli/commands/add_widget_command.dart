@@ -200,7 +200,8 @@ abstract class _AddNamedCommand extends Command {
 
     final snippet = namedEntrySnippet(entryName, filePath);
     if (configContent == null) {
-      print('No mosaic.yaml found — run `mosaic_cli init`, then add under '
+      print(
+          'No mosaic.yaml found — run `dart run mosaic_widgets:mosaic init`, then add under '
           '`$configKey:`:');
       print(snippet);
       return;
@@ -219,7 +220,7 @@ abstract class _AddNamedCommand extends Command {
     }
     await configFile!.writeAsString(updated);
     print('Registered $label "$entryName" in ${configFile.path}');
-    print('Next: run `mosaic_cli build`.');
+    print('Next: run `dart run mosaic_widgets:mosaic build`.');
   }
 }
 
@@ -230,7 +231,8 @@ class AddLiveActivitySubCommand extends _AddNamedCommand {
   final description =
       'Adds a Live Activity (iOS Dynamic Island / Android Live Update).';
   @override
-  String get invocation => 'mosaic_cli add live-activity <Name>';
+  String get invocation =>
+      'dart run mosaic_widgets:mosaic add live-activity <Name>';
   @override
   String get configKey => 'live_activities';
   @override
@@ -250,7 +252,7 @@ class AddControlSubCommand extends _AddNamedCommand {
   final description =
       'Adds a Control (iOS Control Center / Android Quick Settings tile).';
   @override
-  String get invocation => 'mosaic_cli add control <Name>';
+  String get invocation => 'dart run mosaic_widgets:mosaic add control <Name>';
   @override
   String get configKey => 'controls';
   @override
@@ -270,7 +272,7 @@ class AddWidgetSubCommand extends Command {
   final description = 'Adds a new widget definition.';
 
   @override
-  String get invocation => 'mosaic_cli add widget <Name>';
+  String get invocation => 'dart run mosaic_widgets:mosaic add widget <Name>';
 
   AddWidgetSubCommand() {
     argParser.addOption('dir',
@@ -317,7 +319,8 @@ class AddWidgetSubCommand extends Command {
 
     if (!register || configContent == null) {
       if (configContent == null) {
-        print('No mosaic.yaml found — run `mosaic_cli init` first, then add:');
+        print(
+            'No mosaic.yaml found — run `dart run mosaic_widgets:mosaic init` first, then add:');
       } else {
         print('Add the following under `widgets:` in ${configFile!.path}:');
       }
@@ -339,7 +342,7 @@ class AddWidgetSubCommand extends Command {
     }
     await configFile!.writeAsString(updated);
     print('Registered "$widgetName" in ${configFile.path}');
-    print('Next: run `mosaic_cli build`.');
+    print('Next: run `dart run mosaic_widgets:mosaic build`.');
   }
 }
 

@@ -99,7 +99,7 @@ you still support iOS 16–17.
 Then regenerate native code:
 
 ```bash
-dart run mosaic_cli build
+dart run mosaic_widgets:mosaic build
 ```
 
 This emits the iOS `MosaicActivityAttributes.swift` + `<Name>LiveActivity.swift` (registered in the widget bundle under an iOS 16.1 gate) and the Android `MosaicLiveActivityManager`.
@@ -182,7 +182,7 @@ See [ANDROID_SETUP.md](ANDROID_SETUP.md) section 5.
 The demo at `examples/demo_app` ships a complete reference:
 
 1. **Definition** — `lib/platform/live_activities/order_tracker.live.dart` (above): a `{status, progress, eta}` delivery tracker with a Lock Screen banner and a Dynamic Island (scooter glyph + ETA compact, status + progress expanded).
-2. **Registration** — `mosaic.yaml` lists it under `live_activities:` so `dart run mosaic_cli build` generates the native code.
+2. **Registration** — `mosaic.yaml` lists it under `live_activities:` so `dart run mosaic_widgets:mosaic build` generates the native code.
 3. **iOS wiring** — `ios/Runner/Info.plist` sets `NSSupportsLiveActivities`, and `ios/Runner/AppDelegate.swift` routes the lifecycle to `MosaicActivityController`.
 4. **Android wiring** — `MainActivity.kt` routes the lifecycle to `MosaicLiveActivityManager`.
 5. **Driving it** — from app code, call `MosaicLiveActivities.start('OrderTracker', {...})`, push updates (e.g. as the order progresses) with `update(...)`, and finish with `end(...)`, exactly as in section 3.

@@ -14,13 +14,13 @@ import 'package:mosaic_widgets/src/cli/version.dart';
 
 Future<void> main(List<String> args) async {
   final runner = CommandRunner(
-    'mosaic_cli',
+    'dart run mosaic_widgets:mosaic',
     'Native iOS and Android home-screen widgets from one Dart DSL.\n'
         '\nTypical first run:\n'
-        '  mosaic_cli init                    # detect identifiers, write mosaic.yaml\n'
-        '  mosaic_cli add widget News         # scaffold and register a widget\n'
-        '  mosaic_cli build                   # generate native code\n'
-        '  mosaic_cli doctor --fix            # repair setup, report the rest',
+        '  dart run mosaic_widgets:mosaic init                    # detect identifiers, write mosaic.yaml\n'
+        '  dart run mosaic_widgets:mosaic add widget News         # scaffold and register a widget\n'
+        '  dart run mosaic_widgets:mosaic build                   # generate native code\n'
+        '  dart run mosaic_widgets:mosaic doctor --fix            # repair setup, report the rest',
   )
     ..addCommand(InitCommand())
     ..addCommand(AddWidgetCommand())
@@ -32,14 +32,14 @@ Future<void> main(List<String> args) async {
   runner.argParser.addFlag(
     'version',
     negatable: false,
-    help: 'Print the mosaic_cli version.',
+    help: 'Print the Mosaic version.',
   );
 
   try {
     // Handled here rather than as a command so `--version` works alone.
     final parsed = runner.argParser.parse(args);
     if (parsed['version'] as bool) {
-      print('mosaic_cli $packageVersion');
+      print('mosaic $packageVersion');
       return;
     }
     await runner.run(args);

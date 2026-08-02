@@ -23,7 +23,7 @@ class ListCommand extends Command {
       'Lists declared widgets, live activities and controls, with their status.';
 
   @override
-  String get invocation => 'mosaic_cli list';
+  String get invocation => 'dart run mosaic_widgets:mosaic list';
 
   ListCommand() {
     argParser.addFlag('paths',
@@ -35,7 +35,8 @@ class ListCommand extends Command {
   Future<void> run() async {
     final configFile = resolveConfigFile();
     if (configFile == null) {
-      print('No mosaic.yaml found. Run `mosaic_cli init` first.');
+      print(
+          'No mosaic.yaml found. Run `dart run mosaic_widgets:mosaic init` first.');
       return;
     }
 
@@ -138,7 +139,8 @@ class ListCommand extends Command {
         config.liveActivities.isEmpty &&
         config.controls.isEmpty) {
       print('');
-      print('Nothing declared yet. Try `mosaic_cli add widget <Name>`.');
+      print(
+          'Nothing declared yet. Try `dart run mosaic_widgets:mosaic add widget <Name>`.');
     }
   }
 }

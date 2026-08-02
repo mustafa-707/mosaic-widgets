@@ -4,7 +4,7 @@ Android configuration is mostly automated by the `mosaic_cli`, but here are the 
 
 ## 1. Automated Configuration
 
-When you run `dart run mosaic_cli build`, the CLI performs the following:
+When you run `dart run mosaic_widgets:mosaic build`, the CLI performs the following:
 1.  Generates `mosaic_*.xml` layouts in `res/layout`.
 2.  Generates `mosaic_*_info.xml` configurations in `res/xml`.
 3.  Generates Kotlin Provider classes under your package's `mosaic_generated` segment (e.g. `com.example.myapp.mosaic_generated`).
@@ -24,7 +24,7 @@ Images placed in `assets/widgets/` in your Flutter project are automatically cop
 
 ## 3. Register the Mosaic Plugin
 
-`mosaic_cli build` generates `MosaicPlugin.kt` into your app's
+`dart run mosaic_widgets:mosaic build` generates `MosaicPlugin.kt` into your app's
 `mosaic_generated` package. It contains the whole host side of the bridge: the
 `mosaic_bridge` method channel (`saveString`, `saveBool`, `refresh`,
 `refreshAll`, the Live Activity lifecycle), the receiver that forwards widget
@@ -73,19 +73,19 @@ above.
 
 ## 4. Adaptive Colors, RTL & Locale
 
-- **Dark mode**: adaptive colors (`MColor.hex(..., dark: ...)`) are generated as a `res/values/mosaic_colors.xml` + `res/values-night/mosaic_colors.xml` pair and referenced by `@color/mosaic_<hash>`. Android applies the night variant automatically based on the system theme. (`dart run mosaic_cli clean` removes these generated `values*/mosaic_colors.xml` files.)
+- **Dark mode**: adaptive colors (`MColor.hex(..., dark: ...)`) are generated as a `res/values/mosaic_colors.xml` + `res/values-night/mosaic_colors.xml` pair and referenced by `@color/mosaic_<hash>`. Android applies the night variant automatically based on the system theme. (`dart run mosaic_widgets:mosaic clean` removes these generated `values*/mosaic_colors.xml` files.)
 - **Runtime-bound colors** (`MColor.bind(...)`) are resolved at update time from the data store and applied to the `RemoteViews`.
 - **RemoteViews size limit**: a widget update crosses a Binder transaction with a hard size cap. Exceed it and the launcher drops the **whole** update — the widget shows only its static layout, every bound value vanishes at once, and nothing is logged. Mosaic keeps every bitmap it sends inside that budget for you: network images are decoded downsampled (bounds first, power-of-two `inSampleSize`, longest side ≤ 320px), and `MSparkline`/`MBarChart` bitmaps are scaled from the widget's dp bounds but clamped to ~60k pixels with the aspect ratio preserved. `MImage` costs nothing here — asset and file images are passed as a URI the launcher resolves itself.
 - **Cross-platform layout parity**: an `MRow` sizes to its tallest child but centres vertically inside a taller parent (a container, a button, a stack), matching SwiftUI's behaviour when an `HStack` sits in a filled frame. A bound key drives every view it appears in — a battery level rendered as both `MText` and `MProgressBar` updates both. Both were Android-only divergences from iOS.
 - **RTL**: layouts use `start`/`end` gravity and padding so they mirror automatically. Ensure your manifest's `<application>` has `android:supportsRtl="true"` — `doctor` warns when it is `false` **or absent**, since Android ignores `start`/`end` gravity without the opt-in.
 - **Formatting**: `MFormat` on bound `MText` values is applied with the device locale via `NumberFormat` / `DateFormat` / `DateUtils` when the provider updates.
-- **Translated text**: keys declared under `strings:` in `mosaic.yaml` and used as `MText(const MLocalized('key'))` are generated into `res/values/mosaic_localized.xml` (the first-listed locale, used as fallback) plus one `res/values-<locale>/mosaic_localized.xml` per additional locale, and referenced from the layout as `@string/mosaic_s_<key>`. Android resolves the right table from the device language with no code on your side — this is why widget text cannot use `intl`/`AppLocalizations`, which need the Flutter engine the widget process does not have. Values are XML-escaped, and `build` fails if a key is used but missing from the default locale — otherwise the only symptom is a runtime resource-resolution failure on devices in an unlisted language. (`dart run mosaic_cli clean` removes these generated files.)
+- **Translated text**: keys declared under `strings:` in `mosaic.yaml` and used as `MText(const MLocalized('key'))` are generated into `res/values/mosaic_localized.xml` (the first-listed locale, used as fallback) plus one `res/values-<locale>/mosaic_localized.xml` per additional locale, and referenced from the layout as `@string/mosaic_s_<key>`. Android resolves the right table from the device language with no code on your side — this is why widget text cannot use `intl`/`AppLocalizations`, which need the Flutter engine the widget process does not have. Values are XML-escaped, and `build` fails if a key is used but missing from the default locale — otherwise the only symptom is a runtime resource-resolution failure on devices in an unlisted language. (`dart run mosaic_widgets:mosaic clean` removes these generated files.)
 
 ## 5. Control Widgets (Quick Settings Tiles)
 
 Control widgets appear in the Android Quick Settings panel. Users add them manually from the Quick Settings edit screen.
 
-### What `mosaic_cli build` generates
+### What `dart run mosaic_widgets:mosaic build` generates
 
 For each entry under `controls:` in `mosaic.yaml` the CLI:
 

@@ -6,25 +6,9 @@ on:
   pull_request:
 
 jobs:
-  dart:
-    name: mosaic_widgets (analyze + test)
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: packages/mosaic_widgets
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
-        with:
-          sdk: "3.12.2"
-      - run: dart pub get
-      - run: dart analyze --fatal-infos
-      - run: dart test
-
   flutter:
     name: mosaic_widgets (flutter test)
     runs-on: ubuntu-latest
-          - package: examples/demo_app
     defaults:
       run:
         working-directory: packages/mosaic_widgets
@@ -58,10 +42,10 @@ jobs:
         working-directory: examples/demo_app
         run: |
           flutter pub get
-          dart run mosaic_cli build
+          dart run mosaic_widgets:mosaic build
       - name: Fail if the project reports setup problems
         working-directory: examples/demo_app
-        run: dart run mosaic_cli doctor
+        run: dart run mosaic_widgets:mosaic doctor
       - name: Assemble the APK (runs AAPT and kotlinc over the generated code)
         working-directory: examples/demo_app
         run: flutter build apk --debug
@@ -96,16 +80,16 @@ jobs:
       - name: Scaffold one of every entry type
         working-directory: greenfield
         run: |
-          dart run mosaic_cli init
-          dart run mosaic_cli add widget Steps
-          dart run mosaic_cli add live-activity Delivery
-          dart run mosaic_cli add control Torch
-          dart run mosaic_cli list
+          dart run mosaic_widgets:mosaic init
+          dart run mosaic_widgets:mosaic add widget Steps
+          dart run mosaic_widgets:mosaic add live-activity Delivery
+          dart run mosaic_widgets:mosaic add control Torch
+          dart run mosaic_widgets:mosaic list
 
       - name: Generate and compile
         working-directory: greenfield
         run: |
-          dart run mosaic_cli build
+          dart run mosaic_widgets:mosaic build
           flutter analyze
           flutter build apk --debug
 
@@ -116,7 +100,7 @@ jobs:
           # no App Group, and doctor exits non-zero on fatal setup problems. The
           # check here is that it SAYS SO rather than passing silently, which is
           # what it used to do.
-          if dart run mosaic_cli doctor; then
+          if dart run mosaic_widgets:mosaic doctor; then
             echo "::error::doctor passed on a project with no iOS widget extension"
             exit 1
           fi

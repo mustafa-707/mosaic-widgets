@@ -8,7 +8,7 @@ description: Use when building or editing native iOS/Android home-screen widgets
 ## Overview
 Mosaic generates **native** iOS (WidgetKit / Live Activities / Dynamic Island) and Android
 (AppWidget / RemoteViews) code from a single Dart DSL. You write declarative `MosaicDefinition`
-(widget) and `MosaicLiveActivity` (Live Activity) builder functions; the `mosaic_cli build`
+(widget) and `MosaicLiveActivity` (Live Activity) builder functions; the `dart run mosaic_widgets:mosaic build`
 command runs them and emits native Swift/Kotlin/XML. The app pushes live data through
 `MosaicBridge`; the OS renders the widget. Mosaic is NOT in model training data — use the real
 API below, do not invent classes or imports.
@@ -17,18 +17,18 @@ API below, do not invent classes or imports.
 - **Widget/Live-Activity definition files import `package:mosaic_widgets/dsl.dart`** (pure Dart — the build
   runner executes them under `dart run`, which cannot compile Flutter).
 - **App code** (using `MosaicBridge` / `MosaicLiveActivities`) imports `package:mosaic_widgets/mosaic_widgets.dart`.
-Putting `package:mosaic_widgets/mosaic_widgets.dart` in a definition file breaks `mosaic_cli build`.
+Putting `package:mosaic_widgets/mosaic_widgets.dart` in a definition file breaks `dart run mosaic_widgets:mosaic build`.
 
 ## Starting from nothing
 
 ```bash
-dart run mosaic_cli init                    # mosaic.yaml, identifiers detected
-dart run mosaic_cli add widget News         # creates the file and registers it
-dart run mosaic_cli add live-activity Order # lock screen + Dynamic Island
-dart run mosaic_cli add control Torch       # Control Center / Quick Settings
-dart run mosaic_cli build                   # generates native code
-dart run mosaic_cli doctor --fix            # repairs setup, reports the rest
-dart run mosaic_cli list                    # what is declared, and its status
+dart run mosaic_widgets:mosaic init                    # mosaic.yaml, identifiers detected
+dart run mosaic_widgets:mosaic add widget News         # creates the file and registers it
+dart run mosaic_widgets:mosaic add live-activity Order # lock screen + Dynamic Island
+dart run mosaic_widgets:mosaic add control Torch       # Control Center / Quick Settings
+dart run mosaic_widgets:mosaic build                   # generates native code
+dart run mosaic_widgets:mosaic doctor --fix            # repairs setup, reports the rest
+dart run mosaic_widgets:mosaic list                    # what is declared, and its status
 ```
 
 `init` reads `applicationId` from `android/app/build.gradle*` and the Runner
@@ -40,15 +40,15 @@ compiles the generated Swift, and checks **both** hosts register `MosaicPlugin` 
 makes every `MosaicBridge` call throw `MissingPluginException`.
 
 ## Workflow
-1. `dart run mosaic_cli init` → creates `mosaic.yaml` + `lib/home_widgets/`.
-2. `dart run mosaic_cli add widget MyWidget` → scaffolds `lib/home_widgets/mywidget.widget.dart`.
+1. `dart run mosaic_widgets:mosaic init` → creates `mosaic.yaml` + `lib/home_widgets/`.
+2. `dart run mosaic_widgets:mosaic add widget MyWidget` → scaffolds `lib/home_widgets/mywidget.widget.dart`.
 3. Define the widget: a top-level `MosaicDefinition build<Name>()` (convention: `build` + the
    config `name`). Live activities: a `MosaicLiveActivity build<Name>()` in a `*.live.dart` file.
 4. Register it in `mosaic.yaml` (see Config). The `entry:` path is arbitrary — relative to the
    project root; any directory works (the scaffold default is `lib/home_widgets/`, but e.g.
    `lib/platform/widgets/` is fine). The config `name:` must match the `build<Name>()` suffix
    **exactly, case-sensitive** (`name: NewsWidget` ⇒ `MosaicDefinition buildNewsWidget()`).
-5. `dart run mosaic_cli build` → generates native code (idempotent; `clean` removes it).
+5. `dart run mosaic_widgets:mosaic build` → generates native code (idempotent; `clean` removes it).
 6. iOS: add the generated files to your Widget Extension target in Xcode (one-time). Wire
    `AppDelegate.swift` / `MainActivity.kt` from the generated templates (see docs/IOS_SETUP.md,
    docs/ANDROID_SETUP.md). `doctor` checks setup.
@@ -278,7 +278,7 @@ Callbacks not listed keep the old defer-to-app behavior. **iOS only so far** —
 on Android the button still defers to the app.
 
 ## CLI
-`dart run mosaic_cli init | add widget <Name> | build | doctor | clean`.
+`dart run mosaic_widgets:mosaic init | add widget <Name> | build | doctor | clean`.
 
 ## Renaming or removing a widget
 
@@ -345,9 +345,9 @@ controls:
 
 **`MControl` constructor** — all named args: `name` (String, required), `kind` (MControlKind, required), `label` (String, required), `sfSymbol` (String?), `androidIcon` (String?), `valueKey` (String?, toggles), `action` (MAction, required). `MActionCallback`, `MLaunchUrlAction`, and `MRefreshAction` are all valid actions.
 
-**iOS behaviour (iOS 18+):** `mosaic_cli build` emits a `<Name>Control.swift` (`ControlWidgetToggle` / `ControlWidgetButton`) into `ios/HomeWidgetExtension/`, gated `@available(iOS 18.0, *)`. The toggle reads its current state from the App Group `UserDefaults` bool at `valueKey`; tapping writes the new value back and fires the action. A shared `MosaicControlIntents.swift` (also emitted) provides the `SetValueIntent`. Controls are registered in `HomeWidgetBundle.swift` under an iOS 18 gate. Controls are part of the same Widget Extension used for home-screen widgets — no additional Xcode target is required.
+**iOS behaviour (iOS 18+):** `dart run mosaic_widgets:mosaic build` emits a `<Name>Control.swift` (`ControlWidgetToggle` / `ControlWidgetButton`) into `ios/HomeWidgetExtension/`, gated `@available(iOS 18.0, *)`. The toggle reads its current state from the App Group `UserDefaults` bool at `valueKey`; tapping writes the new value back and fires the action. A shared `MosaicControlIntents.swift` (also emitted) provides the `SetValueIntent`. Controls are registered in `HomeWidgetBundle.swift` under an iOS 18 gate. Controls are part of the same Widget Extension used for home-screen widgets — no additional Xcode target is required.
 
-**Android behaviour (API 24+, user-added):** A `<Name>TileService.kt` (`TileService` subclass) is emitted under `mosaic_generated`. For toggles `onStartListening` reads `widget_data` SharedPreferences under `valueKey` and sets `STATE_ACTIVE`/`STATE_INACTIVE`; `onClick` flips the bool and broadcasts a `MOSAIC_CALLBACK` intent (same path as widget buttons). For buttons `onClick` fires the callback directly. The `<service>` tag (with `BIND_QUICK_SETTINGS_TILE` permission and the QS tile intent-filter) is **auto-added to `AndroidManifest.xml`** by `mosaic_cli build`. QS tiles are user-added from the Quick Settings edit panel.
+**Android behaviour (API 24+, user-added):** A `<Name>TileService.kt` (`TileService` subclass) is emitted under `mosaic_generated`. For toggles `onStartListening` reads `widget_data` SharedPreferences under `valueKey` and sets `STATE_ACTIVE`/`STATE_INACTIVE`; `onClick` flips the bool and broadcasts a `MOSAIC_CALLBACK` intent (same path as widget buttons). For buttons `onClick` fires the callback directly. The `<service>` tag (with `BIND_QUICK_SETTINGS_TILE` permission and the QS tile intent-filter) is **auto-added to `AndroidManifest.xml`** by `dart run mosaic_widgets:mosaic build`. QS tiles are user-added from the Quick Settings edit panel.
 
 ## Platform notes
 - Widget definitions, live activities, and control widgets are **pure data** — no Flutter widgets, no `setState`, no runtime logic; all dynamism comes from `MBind` + the data the app pushes.

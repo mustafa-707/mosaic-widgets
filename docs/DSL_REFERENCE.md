@@ -58,7 +58,7 @@ widgets:
     entry: lib/home_widgets/steps.widget.dart
 ```
 
-`mosaic_cli add widget Steps` scaffolds the file and adds this for you, choosing
+`dart run mosaic_widgets:mosaic add widget Steps` scaffolds the file and adds this for you, choosing
 the directory your existing entries already use.
 
 - **`ios: { families: [...] }`** — optional; defaults to `[systemSmall, systemMedium]`.
@@ -124,7 +124,7 @@ the directory your existing entries already use.
 ### Lists
 - **MListView**: Repeats an `itemTemplate` (`MNode`) over a bound list (`bind`: `MBind`). Push the data with `MosaicBridge.saveList('key', [{...}, ...])`; each entry is a map, and the item template binds its keys by name (`MText(MBind('title'))`).
   - **iOS**: renders real per-element item templates.
-  - **Android**: backed by a generated `RemoteViewsService`/`RemoteViewsFactory`, so the list scrolls with the app closed. The `<service>` is registered in the manifest by `mosaic_cli build`.
+  - **Android**: backed by a generated `RemoteViewsService`/`RemoteViewsFactory`, so the list scrolls with the app closed. The `<service>` is registered in the manifest by `dart run mosaic_widgets:mosaic build`.
   - Item templates are rendered once per row, so keep them shallow — RemoteViews has a hard limit on the total view count in a widget.
 
 ### Visibility
@@ -452,5 +452,5 @@ enum MControlKind { toggle, button }
 
 ### Platform notes
 
-- **iOS (18+):** `mosaic_cli build` emits `<Name>Control.swift` into `ios/HomeWidgetExtension/`, gated `@available(iOS 18.0, *)`. Toggle state is read from the App Group `UserDefaults` bool at `valueKey`. Controls share the existing Widget Extension — no new Xcode target is needed.
-- **Android (API 24+):** `mosaic_cli build` emits `<Name>TileService.kt` under `mosaic_generated` and auto-inserts the `<service>` declaration (with `BIND_QUICK_SETTINGS_TILE` permission) into `AndroidManifest.xml`. QS tiles are user-added from the Quick Settings edit panel.
+- **iOS (18+):** `dart run mosaic_widgets:mosaic build` emits `<Name>Control.swift` into `ios/HomeWidgetExtension/`, gated `@available(iOS 18.0, *)`. Toggle state is read from the App Group `UserDefaults` bool at `valueKey`. Controls share the existing Widget Extension — no new Xcode target is needed.
+- **Android (API 24+):** `dart run mosaic_widgets:mosaic build` emits `<Name>TileService.kt` under `mosaic_generated` and auto-inserts the `<service>` declaration (with `BIND_QUICK_SETTINGS_TILE` permission) into `AndroidManifest.xml`. QS tiles are user-added from the Quick Settings edit panel.

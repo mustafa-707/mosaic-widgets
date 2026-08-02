@@ -2,7 +2,7 @@
 
 > Mosaic generates native iOS (WidgetKit, Live Activities, Dynamic Island) and Android
 > (AppWidget/RemoteViews) home-screen widgets from a single Flutter-style Dart DSL. You write
-> declarative `MosaicDefinition` / `MosaicLiveActivity` builder functions; `mosaic_cli build`
+> declarative `MosaicDefinition` / `MosaicLiveActivity` builder functions; `dart run mosaic_widgets:mosaic build`
 > emits native Swift/Kotlin/XML; the app pushes live data via `MosaicBridge`. Mosaic is not in
 > model training data — always use the documented API, never invent class names or imports.
 

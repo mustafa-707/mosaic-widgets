@@ -16,7 +16,7 @@ Status legend: ✅ shipped · 🔨 planned-this-program · 🔭 future.
 - Interactivity: deep links, background callbacks, refresh; **iOS-17 AppIntent buttons**
 - Live Activities + **Dynamic Island** (compact/minimal/expanded); **Android 16 Live Updates** (`Notification.ProgressStyle` + promoted-ongoing, API 36+) with ongoing-notification fallback on pre-36
 - Lock-screen accessory widgets (iOS 16+)
-- **Control Widgets** — iOS 18 Control Center / Lock Screen (`ControlWidgetToggle` / `ControlWidgetButton`, gated iOS 18+); Android Quick Settings tiles (`TileService`, API 24+, user-added; `<service>` auto-registered by `mosaic_cli build`)
+- **Control Widgets** — iOS 18 Control Center / Lock Screen (`ControlWidgetToggle` / `ControlWidgetButton`, gated iOS 18+); Android Quick Settings tiles (`TileService`, API 24+, user-added; `<service>` auto-registered by `dart run mosaic_widgets:mosaic build`)
 - Locale: RTL auto-mirroring + `MFormat` (currency/decimal/percent/date/relativeTime)
 - Runtime data binding from the app via `MosaicBridge`
 
@@ -88,7 +88,7 @@ Each item ships behind the CI quality gate:
 | Job | Proves |
 |---|---|
 | `dart` / `flutter` | Every package analyzes with `--fatal-infos` and its tests pass. |
-| `android-build` | `mosaic_cli build` succeeds, `doctor` reports no fatal problem, and the generated XML and Kotlin survive **AAPT and kotlinc**. |
+| `android-build` | `dart run mosaic_widgets:mosaic build` succeeds, `doctor` reports no fatal problem, and the generated XML and Kotlin survive **AAPT and kotlinc**. |
 | `greenfield` | A project scaffolded from `flutter create` onward — `init`, `add widget`/`live-activity`/`control`, `build`, `flutter build apk` — and that `doctor` still *reports* the iOS wiring Xcode has to do. |
 | `swift-typecheck` | Generated Swift typechecks at every gated iOS version: 16.0, 16.1, 17.0, 18.0. |
 

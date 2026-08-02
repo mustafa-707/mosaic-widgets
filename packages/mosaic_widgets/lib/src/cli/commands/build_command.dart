@@ -345,7 +345,8 @@ class BuildCommand extends Command {
   Future<void> run() async {
     final configFile = resolveConfigFile();
     if (configFile == null) {
-      throw Exception('mosaic.yaml not found. Run "mosaic_cli init" first.');
+      throw Exception(
+          'mosaic.yaml not found. Run "dart run mosaic_widgets:mosaic init" first.');
     }
 
     print('Loading configuration...');

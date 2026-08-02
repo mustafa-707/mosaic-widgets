@@ -6,7 +6,7 @@ Guidance for AI agents (and humans) contributing to or extending Mosaic itself. 
 ## What this repo is
 A Dart/Flutter monorepo. Mosaic compiles a Dart DSL → native iOS/Android home-widget code.
 Pipeline: **DSL (`mosaic`) → IR JSON (`mosaic_core`) → native generators (`mosaic_android`,
-`mosaic_ios`) → `mosaic_cli build`**. Runtime data flows app → `MosaicBridge` → native renderer.
+`mosaic_ios`) → `dart run mosaic_widgets:mosaic build`**. Runtime data flows app → `MosaicBridge` → native renderer.
 
 ## Layout
 ```
@@ -44,7 +44,7 @@ for d in core android ios cli; do (cd platform/$d && dart test); done
 Generated native code is verified by compiling it — never assume:
 ```bash
 cd examples/demo_app
-dart run mosaic_cli clean && dart run mosaic_cli build      # regenerate
+dart run mosaic_widgets:mosaic clean && dart run mosaic_widgets:mosaic build      # regenerate
 flutter build apk --debug                                   # Android: compiles generated Kotlin + AAPT
 SDK=$(xcrun --sdk iphonesimulator --show-sdk-path)          # iOS: type-check generated Swift, BOTH targets
 xcrun swiftc -typecheck -sdk "$SDK" -target arm64-apple-ios17.0-simulator ios/HomeWidgetExtension/*.swift

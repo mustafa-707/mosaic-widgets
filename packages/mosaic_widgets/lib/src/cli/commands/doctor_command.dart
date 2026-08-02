@@ -71,7 +71,7 @@ class DoctorCommand extends Command {
       print('✓ iOS HomeWidgetExtension sources present.');
     } else {
       print(
-        '! ios/HomeWidgetExtension not found. Run `mosaic_cli build` to '
+        '! ios/HomeWidgetExtension not found. Run `dart run mosaic_widgets:mosaic build` to '
         'generate the iOS sources.',
       );
     }
@@ -106,7 +106,8 @@ class DoctorCommand extends Command {
       }
       if (fatal && !(argResults!['fix'] as bool)) {
         print('');
-        print('Some of these can be repaired: `mosaic_cli doctor --fix`.');
+        print(
+            'Some of these can be repaired: `dart run mosaic_widgets:mosaic doctor --fix`.');
       }
     } catch (_) {
       // Config errors are already reported above.
