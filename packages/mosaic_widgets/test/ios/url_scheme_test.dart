@@ -76,7 +76,11 @@ void main() {
     expect(plist(), contains('<string>mosaic</string>'));
   });
 
+  /// `plutil` is macOS-only. On Linux CI these assertions cannot run at all, so
+  /// they are skipped there rather than failing a job that has nothing wrong
+  /// with it — the plist-shape assertions above still run everywhere.
   Future<void> expectValidPlist() async {
+    if (!Platform.isMacOS) return;
     final r = await Process.run('plutil', [
       '-lint',
       p.join(root.path, 'ios', 'Runner', 'Info.plist'),
@@ -152,7 +156,7 @@ void main() {
     expect(entry, contains('c&lt;d'));
   });
 
-  test('the plist stays parseable by plutil', () async {
+  test('the plist stays parseable by plutil', skip: !Platform.isMacOS, () async {
     await run('hwdemo');
     final r = await Process.run('plutil', [
       '-lint',

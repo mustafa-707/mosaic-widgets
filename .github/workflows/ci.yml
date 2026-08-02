@@ -115,13 +115,15 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - uses: dart-lang/setup-dart@v1
+      # Flutter, not bare Dart: since the single-package merge mosaic_widgets
+      # depends on the Flutter SDK, so `dart pub get` cannot resolve it.
+      - uses: subosito/flutter-action@v2
         with:
-          sdk: "3.12.2"
+          flutter-version: "3.44.7"
       - name: Generate a widget exercising the component pack
         working-directory: packages/mosaic_widgets
         run: |
-          dart pub get
+          flutter pub get
           echo "GEN_DIR=$(dart run test/ios/support/verify_typecheck.dart | tail -1)" >> "$GITHUB_ENV"
       - name: swiftc -typecheck at each gated iOS version
         run: |
