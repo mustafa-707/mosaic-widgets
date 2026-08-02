@@ -38,7 +38,14 @@ void main() {
     final s = (await runIos([_def()], config: _config(['systemSmall'])))
         .swiftForTestW();
     expect(s, contains('#if os(watchOS)'));
-    expect(s, contains('return []'));
+    // The list starts empty and the system families are appended only off
+    // watchOS, so a watch build offers nothing rather than naming a case that
+    // does not exist there.
+    expect(s, contains('var f: [WidgetFamily] = []'));
+    final at = s.indexOf('#if os(watchOS)');
+    final block = s.substring(at, s.indexOf('return f', at));
+    expect(block, contains('#else'));
+    expect(block.split('#else').first, isNot(contains('.systemSmall')));
   });
 
   test('system families are fenced out, accessories fenced in', () async {

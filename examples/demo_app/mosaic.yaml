@@ -66,7 +66,8 @@ widgets:
     entry: lib/platform/widgets/flashlight.widget.dart
     ios:
       # One tap target; there is nothing to gain from a larger family.
-      families: [systemSmall]
+      # accessoryCorner puts the same tile on a watch face corner.
+      families: [systemSmall, accessoryCircular, accessoryCorner]
 
   - name: Memory
     entry: lib/platform/widgets/memory.widget.dart

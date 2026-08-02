@@ -216,11 +216,12 @@ struct ProfileVPWidget: Widget {
     // Built at runtime so iOS 16+ lock-screen accessory families can be added
     // under an availability check (their WidgetFamily cases are iOS 16+).
     private var families: [WidgetFamily] {
+        var f: [WidgetFamily] = []
         #if os(watchOS)
-        return []
         #else
-        return [.systemSmall, .systemMedium]
+        f.append(contentsOf: [.systemSmall, .systemMedium])
         #endif
+        return f
     }
 
     var body: some WidgetConfiguration {

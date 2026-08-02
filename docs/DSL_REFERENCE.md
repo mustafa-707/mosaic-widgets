@@ -344,8 +344,31 @@ Widget families are declared per widget in `mosaic.yaml` under `ios.families`. I
 | `accessoryRectangular` | The full small layout. |
 | `accessoryCircular` | A single gauge/progress or primary value. |
 | `accessoryInline` | Leading image + a single text. |
+| `accessoryCorner` | **watchOS only** — the curved complication in a watch-face corner. |
 
-Accessory families are gated `if #available(iOS 16.0, *)`. **Android skips accessory families** (with a build-time notice) — there are no general user Lock Screen widgets on Android.
+Accessory families are gated `if #available(iOS 16.0, watchOS 9.0, *)`. **Android skips accessory families** (with a build-time notice) — there are no general user Lock Screen widgets on Android.
+
+### Which platforms the generated Swift builds for
+
+One widget extension target can be built for more than iOS, and the generated
+code compiles for all three:
+
+| | Families available |
+|---|---|
+| **iOS 14+** | system + accessory (16+) |
+| **macOS 14+** | system only — macOS has no accessory families |
+| **watchOS 9+** | accessory only — a complication is never a system family |
+
+The family sets are disjoint, so a `WidgetFamily` case is a *compile* error on a
+platform that lacks it, not a runtime no-op. Mosaic fences each one, and CI
+typechecks the generated output against iOS 16–18, macOS 14–15 and watchOS
+10–11 to keep it that way. Declare only the families you want; anything absent
+on a platform simply is not offered there.
+
+Live Activities and Control Widgets are **iOS only** (ActivityKit and
+ControlWidget have no counterpart elsewhere), so they are compiled out on other
+platforms rather than omitted — an omitted file would leave the bundle
+referencing a type that does not exist.
 
 ## Live Activities
 

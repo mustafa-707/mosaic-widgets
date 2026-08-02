@@ -116,6 +116,8 @@ MVisibility(bind: MDeviceValue(MDeviceMetric.batteryCharging), child: boltIcon)
 ```
 `MDeviceMetric { batteryLevel, batteryCharging, storageFreeGb, storageUsedPercent }`. Only referenced metrics are collected.
 
+**Platforms the generated Swift builds for:** one extension target can serve iOS, macOS and watchOS. Family sets are disjoint — macOS has no accessory families, watchOS has no system families, and `accessoryCorner` is watchOS-only — so a `WidgetFamily` case is a *compile* error where it does not exist. Mosaic fences each; declare only what you want. Live Activities and Control Widgets are iOS-only and are compiled out elsewhere.
+
 **Accessibility:** `MSemantics(label: labelOrBind, child: …, bool excludeChildren)` → iOS `.accessibilityLabel`, Android `contentDescription`. Without it a screen reader reads bare numbers with no unit or context. `excludeChildren` collapses the subtree to one element on **both** platforms (iOS `.accessibilityElement(children: .ignore)`, Android `importantForAccessibility="noHideDescendants"` — a static layout attribute, so nothing crosses the RemoteViews boundary).
 
 **Motion — read the limits before reaching for these.** Widgets render static snapshots; there is no general animation on either platform and **Lottie is impossible** (it needs a live animation view, which neither WidgetKit nor RemoteViews provides).

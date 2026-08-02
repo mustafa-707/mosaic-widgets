@@ -185,11 +185,21 @@ struct FlashlightWidget: Widget {
     // Built at runtime so iOS 16+ lock-screen accessory families can be added
     // under an availability check (their WidgetFamily cases are iOS 16+).
     private var families: [WidgetFamily] {
-        #if os(watchOS)
-        return []
-        #else
-        return [.systemSmall]
+        var f: [WidgetFamily] = []
+        #if !os(watchOS)
+        f.append(contentsOf: [.systemSmall])
         #endif
+        #if os(iOS) || os(watchOS)
+        if #available(iOS 16.0, watchOS 9.0, *) {
+            f.append(contentsOf: [.accessoryCircular])
+        }
+        #endif
+        #if os(watchOS)
+        if #available(watchOS 9.0, *) {
+            f.append(.accessoryCorner)
+        }
+        #endif
+        return f
     }
 
     var body: some WidgetConfiguration {

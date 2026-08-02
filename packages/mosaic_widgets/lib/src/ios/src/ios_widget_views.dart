@@ -462,6 +462,11 @@ ${_pushConfiguration(def, configurable: true)}
     'accessoryInline',
   };
 
+  /// `accessoryCorner` exists only on watchOS, so it cannot sit in the set
+  /// above: that one is emitted under a gate naming iOS as well, and iOS has no
+  /// such case. It gets its own watchOS-only fence.
+  static const String _watchOnlyFamily = 'accessoryCorner';
+
   /// Emits the Swift body of the `families` computed property for [def].
   ///
   /// WidgetKit sizes widgets by family, so the families declared in mosaic.yaml
@@ -533,29 +538,50 @@ ${_pushConfiguration(def, configurable: true)}
     // Validate and partition into system vs accessory families.
     final systemSel = <String>[];
     final accessorySel = <String>[];
+    var wantsCorner = false;
     for (final f in resolved) {
-      if (_systemFamilies.contains(f)) {
+      if (f == _watchOnlyFamily) {
+        wantsCorner = true;
+      } else if (_systemFamilies.contains(f)) {
         systemSel.add(f);
       } else if (_accessoryFamilies.contains(f)) {
         accessorySel.add(f);
       } else {
-        final valid = [..._systemFamilies, ..._accessoryFamilies].join(', ');
+        final valid = [
+          ..._systemFamilies,
+          ..._accessoryFamilies,
+          _watchOnlyFamily
+        ].join(', ');
         throw StateError('Unknown ios.family "$f" for widget "${def.name}". '
             'Valid families: $valid.');
       }
     }
 
+    // accessoryCorner is watchOS-only; naming it anywhere else fails to
+    // compile, so it never joins the shared accessory list.
+    // Leading newline: a preprocessor directive must start its own line, and
+    // this block is appended straight after an `#endif`.
+    final cornerBlock = wantsCorner
+        ? '''
+
+        #if os(watchOS)
+        if #available(watchOS 9.0, *) {
+            f.append(.accessoryCorner)
+        }
+        #endif'''
+        : '';
     final systemList = systemSel.map((f) => '.$f').join(', ');
     if (accessorySel.isEmpty) {
       // No accessory families, so no availability gate — but still fenced:
       // watchOS has no system families at all, and a bare literal here is what
       // broke a watch target even though the widget was never meant for one.
       // An empty list is the honest answer: the widget offers nothing there.
-      return '''#if os(watchOS)
-        return []
+      return '''var f: [WidgetFamily] = []
+        #if os(watchOS)$cornerBlock
         #else
-        return [$systemList]
-        #endif''';
+        f.append(contentsOf: [$systemList])
+        #endif
+        return f''';
     }
 
     final accessoryList = accessorySel.map((f) => '.$f').join(', ');
@@ -574,7 +600,7 @@ ${_pushConfiguration(def, configurable: true)}
         if #available(iOS 16.0, watchOS 9.0, *) {
             f.append(contentsOf: [$accessoryList])
         }
-        #endif
+        #endif$cornerBlock
         return f''';
   }
 
