@@ -465,6 +465,69 @@ $batteryMembers
             save(key: key, value: value, groupId: args["appGroupId"] as? String,
                  result: result)
 
+        case "getValue":
+            // The widget writes to this store too — a toggle flips its bool
+            // on-device with the app closed — so the app has to be able to read
+            // it back, not just write.
+            guard let args = call.arguments as? [String: Any],
+                  let key = args["key"] as? String,
+                  let defaults = UserDefaults(
+                    suiteName: (args["appGroupId"] as? String) ?? Self.appGroup) else {
+                result(Self.badArguments("key is required"))
+                return
+            }
+            result(defaults.object(forKey: key))
+
+        case "saveFile":
+            // MFileImage names a path in the App Group container; this is what
+            // puts a file there.
+            guard let args = call.arguments as? [String: Any],
+                  let key = args["key"] as? String,
+                  let data = args["bytes"] as? FlutterStandardTypedData else {
+                result(Self.badArguments("key and bytes are required"))
+                return
+            }
+            let ext = (args["extension"] as? String) ?? "png"
+            let group = (args["appGroupId"] as? String) ?? Self.appGroup
+            guard let container = FileManager.default
+                .containerURL(forSecurityApplicationGroupIdentifier: group) else {
+                result(FlutterError(code: "APP_GROUP_ERROR",
+                                    message: "No container for \\(group)", details: nil))
+                return
+            }
+            let url = container.appendingPathComponent("\\(key).\\(ext)")
+            do {
+                try data.data.write(to: url, options: .atomic)
+                result(url.path)
+            } catch {
+                result(FlutterError(code: "WRITE_FAILED",
+                                    message: error.localizedDescription, details: nil))
+            }
+
+        case "installedWidgets":
+            // WidgetKit can enumerate placed widgets from iOS 14.
+            if #available(iOS 14.0, *) {
+                WidgetCenter.shared.getCurrentConfigurations { outcome in
+                    switch outcome {
+                    case .success(let widgets):
+                        result(widgets.map { info in
+                            [
+                                "name": info.kind,
+                                "id": String(info.configuration
+                                    .map { String(describing: \$0) } ?? ""),
+                                "family": String(describing: info.family),
+                            ]
+                        })
+                    case .failure:
+                        // Not an error worth surfacing: the common cause is
+                        // simply that no widget is placed.
+                        result([])
+                    }
+                }
+            } else {
+                result([])
+            }
+
         case "refresh":
             guard let args = call.arguments as? [String: Any],
                   let widgetName = args["widgetName"] as? String else {

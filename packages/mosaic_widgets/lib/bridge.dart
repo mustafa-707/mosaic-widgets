@@ -1,6 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui' as ui;
+
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 // ─── Live Activity types ───────────────────────────────────────────────────
 
@@ -144,6 +148,26 @@ class MosaicLiveActivities {
 }
 
 /// A bridge to communicate with native home widgets.
+/// A widget the user has placed on their home screen.
+class MosaicWidgetInfo {
+  /// The widget's declared name in `mosaic.yaml`.
+  final String name;
+
+  /// Platform id: the AppWidget id on Android, the WidgetKit configuration id
+  /// on iOS. Null where the platform does not expose one.
+  final String? id;
+
+  /// The size family, on iOS (`systemSmall`, …). Null on Android, which has no
+  /// equivalent concept.
+  final String? family;
+
+  /// Creates a [MosaicWidgetInfo].
+  const MosaicWidgetInfo({required this.name, this.id, this.family});
+
+  @override
+  String toString() => 'MosaicWidgetInfo($name, id: $id, family: $family)';
+}
+
 class MosaicBridge {
   static const MethodChannel _channel = MethodChannel('mosaic_bridge');
   static final _onDeepLinkController = StreamController<String>.broadcast();
@@ -229,6 +253,175 @@ class MosaicBridge {
       'value': value,
       'appGroupId': _appGroupId,
     });
+  }
+
+  /// Reads a value back out of shared storage.
+  ///
+  /// The store is not write-only: the *widget* writes to it too. An
+  /// `MToggleAction` flips its bool on-device with the app closed, and a
+  /// declared `refresh:` source stores what it fetched — neither is visible to
+  /// the app without reading it back.
+  ///
+  /// [T] may be `String`, `bool`, `int`, `double`, or `List<dynamic>` /
+  /// `Map<String, dynamic>` for values written with [saveList] / [saveJson].
+  /// Returns [defaultValue] when the key is absent or holds another type.
+  static Future<T?> getValue<T>(String key, {T? defaultValue}) async {
+    try {
+      final raw = await _channel.invokeMethod<Object?>('getValue', {
+        'key': key,
+        'appGroupId': _appGroupId,
+      });
+      if (raw == null) return defaultValue;
+      if (raw is T) return raw as T;
+
+      // Android keeps everything as strings, so coerce rather than fail.
+      final text = raw.toString();
+      if (T == String) return text as T;
+      if (T == bool) {
+        return (text == 'true' || text == '1') as T;
+      }
+      if (T == int) return (int.tryParse(text) ?? defaultValue) as T?;
+      if (T == double) return (double.tryParse(text) ?? defaultValue) as T?;
+      // Parenthesised: bare `T == List<dynamic>` parses the angle bracket as a
+      // comparison operator.
+      if (T == (List<dynamic>) || T == (Map<String, dynamic>)) {
+        return jsonDecode(text) as T;
+      }
+      return defaultValue;
+    } on PlatformException {
+      return defaultValue;
+    } on FormatException {
+      return defaultValue;
+    }
+  }
+
+  /// Writes [bytes] into shared storage and returns the absolute path.
+  ///
+  /// That path is what `MFileImage` expects. Without this the DSL could name a
+  /// file the app had no supported way to put there.
+  static Future<String?> saveFile(
+    String key,
+    Uint8List bytes, {
+    String extension = 'png',
+  }) async {
+    return _channel.invokeMethod<String>('saveFile', {
+      'key': key,
+      'bytes': bytes,
+      'extension': extension,
+      'appGroupId': _appGroupId,
+    });
+  }
+
+  /// Encodes [provider] as a PNG in shared storage and returns its path.
+  static Future<String?> saveImage(
+    String key,
+    ImageProvider provider, {
+    ImageConfiguration configuration = ImageConfiguration.empty,
+  }) async {
+    final completer = Completer<ui.Image>();
+    final stream = provider.resolve(configuration);
+    late final ImageStreamListener listener;
+    listener = ImageStreamListener((info, _) {
+      stream.removeListener(listener);
+      completer.complete(info.image);
+    }, onError: (error, stack) {
+      stream.removeListener(listener);
+      completer.completeError(error, stack);
+    });
+    stream.addListener(listener);
+
+    final image = await completer.future;
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (data == null) return null;
+    return saveFile(key, data.buffer.asUint8List());
+  }
+
+  /// Rasterises an arbitrary Flutter [widget] to a PNG in shared storage and
+  /// returns its path, for display through `MFileImage`.
+  ///
+  /// The escape hatch for anything the DSL cannot express — a chart, a
+  /// `CustomPaint`, a layout with no widget-safe equivalent. The cost is that
+  /// the result is a **static bitmap**: it does not adapt to light/dark or to
+  /// the widget's real size, and it has to be re-rendered whenever the content
+  /// changes. Prefer real DSL nodes where they exist, and reach for this when
+  /// they do not.
+  ///
+  /// [logicalSize] is in logical pixels and should match the space the image
+  /// occupies. Keep it modest on Android: a RemoteViews update carries the
+  /// bitmap across a Binder transaction, and an oversized one silently drops
+  /// the entire update.
+  static Future<String?> renderFlutterWidget(
+    Widget widget, {
+    required String key,
+    Size logicalSize = const Size(300, 300),
+    double? pixelRatio,
+  }) async {
+    final repaint = RenderRepaintBoundary();
+    final view = WidgetsBinding.instance.platformDispatcher.views.first;
+    final ratio = pixelRatio ?? view.devicePixelRatio;
+
+    final renderView = RenderView(
+      view: view,
+      child: RenderPositionedBox(child: repaint),
+      configuration: ViewConfiguration(
+        physicalConstraints: BoxConstraints.tight(logicalSize) * ratio,
+        logicalConstraints: BoxConstraints.tight(logicalSize),
+        devicePixelRatio: ratio,
+      ),
+    );
+
+    final pipeline = PipelineOwner()..rootNode = renderView;
+    renderView.prepareInitialFrame();
+
+    final buildOwner = BuildOwner(focusManager: FocusManager());
+    final element = RenderObjectToWidgetAdapter<RenderBox>(
+      container: repaint,
+      child: Directionality(
+        textDirection: TextDirection.ltr,
+        child: MediaQuery(
+          data: MediaQueryData.fromView(view),
+          child: widget,
+        ),
+      ),
+    ).attachToRenderTree(buildOwner);
+
+    buildOwner
+      ..buildScope(element)
+      ..finalizeTree();
+    pipeline
+      ..flushLayout()
+      ..flushCompositingBits()
+      ..flushPaint();
+
+    final image = await repaint.toImage(pixelRatio: ratio);
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    if (data == null) return null;
+    return saveFile(key, data.buffer.asUint8List());
+  }
+
+  /// The widgets the user has actually placed, so an onboarding prompt can stop
+  /// nagging once one exists.
+  ///
+  /// Returns an empty list where the platform cannot enumerate them.
+  static Future<List<MosaicWidgetInfo>> installedWidgets() async {
+    try {
+      final raw = await _channel
+          .invokeListMethod<Map<Object?, Object?>>('installedWidgets', {
+        'appGroupId': _appGroupId,
+      });
+      if (raw == null) return const [];
+      return raw
+          .map((m) => MosaicWidgetInfo(
+                name: m['name']?.toString() ?? '',
+                id: m['id']?.toString(),
+                family: m['family']?.toString(),
+              ))
+          .toList();
+    } on PlatformException {
+      return const [];
+    } on MissingPluginException {
+      return const [];
+    }
   }
 
   /// Triggers a refresh of all home widgets.

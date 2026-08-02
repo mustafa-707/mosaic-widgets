@@ -363,6 +363,60 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  /// Renders a Flutter widget into the widget's file store.
+  ///
+  /// The escape hatch: anything the DSL cannot express — here a gradient ring
+  /// with a CustomPaint-style arc — can be drawn in Flutter and shown through
+  /// MFileImage. Kept small deliberately: on Android the bitmap crosses a
+  /// Binder transaction with the RemoteViews update, and an oversized one
+  /// silently drops the whole update.
+  Future<void> _renderChart() async {
+    final path = await MosaicBridge.renderFlutterWidget(
+      Container(
+        width: 120,
+        height: 120,
+        decoration: const BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: SweepGradient(
+            colors: [Color(0xFF34D399), Color(0xFF2563EB), Color(0xFF34D399)],
+          ),
+        ),
+        child: const Center(
+          child: Text(
+            '72%',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 28,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+      key: 'ring',
+      logicalSize: const Size(120, 120),
+    );
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(path == null ? 'render failed' : 'rendered: $path')),
+    );
+    if (path != null) {
+      await MosaicBridge.saveString('ring_path', path);
+      await MosaicBridge.refreshAll();
+    }
+  }
+
+  /// Reads back what the widget itself wrote, which used to be impossible.
+  Future<void> _readBack() async {
+    final torch = await MosaicBridge.getValue<bool>('torch_on') ?? false;
+    final placed = await MosaicBridge.installedWidgets();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('torch_on=$torch · ${placed.length} widget(s) placed'),
+      ),
+    );
+  }
+
   Future<void> _endDelivery() async {
     final id = _activityId;
     if (id == null) return;
@@ -428,6 +482,27 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
               ),
+            const SizedBox(height: 12),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _renderChart,
+                  icon: const Icon(Icons.donut_large, size: 18),
+                  label: const Text('Render Flutter widget'),
+                  style:
+                      OutlinedButton.styleFrom(foregroundColor: Colors.white70),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _readBack,
+                  icon: const Icon(Icons.download_outlined, size: 18),
+                  label: const Text('Read widget state'),
+                  style:
+                      OutlinedButton.styleFrom(foregroundColor: Colors.white70),
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             // Live Activities need the app to start them; there is no way to
             // trigger one from a widget, so it belongs here.

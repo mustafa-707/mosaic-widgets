@@ -71,7 +71,7 @@ class CryptoWidgetProvider : AppWidgetProvider() {
 
         views.setTextViewText(R.id.hw_text_btc_price, MosaicData.formatValue(MosaicData.resolveString(context, "btc_price"), "currency", "USD"))
         views.setTextViewText(R.id.hw_text_btc_change, MosaicData.formatValue(MosaicData.resolveString(context, "btc_change"), "signedPercent"))
-                val target0 = 1785613343734L
+                val target0 = 1785657504680L
         val offset0 = target0 - System.currentTimeMillis()
         views.setChronometer(R.id.hw_timer_0, android.os.SystemClock.elapsedRealtime() + offset0, null, true)
         views.setChronometerCountDown(R.id.hw_timer_0, false)

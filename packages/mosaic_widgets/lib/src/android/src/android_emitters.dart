@@ -569,6 +569,13 @@ $table
     final pkg = config.app.androidPackage;
     final hasActivities = liveActivities.isNotEmpty;
 
+    // Declared name -> provider class, so installedWidgets can query each
+    // without installedProvidersForPackage (API 26+).
+    final providerPairs = definitions
+        .map((d) =>
+            '"${kotlinEscape(d.name)}" to ${_safeName(d.name)}Provider::class.java')
+        .join(',\n        ');
+
     final activityCases = hasActivities
         ? '''
                 "startActivity" -> {
@@ -665,6 +672,10 @@ class MosaicPlugin {
         val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "mosaic_bridge")
         this.channel = channel
 
+        val mosaicProviders = listOf<Pair<String, Class<*>>>(
+        $providerPairs
+        )
+
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "saveString", "saveBool" -> {
@@ -688,6 +699,60 @@ class MosaicPlugin {
                             }
                         }
                     }
+                }
+                "getValue" -> {
+                    // The widget writes here too: a toggle flips its bool
+                    // on-device with the app closed, and a declared refresh
+                    // source stores what it fetched. Neither is visible to the
+                    // app unless it can read back.
+                    val key = call.argument<String>("key")
+                    if (key == null) {
+                        result.error("INVALID_ARGUMENTS", "key is required", null)
+                    } else {
+                        val prefs = context.getSharedPreferences(
+                            "widget_data", Context.MODE_PRIVATE)
+                        result.success(prefs.all[key])
+                    }
+                }
+                "saveFile" -> {
+                    // MFileImage names a path; this is what puts a file there.
+                    // Written into the app's own files dir, which the widget
+                    // process reads through the same absolute path.
+                    val key = call.argument<String>("key")
+                    val bytes = call.argument<ByteArray>("bytes")
+                    val ext = call.argument<String>("extension") ?: "png"
+                    if (key == null || bytes == null) {
+                        result.error("INVALID_ARGUMENTS", "key and bytes are required", null)
+                    } else {
+                        try {
+                            val dir = java.io.File(context.filesDir, "mosaic_files")
+                            if (!dir.exists()) dir.mkdirs()
+                            val file = java.io.File(dir, "\$key.\$ext")
+                            file.writeBytes(bytes)
+                            result.success(file.absolutePath)
+                        } catch (e: Exception) {
+                            result.error("WRITE_FAILED", e.message, null)
+                        }
+                    }
+                }
+                "installedWidgets" -> {
+                    // One entry per placed instance, so a widget added twice
+                    // reports twice — which is what the user actually sees.
+                    // Queried per declared provider rather than through
+                    // installedProvidersForPackage, which is API 26+ and would
+                    // raise this package's floor for one convenience call.
+                    val manager = AppWidgetManager.getInstance(context)
+                    val out = ArrayList<Map<String, Any?>>()
+                    for ((widgetName, cls) in mosaicProviders) {
+                        val ids = manager.getAppWidgetIds(
+                            ComponentName(context, cls))
+                        for (id in ids) {
+                            out.add(mapOf("name" to widgetName,
+                                          "id" to id.toString(),
+                                          "family" to null))
+                        }
+                    }
+                    result.success(out)
                 }
                 "refreshAll" -> {
                     HomeWidgetBridgeHelper.refreshAll(context)

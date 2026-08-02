@@ -151,6 +151,43 @@ the directory your existing entries already use.
   - **Rounded containers**: a bound background on an `MContainer` with a `radius` keeps its corners. The layout carries a real shape and the provider *tints* it (`setBackgroundTintList`) rather than replacing the background — `setBackgroundColor` installs a flat `ColorDrawable` and would discard the shape. Tinting is **API 31+**; on older Android the flat fill is the only option RemoteViews offers, so the colour is right and the corners are square there.
 - **Lock-screen note**: on iOS accessory (Lock Screen) widgets the OS renders content tinted/monochrome, so custom colors are largely ignored; Mosaic emits `.widgetAccentable()` on accent-able content.
 
+### Reading back, files, and rendering Flutter into a widget
+
+The shared store is not write-only. The widget writes to it too — an
+`MToggleAction` flips its bool on-device with the app closed, and a declared
+`refresh:` source stores what it fetched.
+
+```dart
+final on    = await MosaicBridge.getValue<bool>('torch_on') ?? false;
+final rows  = await MosaicBridge.getValue<List<dynamic>>('tasks');
+final placed = await MosaicBridge.installedWidgets();   // stop nagging once one exists
+```
+
+`MFileImage` needs a file in shared storage, and these put one there:
+
+```dart
+final path = await MosaicBridge.saveFile('avatar', bytes);          // raw bytes
+final path = await MosaicBridge.saveImage('avatar', NetworkImage(u)); // any ImageProvider
+```
+
+**`renderFlutterWidget` is the escape hatch** for anything the DSL cannot
+express — a chart, a `CustomPaint`, a layout with no widget-safe equivalent:
+
+```dart
+final path = await MosaicBridge.renderFlutterWidget(
+  MyChart(data),
+  key: 'chart',
+  logicalSize: const Size(160, 120),
+);
+await MosaicBridge.saveString('chart_path', path!);   // shown via MFileImage(MBind('chart_path'))
+```
+
+The cost is that the result is a **static bitmap**: it does not adapt to
+light/dark or to the widget's real size, and it must be re-rendered whenever the
+content changes. Prefer real DSL nodes where they exist. Keep `logicalSize`
+modest on Android — the bitmap crosses a Binder transaction with the RemoteViews
+update, and an oversized one silently drops the whole update.
+
 ### Sizing a column inside a widget
 
 The OS chooses a widget's height, not you. `MMainAxisAlignment.spaceBetween` on
