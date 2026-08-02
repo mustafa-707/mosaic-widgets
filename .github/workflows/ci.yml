@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Feature branches only get CI through a pull request, which is fine — but it
+  # leaves no way to check a workflow change before merging it. This one does.
+  workflow_dispatch:
 
 jobs:
   flutter:
