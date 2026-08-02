@@ -55,7 +55,8 @@ void main() {
       final core =
           readFile(r.file('ios/HomeWidgetExtension/HomeWidgetCore.swift'));
       expect(core, contains('func mosaicNumericTransition()'));
-      expect(core, contains('if #available(iOS 17.0, macOS 14.0, *)'));
+      expect(core,
+          contains('if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *)'));
       expect(core, contains('.contentTransition(.numericText())'));
     });
   });

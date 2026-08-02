@@ -145,3 +145,16 @@ jobs:
               "$GEN_DIR"/*.swift
             echo "::endgroup::"
           done
+      - name: swiftc -typecheck for watchOS
+        # Complications are WidgetKit too, but watchOS has no system families
+        # and macOS has no accessory ones — every WidgetFamily case has to be
+        # fenced for the platform that lacks it, and only a real typecheck
+        # catches a missing fence.
+        run: |
+          for target in 10.0 11.0; do
+            echo "::group::watchOS $target"
+            xcrun --sdk watchos swiftc -typecheck \
+              -target "arm64_32-apple-watchos$target" \
+              "$GEN_DIR"/*.swift
+            echo "::endgroup::"
+          done

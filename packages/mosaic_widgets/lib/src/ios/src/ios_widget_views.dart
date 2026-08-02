@@ -24,7 +24,7 @@ extension IosWidgetViews on IosGenerator {
 
     // The handler type carries macOS 26 too, so the call site must match or it
     // will not resolve on a macOS target.
-    return '''        if #available(iOS 26.0, macOS 26.0, *) {
+    return '''        if #available(iOS 26.0, macOS 26.0, watchOS 26.0, *) {
             return $base
                 .pushHandler(${def.name}PushHandler.self)
         } else {
@@ -47,7 +47,7 @@ extension IosWidgetViews on IosGenerator {
 /// Send `{"aps":{"content-changed":true}}` to that token with
 /// `apns-push-type: widgets` and topic `<bundle-id>.push-type.widgets` to
 /// reload the timeline with the app closed.
-@available(iOS 26.0, macOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, watchOS 26.0, *)
 struct ${def.name}PushHandler: WidgetPushHandler {
     init() {}
 
@@ -285,7 +285,7 @@ ${_pushConfiguration(def)}
   }
 
   /// Generates an iOS 17+ configurable widget for a definition carrying
-  /// `params`. Produces, all gated `@available(iOS 17.0, macOS 14.0, *)`:
+  /// `params`. Produces, all gated `@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)`:
   ///  - a `<Name>ConfigIntent: WidgetConfigurationIntent` with one `@Parameter`
   ///    per param,
   ///  - a `<Name>Provider: AppIntentTimelineProvider` whose
@@ -294,7 +294,7 @@ ${_pushConfiguration(def)}
   ///    (`entry.data[key]`) shows the chosen value, and
   ///  - an `AppIntentConfiguration`-based `<Name>Widget`.
   ///
-  /// The whole struct family is `@available(iOS 17.0, macOS 14.0, *)` because
+  /// The whole struct family is `@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)` because
   /// `AppIntentConfiguration`/`AppIntentTimelineProvider`/
   /// `WidgetConfigurationIntent` are iOS-17 APIs; the WidgetBundle registers it
   /// under `if #available(iOS 17.0, *)`.
@@ -346,7 +346,7 @@ struct ${def.name}Entry: TimelineEntry {
 // The chosen values are copied into the timeline entry's `data` dict by the
 // provider so the widget tree's existing bind resolution (entry.data[key])
 // renders them.
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 struct ${def.name}ConfigIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "${swiftEscape(def.name)}"
     static let description = IntentDescription("Configure this widget.")
@@ -356,10 +356,20 @@ $paramDecls
     init() {}
 }
 
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 struct ${def.name}Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> ${def.name}Entry {
         ${def.name}Entry(date: Date(), data: [:])
+    }
+
+    /// What the complication picker offers before the user configures anything.
+    ///
+    /// Optional on iOS and macOS, where the protocol supplies a default, but
+    /// **required on watchOS** — without it the provider does not conform and
+    /// the extension will not build for a watch target.
+    func recommendations() -> [AppIntentRecommendation<${def.name}ConfigIntent>] {
+        [AppIntentRecommendation(intent: ${def.name}ConfigIntent(),
+                                 description: Text("${def.name}"))]
     }
 
     func snapshot(for configuration: ${def.name}ConfigIntent, in context: Context) async -> ${def.name}Entry {
@@ -404,7 +414,7 @@ $copyLines
     }
 }
 
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 struct ${def.name}View: View {
     var entry: ${def.name}Entry
 
@@ -423,7 +433,7 @@ struct ${def.name}View: View {
 
 // NOTE: width=${def.width}, height=${def.height}, previewImage and resizeMode=${def.resizeMode}
 // are advisory on iOS; WidgetKit sizes by family.
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 struct ${def.name}Widget: Widget {
     let kind: String = "${def.name}"
 
@@ -537,17 +547,31 @@ ${_pushConfiguration(def, configurable: true)}
 
     final systemList = systemSel.map((f) => '.$f').join(', ');
     if (accessorySel.isEmpty) {
-      // No accessory families: a plain literal, no availability gate needed.
-      return 'return [$systemList]';
+      // No accessory families, so no availability gate — but still fenced:
+      // watchOS has no system families at all, and a bare literal here is what
+      // broke a watch target even though the widget was never meant for one.
+      // An empty list is the honest answer: the widget offers nothing there.
+      return '''#if os(watchOS)
+        return []
+        #else
+        return [$systemList]
+        #endif''';
     }
 
     final accessoryList = accessorySel.map((f) => '.$f').join(', ');
     // Accessory families are lock-screen/watch surfaces; the enum cases do not
     // exist on macOS at all, so this is a compile fence rather than a runtime
     // availability check.
-    return '''var f: [WidgetFamily] = [$systemList]
-        #if os(iOS)
-        if #available(iOS 16.0, *) {
+    // watchOS has no system families at all — a complication is only ever an
+    // accessory — so the system list is fenced out rather than gated.
+    // Accessory families exist on iOS 16+ and watchOS 9+, which is why that
+    // block covers both.
+    return '''var f: [WidgetFamily] = []
+        #if !os(watchOS)
+        f.append(contentsOf: [$systemList])
+        #endif
+        #if os(iOS) || os(watchOS)
+        if #available(iOS 16.0, watchOS 9.0, *) {
             f.append(contentsOf: [$accessoryList])
         }
         #endif

@@ -156,7 +156,8 @@ void main() {
     expect(entry, contains('c&lt;d'));
   });
 
-  test('the plist stays parseable by plutil', skip: !Platform.isMacOS, () async {
+  test('the plist stays parseable by plutil', skip: !Platform.isMacOS,
+      () async {
     await run('hwdemo');
     final r = await Process.run('plutil', [
       '-lint',

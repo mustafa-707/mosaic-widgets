@@ -7,7 +7,7 @@ struct HomeWidgetBundle: WidgetBundle {
     var body: some Widget {
         ProfileVPWidget()
         NewsWidgetWidget()
-        if #available(iOS 17.0, macOS 14.0, *) {
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             CryptoWidgetWidget()
         }
         WeatherWidget()

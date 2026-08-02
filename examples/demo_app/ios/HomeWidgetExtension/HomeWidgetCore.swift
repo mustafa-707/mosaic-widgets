@@ -31,12 +31,17 @@ extension Image {
 /// where they exist — those cases are absent on macOS, so the check is fenced
 /// rather than written inline in each view body.
 func mosaicPrefersCompact(_ family: WidgetFamily) -> Bool {
-    #if os(iOS)
-    if #available(iOS 16.0, *) {
+    #if os(iOS) || os(watchOS)
+    if #available(iOS 16.0, watchOS 9.0, *) {
         if family == .accessoryCircular || family == .accessoryInline { return true }
     }
     #endif
+    #if os(watchOS)
+    // Every watch family is an accessory, so the compact tree always wins.
+    return true
+    #else
     return family == .systemSmall
+    #endif
 }
 
 let kMosaicAppGroup = "group.com.example.demo_app.widgets"
@@ -76,7 +81,7 @@ enum MosaicDevice {
         // UIDevice is iOS/watchOS only. On macOS the value comes from the host
         // app the same way it does on iOS, so the widget simply reads whatever
         // is in the App Group.
-        #if canImport(UIKit)
+        #if os(iOS)
         UIDevice.current.isBatteryMonitoringEnabled = true
         let level = UIDevice.current.batteryLevel
         if level >= 0 {
@@ -274,10 +279,14 @@ extension Color {
     /// Builds a color that resolves at render time to [light] or [dark] based on
     /// the current interface style. Used for adaptive (dark-mode) MColors.
     init(light: Color, dark: Color) {
-        #if canImport(UIKit)
+        #if os(iOS) || os(tvOS)
         self.init(UIColor { traits in
             traits.userInterfaceStyle == .dark ? UIColor(dark) : UIColor(light)
         })
+        #elseif os(watchOS)
+        // watchOS has no trait-based resolution and is always dark, so the dark
+        // value is simply the right one rather than a fallback.
+        self = dark
         #else
         // AppKit resolves appearance through NSColor rather than a trait
         // closure; asking the current appearance which of the two names it
@@ -298,7 +307,7 @@ extension Image {
     /// after `.resizable()` (Image → Image) and before any View modifiers —
     /// see iosImageFitParts.
     @ViewBuilder func mosaicAccentedRendering(_ mode: String) -> some View {
-        if #available(iOS 18.0, macOS 15.0, *) {
+        if #available(iOS 18.0, macOS 15.0, watchOS 11.0, *) {
             switch mode {
             case "accented":
                 self.widgetAccentedRenderingMode(.accented)
@@ -321,7 +330,7 @@ extension View {
     /// Rolls digits when a value changes. `contentTransition` is iOS 17+, so
     /// older systems fall through to a plain swap.
     @ViewBuilder func mosaicNumericTransition() -> some View {
-        if #available(iOS 17.0, macOS 14.0, *) {
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             self.contentTransition(.numericText())
         } else {
             self
@@ -332,7 +341,7 @@ extension View {
     /// On iOS 17+ uses .containerBackground(for: .widget); on iOS 16 falls back
     /// to .background(_:) so the widget extension compiles at both targets.
     @ViewBuilder func mosaicContainerBackground<S: ShapeStyle>(_ style: S) -> some View {
-        if #available(iOS 17.0, macOS 14.0, *) {
+        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             self.containerBackground(style, for: .widget)
         } else {
             self.background(style)

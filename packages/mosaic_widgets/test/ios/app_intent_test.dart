@@ -49,7 +49,7 @@ void main() {
     final body = readFile(intents);
     expect(body, contains('struct MosaicCallbackIntent: AppIntent'));
     expect(body, contains('struct MosaicRefreshIntent: AppIntent'));
-    expect(body, contains('@available(iOS 17.0, macOS 14.0, *)'));
+    expect(body, contains('@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)'));
     expect(body, contains('reloadAllTimelines'));
     expect(body, contains('mosaic_pending_callback'));
     expect(body, contains('@Parameter'));

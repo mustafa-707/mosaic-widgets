@@ -36,7 +36,8 @@ void main() {
         await runIos([irDef(text('hi'))], config: configWithPush(push: true));
     final swift = r.swiftForTestW();
     expect(swift, contains('struct TestWPushHandler: WidgetPushHandler'));
-    expect(swift, contains('@available(iOS 26.0, macOS 26.0, *)'));
+    expect(
+        swift, contains('@available(iOS 26.0, macOS 26.0, watchOS 26.0, *)'));
     expect(
         swift,
         contains(
@@ -47,7 +48,8 @@ void main() {
     final r =
         await runIos([irDef(text('hi'))], config: configWithPush(push: true));
     final swift = r.swiftForTestW();
-    expect(swift, contains('if #available(iOS 26.0, macOS 26.0, *)'));
+    expect(swift,
+        contains('if #available(iOS 26.0, macOS 26.0, watchOS 26.0, *)'));
     expect(swift, contains('.pushHandler(TestWPushHandler.self)'));
     // Both branches return, so iOS 16 still gets a working widget.
     expect(swift, contains('} else {'));

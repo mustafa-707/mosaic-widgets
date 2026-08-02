@@ -142,7 +142,11 @@ struct NewsWidgetWidget: Widget {
     // Built at runtime so iOS 16+ lock-screen accessory families can be added
     // under an availability check (their WidgetFamily cases are iOS 16+).
     private var families: [WidgetFamily] {
+        #if os(watchOS)
+        return []
+        #else
         return [.systemMedium]
+        #endif
     }
 
     var body: some WidgetConfiguration {

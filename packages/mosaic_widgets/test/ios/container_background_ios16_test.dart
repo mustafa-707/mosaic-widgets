@@ -42,7 +42,7 @@ void main() {
 
       expect(
         core,
-        contains('#available(iOS 17.0, macOS 14.0, *)'),
+        contains('#available(iOS 17.0, macOS 14.0, watchOS 10.0, *)'),
         reason: 'helper must gate .containerBackground behind iOS 17 check',
       );
     });

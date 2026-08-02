@@ -12,7 +12,7 @@ struct CryptoWidgetEntry: TimelineEntry {
 // The chosen values are copied into the timeline entry's `data` dict by the
 // provider so the widget tree's existing bind resolution (entry.data[key])
 // renders them.
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 struct CryptoWidgetConfigIntent: WidgetConfigurationIntent {
     static let title: LocalizedStringResource = "CryptoWidget"
     static let description = IntentDescription("Configure this widget.")
@@ -33,10 +33,20 @@ struct CryptoWidgetConfigIntent: WidgetConfigurationIntent {
     init() {}
 }
 
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 struct CryptoWidgetProvider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> CryptoWidgetEntry {
         CryptoWidgetEntry(date: Date(), data: [:])
+    }
+
+    /// What the complication picker offers before the user configures anything.
+    ///
+    /// Optional on iOS and macOS, where the protocol supplies a default, but
+    /// **required on watchOS** — without it the provider does not conform and
+    /// the extension will not build for a watch target.
+    func recommendations() -> [AppIntentRecommendation<CryptoWidgetConfigIntent>] {
+        [AppIntentRecommendation(intent: CryptoWidgetConfigIntent(),
+                                 description: Text("CryptoWidget"))]
     }
 
     func snapshot(for configuration: CryptoWidgetConfigIntent, in context: Context) async -> CryptoWidgetEntry {
@@ -84,7 +94,7 @@ struct CryptoWidgetProvider: AppIntentTimelineProvider {
     }
 }
 
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 struct CryptoWidgetView: View {
     var entry: CryptoWidgetEntry
 
@@ -178,9 +188,9 @@ HStack(alignment: .center, spacing: 0) {
     Text("LIVE: ").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 8.0)).dynamicTypeSize(.large)
 Group {
     if #available(iOS 16.0, *) {
-        Text(timerInterval: Date(timeIntervalSince1970: 1785663449.2)...Date.distantFuture, countsDown: false)
+        Text(timerInterval: Date(timeIntervalSince1970: 1785666008.714)...Date.distantFuture, countsDown: false)
     } else {
-        Text(Date(timeIntervalSince1970: 1785663449.2), style: .timer)
+        Text(Date(timeIntervalSince1970: 1785666008.714), style: .timer)
     }
 }.foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
 }
@@ -202,14 +212,17 @@ Group {
 
 // NOTE: width=2, height=2, previewImage and resizeMode=both
 // are advisory on iOS; WidgetKit sizes by family.
-@available(iOS 17.0, macOS 14.0, *)
+@available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 struct CryptoWidgetWidget: Widget {
     let kind: String = "CryptoWidget"
 
     private var families: [WidgetFamily] {
-        var f: [WidgetFamily] = [.systemMedium]
-        #if os(iOS)
-        if #available(iOS 16.0, *) {
+        var f: [WidgetFamily] = []
+        #if !os(watchOS)
+        f.append(contentsOf: [.systemMedium])
+        #endif
+        #if os(iOS) || os(watchOS)
+        if #available(iOS 16.0, watchOS 9.0, *) {
             f.append(contentsOf: [.accessoryRectangular])
         }
         #endif
@@ -217,7 +230,7 @@ struct CryptoWidgetWidget: Widget {
     }
 
     var body: some WidgetConfiguration {
-        if #available(iOS 26.0, macOS 26.0, *) {
+        if #available(iOS 26.0, macOS 26.0, watchOS 26.0, *) {
             return AppIntentConfiguration(kind: kind, intent: CryptoWidgetConfigIntent.self, provider: CryptoWidgetProvider()) { entry in
             CryptoWidgetView(entry: entry)
                 .mosaicContainerBackground(.clear)
@@ -246,7 +259,7 @@ struct CryptoWidgetWidget: Widget {
 /// Send `{"aps":{"content-changed":true}}` to that token with
 /// `apns-push-type: widgets` and topic `<bundle-id>.push-type.widgets` to
 /// reload the timeline with the app closed.
-@available(iOS 26.0, macOS 26.0, *)
+@available(iOS 26.0, macOS 26.0, watchOS 26.0, *)
 struct CryptoWidgetPushHandler: WidgetPushHandler {
     init() {}
 
