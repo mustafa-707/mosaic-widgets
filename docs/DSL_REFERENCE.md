@@ -137,6 +137,28 @@ the directory your existing entries already use.
 - `size`: `double`
 - `opacity`: `double`
 - `bold`: `bool`
+- `italic`: `bool`
+- `weight`: `MFontWeight` — takes precedence over `bold` when both are set.
+- `baseStyle`: `MTextStyle` — inherit from another style; own fields win. Flattened before serialization, so nothing downstream sees a chain.
+- `copyWith({size, color, opacity, bold, weight, italic})`
+
+### MFontWeight
+
+`w100` … `w900`, matching Flutter's `FontWeight` scale.
+
+**iOS honours all nine** via `.fontWeight(...)`. **Android collapses three of
+them.** `android:textFontWeight` is API 28 while Mosaic's floor is 21, so weight
+is expressed through the `sans-serif-*` family aliases the platform has always
+had — thin, light, regular, medium, bold, black. Six steps for nine weights:
+
+| Declared | Android renders |
+|---|---|
+| `w200` | as `w100` (thin) |
+| `w600` | as `w500` (medium) |
+| `w800` | as `w900` (black) |
+
+The other six are exact. This is a real approximation, stated rather than
+hidden — the same class of documented lossiness as `spaceAround` on Android.
 
 ### MColor
 - **Plain / opacity**: `MColor.hex("#RRGGBB")`, optionally with `opacity:` (e.g. `MColor.hex("#F43F5E", opacity: 0.1)`).

@@ -122,7 +122,9 @@ MosaicDefinition buildCryptoWidget() {
                   style: const MTextStyle(
                     color: MColor.hex("#FFFFFF"),
                     size: 20,
-                    bold: true,
+                    // Semibold reads better than bold at this size. iOS gets
+                    // exactly that; Android its nearest family, medium.
+                    weight: MFontWeight.w600,
                   ),
                 ),
                 MRow([

@@ -1197,20 +1197,124 @@ class MFileImage extends MImageSource {
 
 /// Styling types
 
+/// Font weight, matching Flutter's `FontWeight` scale.
+///
+/// **Android collapses some of these.** `textFontWeight` is API 28 while the
+/// minimum is 21, so weight is expressed through the `sans-serif-*` family
+/// aliases the platform has always had — which offer thin, light, regular,
+/// medium, bold and black. [w200], [w600] and [w800] therefore render as their
+/// nearest neighbour there. iOS honours all nine.
+enum MFontWeight {
+  /// Thin.
+  w100('thin', 'ultraLight'),
+
+  /// Extra light — nearest Android family is thin.
+  w200('thin', 'thin'),
+
+  /// Light.
+  w300('light', 'light'),
+
+  /// Regular.
+  w400('regular', 'regular'),
+
+  /// Medium.
+  w500('medium', 'medium'),
+
+  /// Semibold — nearest Android family is medium.
+  w600('medium', 'semibold'),
+
+  /// Bold.
+  w700('bold', 'bold'),
+
+  /// Extra bold — nearest Android family is black.
+  w800('black', 'heavy'),
+
+  /// Black.
+  w900('black', 'black');
+
+  const MFontWeight(this.androidFamilySuffix, this.swiftWeight);
+
+  /// The `sans-serif-<suffix>` family Android uses to approximate this weight.
+  final String androidFamilySuffix;
+
+  /// The SwiftUI `Font.Weight` case name.
+  final String swiftWeight;
+}
+
 class MTextStyle {
   final double? size;
   final MColor? color;
   final double? opacity;
   final bool? bold;
 
-  const MTextStyle({this.size, this.color, this.opacity, this.bold});
+  /// Font weight. Takes precedence over [bold] when both are set.
+  final MFontWeight? weight;
 
-  Map<String, dynamic> toJson() => {
-        'size': size,
-        'color': color?.toJson(),
-        'opacity': opacity,
-        'bold': bold,
-      };
+  /// Renders italic.
+  final bool? italic;
+
+  /// A style to inherit from — anything set here is overridden by the fields
+  /// on this instance.
+  ///
+  /// Resolved before serialization, so nothing downstream ever sees a chain.
+  final MTextStyle? baseStyle;
+
+  const MTextStyle({
+    this.size,
+    this.color,
+    this.opacity,
+    this.bold,
+    this.weight,
+    this.italic,
+    this.baseStyle,
+  });
+
+  /// A copy with the given fields replaced.
+  MTextStyle copyWith({
+    double? size,
+    MColor? color,
+    double? opacity,
+    bool? bold,
+    MFontWeight? weight,
+    bool? italic,
+  }) =>
+      MTextStyle(
+        size: size ?? this.size,
+        color: color ?? this.color,
+        opacity: opacity ?? this.opacity,
+        bold: bold ?? this.bold,
+        weight: weight ?? this.weight,
+        italic: italic ?? this.italic,
+        baseStyle: baseStyle,
+      );
+
+  /// This style with [baseStyle] folded in, so callers never walk the chain.
+  MTextStyle get _resolved {
+    final base = baseStyle;
+    if (base == null) return this;
+    final flat = base._resolved;
+    return MTextStyle(
+      size: size ?? flat.size,
+      color: color ?? flat.color,
+      opacity: opacity ?? flat.opacity,
+      bold: bold ?? flat.bold,
+      weight: weight ?? flat.weight,
+      italic: italic ?? flat.italic,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    final s = _resolved;
+    return {
+      'size': s.size,
+      'color': s.color?.toJson(),
+      'opacity': s.opacity,
+      'bold': s.bold,
+      // Omitted when unset so the wire shape is unchanged for existing styles.
+      if (s.weight != null) 'weight': s.weight!.name,
+      if (s.italic != null) 'italic': s.italic,
+    };
+  }
 }
 
 /// A colour drawn from the user's own system theme.

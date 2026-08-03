@@ -122,7 +122,7 @@ Image(systemName: "bitcoinsign").font(.system(size: 18.0)).foregroundColor(Color
 }
 Spacer()
 VStack(alignment: .leading, spacing: 0) {
-    Text((mosaicNum(entry.data["btc_price"]) ?? 0).formatted(.currency(code: "USD"))).bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 20.0)).mosaicNumericTransition().dynamicTypeSize(.large)
+    Text((mosaicNum(entry.data["btc_price"]) ?? 0).formatted(.currency(code: "USD"))).fontWeight(.semibold).foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 20.0)).mosaicNumericTransition().dynamicTypeSize(.large)
 HStack(alignment: .center, spacing: 0) {
     Text((mosaicNum(entry.data["btc_change"]) ?? 0).formatted(.number.precision(.fractionLength(2)).sign(strategy: .always())) + "%").bold().foregroundColor(Color(red: 0.2901960784313726, green: 0.8705882352941177, blue: 0.5019607843137255, opacity: 1.0)).font(.system(size: 12.0)).dynamicTypeSize(.large)
 Text("24h").foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 12.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 0.0, leading: 4.0, bottom: 0.0, trailing: 0.0))
@@ -188,9 +188,9 @@ HStack(alignment: .center, spacing: 0) {
     Text("LIVE: ").bold().foregroundColor(Color(red: 0.5764705882352941, green: 0.7725490196078432, blue: 0.9921568627450981, opacity: 1.0)).font(.system(size: 8.0)).dynamicTypeSize(.large)
 Group {
     if #available(iOS 16.0, *) {
-        Text(timerInterval: Date(timeIntervalSince1970: 1785762451.935)...Date.distantFuture, countsDown: false)
+        Text(timerInterval: Date(timeIntervalSince1970: 1785777543.572)...Date.distantFuture, countsDown: false)
     } else {
-        Text(Date(timeIntervalSince1970: 1785762451.935), style: .timer)
+        Text(Date(timeIntervalSince1970: 1785777543.572), style: .timer)
     }
 }.foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 8.0)).monospacedDigit()
 }

@@ -177,7 +177,24 @@ class TextHandler extends IosNodeHandler {
     }
 
     final style = node.data['style'] ?? {};
-    final bold = style['bold'] == true ? '.bold()' : '';
+    // weight wins over bold when both are set, matching the DSL's own rule.
+    // SwiftUI has all nine, so nothing is approximated here.
+    const swiftWeights = {
+      'w100': 'ultraLight',
+      'w200': 'thin',
+      'w300': 'light',
+      'w400': 'regular',
+      'w500': 'medium',
+      'w600': 'semibold',
+      'w700': 'bold',
+      'w800': 'heavy',
+      'w900': 'black',
+    };
+    final weightName = swiftWeights[style['weight']];
+    final bold = weightName != null
+        ? '.fontWeight(.$weightName)'
+        : (style['bold'] == true ? '.bold()' : '');
+    final italic = style['italic'] == true ? '.italic()' : '';
     final color = style['color'] != null
         ? '.foregroundColor(${context._colorToSwift(style['color'])})'
         : '';
@@ -209,8 +226,8 @@ class TextHandler extends IosNodeHandler {
     final transition = node.data['contentTransition'] == 'numericText'
         ? '.mosaicNumericTransition()'
         : '';
-    return '$textExpr$bold$color$size$opacity$lineLimit$alignMod$transition'
-        '.dynamicTypeSize(.large)';
+    return '$textExpr$bold$italic$color$size$opacity$lineLimit$alignMod'
+        '$transition.dynamicTypeSize(.large)';
   }
 
   /// Emits a `Text(...)` for a bound value formatted per MFormat, localized via

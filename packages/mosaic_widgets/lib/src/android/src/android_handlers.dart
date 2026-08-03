@@ -151,6 +151,27 @@ class RowHandler extends AndroidNodeHandler {
   }
 }
 
+/// The `sans-serif-*` family that approximates [weight], or nothing.
+///
+/// Android expresses weight through family aliases below API 28, and those
+/// offer six steps against the DSL's nine — so w200, w600 and w800 render as
+/// their nearest neighbour. That is a real approximation, documented rather
+/// than hidden. Bold is left to `textStyle`, which every API level honours.
+String androidFontFamily(String? weight) {
+  const families = {
+    'w100': 'sans-serif-thin',
+    'w200': 'sans-serif-thin',
+    'w300': 'sans-serif-light',
+    'w400': 'sans-serif',
+    'w500': 'sans-serif-medium',
+    'w600': 'sans-serif-medium',
+    'w800': 'sans-serif-black',
+    'w900': 'sans-serif-black',
+  };
+  final family = families[weight];
+  return family == null ? '' : ' android:fontFamily="$family"';
+}
+
 class TextHandler extends AndroidNodeHandler {
   @override
   String get type => 'HWText';
@@ -202,7 +223,20 @@ class TextHandler extends AndroidNodeHandler {
       (colorData as Map).cast<String, dynamic>(),
     );
     final size = node.data['style']?['size'] ?? 14;
-    final style = node.data['style']?['bold'] == true ? 'bold' : 'normal';
+    // textStyle carries bold/italic; weight goes through the family alias,
+    // because android:textFontWeight is API 28 and the floor here is 21 —
+    // emitting it unconditionally would be silently ignored on older devices.
+    final st = node.data['style'] as Map? ?? const {};
+    final isBold = st['bold'] == true || st['weight'] == 'w700';
+    final isItalic = st['italic'] == true;
+    final style = isBold && isItalic
+        ? 'bold|italic'
+        : isBold
+            ? 'bold'
+            : isItalic
+                ? 'italic'
+                : 'normal';
+    final fontFamily = androidFontFamily(st['weight'] as String?);
     // Standalone opacity applies to the whole view regardless of color alpha.
     final opacity = node.data['style']?['opacity'];
     final alphaAttr = opacity != null ? ' android:alpha="$opacity"' : '';
@@ -252,7 +286,7 @@ class TextHandler extends AndroidNodeHandler {
     final textAttr = localizedRes != null
         ? 'android:text="@string/$localizedRes"'
         : 'android:text="${xmlEscape(textValue)}"';
-    return '<TextView $idAttr android:layout_width="wrap_content" android:layout_height="wrap_content" $textAttr android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style"$alphaAttr$maxLinesAttr$alignAttr />';
+    return '<TextView $idAttr android:layout_width="wrap_content" android:layout_height="wrap_content" $textAttr android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style"$fontFamily$alphaAttr$maxLinesAttr$alignAttr />';
   }
 }
 
