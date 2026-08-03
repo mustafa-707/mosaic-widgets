@@ -17,7 +17,7 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="start|center_vertical">
-    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="San Francisco" android:textColor="#FFFFFF" android:textSize="14.0sp" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" />
+    <TextView  android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="San Francisco" android:textColor="#FFFFFF" android:textSize="16sp" android:textStyle="normal" android:fontFamily="sans-serif-medium" android:maxLines="1" android:ellipsize="end" />
 <FrameLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
 <ImageView android:src="@drawable/ic_weather" android:tint="#FFD700" android:layout_width="26.0dp" android:layout_height="26.0dp" />
 </LinearLayout>

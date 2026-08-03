@@ -139,8 +139,36 @@ the directory your existing entries already use.
 - `bold`: `bool`
 - `italic`: `bool`
 - `weight`: `MFontWeight` — takes precedence over `bold` when both are set.
+- `role`: `MTextRole` — a semantic type role. An explicit `size` overrides it.
 - `baseStyle`: `MTextStyle` — inherit from another style; own fields win. Flattened before serialization, so nothing downstream sees a chain.
 - `copyWith({size, color, opacity, bold, weight, italic})`
+
+### MTextRole
+
+Name the intent instead of guessing a point size, and each platform places the
+text on **its own** scale — which is what makes a widget sit right beside the
+OS's own.
+
+`title` · `headline` · `body` · `callout` · `caption` · `captionSmall`
+
+| Role | iOS | Android |
+|---|---|---|
+| `title` | `.title` | 22sp |
+| `headline` | `.headline` | 16sp |
+| `body` | `.body` | 14sp |
+| `callout` | `.callout` | 13sp |
+| `caption` | `.caption` | 12sp |
+| `captionSmall` | `.caption2` | 11sp |
+
+The roles line up; the exact sizes deliberately do not. Android has no semantic
+scale a RemoteViews layout can reference, so a role resolves to a concrete `sp`
+there, while iOS uses the real SwiftUI `Font` case.
+
+An explicit `size` wins — naming a number is the more specific instruction.
+
+Mosaic pins `.dynamicTypeSize(.large)` on iOS, so a role gives you the scale's
+proportions without accessibility text scaling overflowing a layout whose space
+the OS has fixed.
 
 ### MFontWeight
 

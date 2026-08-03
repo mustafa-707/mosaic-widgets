@@ -198,8 +198,12 @@ class TextHandler extends IosNodeHandler {
     final color = style['color'] != null
         ? '.foregroundColor(${context._colorToSwift(style['color'])})'
         : '';
-    final size =
-        style['size'] != null ? '.font(.system(size: ${style['size']}))' : '';
+    // An explicit size wins over a role: naming a number is the more specific
+    // instruction. Otherwise the role supplies the platform's own type case.
+    final roleFont = style['roleSwiftFont'];
+    final size = style['size'] != null
+        ? '.font(.system(size: ${style['size']}))'
+        : (roleFont != null ? '.font(.$roleFont)' : '');
     final opacity =
         style['opacity'] != null ? '.opacity(${style['opacity']})' : '';
     // maxLines → .lineLimit(n); align (start|center|end) →

@@ -68,7 +68,7 @@ struct WeatherView: View {
         GeometryReader { geometry in
             VStack(alignment: .leading, spacing: 0) {
     HStack(alignment: .center, spacing: 0) {
-    Text("San Francisco").bold().foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.system(size: 14.0)).lineLimit(1).dynamicTypeSize(.large)
+    Text("San Francisco").fontWeight(.semibold).foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0, opacity: 1.0)).font(.headline).lineLimit(1).dynamicTypeSize(.large)
 Spacer()
 Image(systemName: "cloud.sun.fill").font(.system(size: 26.0)).foregroundColor(Color(red: 1.0, green: 0.8431372549019608, blue: 0.0, opacity: 1.0))
 }

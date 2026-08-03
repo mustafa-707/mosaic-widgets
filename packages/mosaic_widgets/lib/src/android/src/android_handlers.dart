@@ -222,7 +222,12 @@ class TextHandler extends AndroidNodeHandler {
     final color = context.parseColor(
       (colorData as Map).cast<String, dynamic>(),
     );
-    final size = node.data['style']?['size'] ?? 14;
+    // Explicit size, else the role's sp, else the historic default. Android
+    // has no semantic scale a RemoteViews layout can reference, so the role
+    // resolves to a concrete size here rather than a textAppearance.
+    final size = node.data['style']?['size'] ??
+        node.data['style']?['roleAndroidSp'] ??
+        14;
     // textStyle carries bold/italic; weight goes through the family alias,
     // because android:textFontWeight is API 28 and the floor here is 21 —
     // emitting it unconditionally would be silently ignored on older devices.

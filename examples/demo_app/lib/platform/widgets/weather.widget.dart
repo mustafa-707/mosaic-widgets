@@ -47,7 +47,13 @@ MosaicDefinition buildWeather() => MosaicDefinition(
           // temperature down — while the wider Android cell fit it on one and
           // looked fine. A header in a Row wants an explicit limit.
           maxLines: 1,
-          style: MTextStyle(color: MColor.hex('#FFFFFF'), bold: true, size: 14),
+          // A role rather than a guessed 14: each platform places it on its own
+          // type scale, which is what makes a widget sit right beside the OS's.
+          style: MTextStyle(
+            color: MColor.hex('#FFFFFF'),
+            weight: MFontWeight.w600,
+            role: MTextRole.headline,
+          ),
         ),
         const MIcon(
           sfSymbol: 'cloud.sun.fill',

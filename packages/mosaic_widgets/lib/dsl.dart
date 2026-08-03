@@ -1241,6 +1241,48 @@ enum MFontWeight {
   final String swiftWeight;
 }
 
+/// A semantic type role, so a widget follows each platform's own scale instead
+/// of hand-guessed point sizes.
+///
+/// Maps to SwiftUI's `Font` cases on iOS and to a matching sp table on Android.
+/// The two platforms have different scales by design, so the *roles* line up
+/// while the exact sizes do not — that is the point of naming the role rather
+/// than the number.
+///
+/// An explicit `size` still wins: the role sets the type, `size` overrides it.
+///
+/// Note Mosaic pins `.dynamicTypeSize(.large)` on iOS, so a role gives you the
+/// scale's proportions without accessibility text scaling breaking a layout
+/// whose space the OS fixed.
+enum MTextRole {
+  /// The one number or word a tile exists to show.
+  title('title', 22),
+
+  /// A section heading above supporting detail.
+  headline('headline', 16),
+
+  /// Ordinary content.
+  body('body', 14),
+
+  /// Content that should sit slightly quieter than [body].
+  callout('callout', 13),
+
+  /// Labels, units, timestamps.
+  caption('caption', 12),
+
+  /// The smallest legible label.
+  captionSmall('caption2', 11);
+
+  const MTextRole(this.swiftFont, this.androidSp);
+
+  /// The SwiftUI `Font` case name.
+  final String swiftFont;
+
+  /// The Android size in sp. Android has no equivalent semantic scale that
+  /// RemoteViews can reference, so the role resolves to a concrete size.
+  final int androidSp;
+}
+
 class MTextStyle {
   final double? size;
   final MColor? color;
@@ -1249,6 +1291,9 @@ class MTextStyle {
 
   /// Font weight. Takes precedence over [bold] when both are set.
   final MFontWeight? weight;
+
+  /// Semantic type role. An explicit [size] overrides it.
+  final MTextRole? role;
 
   /// Renders italic.
   final bool? italic;
@@ -1266,6 +1311,7 @@ class MTextStyle {
     this.bold,
     this.weight,
     this.italic,
+    this.role,
     this.baseStyle,
   });
 
@@ -1277,6 +1323,7 @@ class MTextStyle {
     bool? bold,
     MFontWeight? weight,
     bool? italic,
+    MTextRole? role,
   }) =>
       MTextStyle(
         size: size ?? this.size,
@@ -1285,6 +1332,7 @@ class MTextStyle {
         bold: bold ?? this.bold,
         weight: weight ?? this.weight,
         italic: italic ?? this.italic,
+        role: role ?? this.role,
         baseStyle: baseStyle,
       );
 
@@ -1300,6 +1348,7 @@ class MTextStyle {
       bold: bold ?? flat.bold,
       weight: weight ?? flat.weight,
       italic: italic ?? flat.italic,
+      role: role ?? flat.role,
     );
   }
 
@@ -1313,6 +1362,10 @@ class MTextStyle {
       // Omitted when unset so the wire shape is unchanged for existing styles.
       if (s.weight != null) 'weight': s.weight!.name,
       if (s.italic != null) 'italic': s.italic,
+      if (s.role != null) 'role': s.role!.name,
+      // Carried so each generator can resolve the role without a shared table.
+      if (s.role != null) 'roleSwiftFont': s.role!.swiftFont,
+      if (s.role != null) 'roleAndroidSp': s.role!.androidSp,
     };
   }
 }
