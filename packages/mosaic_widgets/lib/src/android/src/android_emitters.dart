@@ -1037,7 +1037,7 @@ class MosaicTvInitReceiver : android.content.BroadcastReceiver() {
   Future<void> _generateDeviceMetrics(String projectRoot) async {
     final metrics = <MosaicDeviceMetric>{};
     for (final def in definitions) {
-      metrics.addAll(deviceMetricsIn(def.root.toJson()));
+      metrics.addAll(deviceMetricsIn(def.root.toJson(), platform: 'android'));
     }
 
     final packagePath = config.app.androidPackage.replaceAll('.', '/');

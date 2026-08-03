@@ -53,7 +53,24 @@ enum MosaicDeviceMetric {
 /// Generators use this to emit native collection code only for the metrics a
 /// widget actually shows: reading battery level enables battery monitoring, and
 /// storage stats hit the filesystem, so collecting unused metrics is waste.
-Set<MosaicDeviceMetric> deviceMetricsIn(Object? json) {
+/// The children of [value] a walker for [platform] should descend into.
+///
+/// An `MAdaptive` node holds one subtree per platform, and only one of them is
+/// ever generated. A walker that descends into both over-collects: it would
+/// demand an `androidDrawable` that lives only in the iOS branch, or emit a
+/// native metric read for a bind that only the other platform renders.
+///
+/// [platform] is `'ios'`, `'android'`, or null to mean "both", which is right
+/// for anything genuinely shared such as localized string keys.
+Iterable<Object?> mosaicWalkChildren(Map value, {String? platform}) {
+  if (value['__type'] == 'HWAdaptive' && platform != null) {
+    final branch = value[platform];
+    return branch == null ? const [] : [branch];
+  }
+  return value.values;
+}
+
+Set<MosaicDeviceMetric> deviceMetricsIn(Object? json, {String? platform}) {
   final found = <MosaicDeviceMetric>{};
 
   void walk(Object? value) {
@@ -65,7 +82,7 @@ Set<MosaicDeviceMetric> deviceMetricsIn(Object? json) {
           if (metric != null) found.add(metric);
         }
       }
-      value.values.forEach(walk);
+      mosaicWalkChildren(value, platform: platform).forEach(walk);
     } else if (value is List) {
       value.forEach(walk);
     }

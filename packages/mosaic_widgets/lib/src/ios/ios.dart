@@ -82,6 +82,7 @@ class IosGenerator {
     _register(SpacerHandler());
     _register(ActivityIndicatorHandler());
     _register(NetworkImageHandler());
+    _register(AdaptiveHandler());
     _register(FlipperHandler());
     _register(SemanticsHandler());
     _register(ButtonHandler());
@@ -247,9 +248,11 @@ class IosGenerator {
     // and the widget reads it like any other stored key.
     final metrics = <MosaicDeviceMetric>{};
     for (final def in definitions) {
-      metrics.addAll(deviceMetricsIn(def.root.toJson()));
+      metrics.addAll(deviceMetricsIn(def.root.toJson(), platform: 'ios'));
       final compact = def.compactRoot;
-      if (compact != null) metrics.addAll(deviceMetricsIn(compact.toJson()));
+      if (compact != null) {
+        metrics.addAll(deviceMetricsIn(compact.toJson(), platform: 'ios'));
+      }
     }
     final needsBattery = metrics.contains(MosaicDeviceMetric.batteryLevel) ||
         metrics.contains(MosaicDeviceMetric.batteryCharging);
@@ -789,7 +792,7 @@ $activityCases
             value['defaultValue'] is String) {
           out[value['key'] as String] = value['defaultValue'] as String;
         }
-        for (final v in value.values) {
+        for (final v in mosaicWalkChildren(value, platform: 'ios')) {
           walk(v);
         }
       } else if (value is List) {
@@ -808,7 +811,7 @@ $activityCases
       if (value['__type'] == 'HWBind' && value['key'] is String) {
         keys.add(value['key'] as String);
       }
-      for (final v in value.values) {
+      for (final v in mosaicWalkChildren(value, platform: 'ios')) {
         _collectFromValue(v, keys);
       }
     } else if (value is List) {

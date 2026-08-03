@@ -66,6 +66,40 @@ $rendered
 /// `ViewFlipper` is `@RemoteView` and, with `autoStart`, the system drives the
 /// cycling without the app running — the only continuously changing content an
 /// app widget can show.
+/// Renders only the `android:` branch of an [MAdaptive].
+///
+/// The iOS branch never reaches this generator, so an SF Symbol or an
+/// iOS-only node inside it produces no XML — and, because the bind and button
+/// collectors are threaded through this traversal, nothing from that branch is
+/// registered for the provider either.
+class AdaptiveHandler extends AndroidNodeHandler {
+  @override
+  String get type => 'HWAdaptive';
+  @override
+  String handle(
+    IRNode node,
+    Map<String, Set<String>> usedBinds,
+    List<String> visibilityKeys,
+    Map<String, String> timers,
+    List<Map<String, dynamic>> buttons,
+    AndroidGenerator context, {
+    bool isInsideLinearLayout = false,
+    bool isVertical = true,
+  }) {
+    final branch = node.data['android'];
+    if (branch is! Map) return '<!-- MAdaptive has no android branch -->';
+    return context.nodeToXml(
+      IRNode.fromJson(branch.cast<String, dynamic>()),
+      usedBinds,
+      visibilityKeys,
+      timers,
+      buttons,
+      isInsideLinearLayout: isInsideLinearLayout,
+      isVertical: isVertical,
+    );
+  }
+}
+
 class FlipperHandler extends AndroidNodeHandler {
   @override
   String get type => 'HWFlipper';

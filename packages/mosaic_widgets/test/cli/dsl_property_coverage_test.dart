@@ -48,6 +48,13 @@ void main() {
     'HWExpanded': 'MExpanded',
   };
 
+  /// Types where each generator reading only *part* of the node is the point.
+  ///
+  /// `MAdaptive` holds one subtree per platform and each generator emits only
+  /// its own, so "Android never reads .ios" is the feature working, not a
+  /// dropped property.
+  const bothExemptTypes = {'HWAdaptive': 'MAdaptive'};
+
   /// Keys the DSL emits, grouped by wire type.
   Map<String, Set<String>> emittedByType() {
     final src = File('lib/dsl.dart').readAsStringSync();
@@ -100,12 +107,12 @@ void main() {
       'Android': (
         keys: keysReadBy('lib/src/android'),
         exempt: androidExempt,
-        types: androidExemptTypes.keys.toSet(),
+        types: {...androidExemptTypes.keys, ...bothExemptTypes.keys},
       ),
       'iOS': (
         keys: keysReadBy('lib/src/ios'),
         exempt: iosExempt,
-        types: <String>{},
+        types: bothExemptTypes.keys.toSet(),
       ),
     };
 
@@ -132,8 +139,12 @@ void main() {
     // An exemption is a promise to the developer that the argument does nothing
     // on that platform. If the reference does not say so, they cannot know.
     final ref = File('../../docs/DSL_REFERENCE.md').readAsStringSync();
-    for (final entry
-        in {...androidExempt, ...iosExempt, ...androidExemptTypes}.entries) {
+    for (final entry in {
+      ...androidExempt,
+      ...iosExempt,
+      ...androidExemptTypes,
+      ...bothExemptTypes,
+    }.entries) {
       expect(ref, contains(entry.value),
           reason: '${entry.key} is exempted from one platform, but '
               '${entry.value} is never mentioned in docs/DSL_REFERENCE.md');

@@ -25,7 +25,10 @@ Set<String> referencedAndroidDrawables(List<IRDefinition> definitions) {
     if (value is Map) {
       final drawable = value['androidDrawable'];
       if (drawable is String && drawable.isNotEmpty) names.add(drawable);
-      value.values.forEach(walk);
+      // Android branch only: an MAdaptive's iOS subtree never reaches the
+      // Android generator, so requiring its drawables would fail a build over
+      // a resource that is never referenced.
+      mosaicWalkChildren(value, platform: 'android').forEach(walk);
     } else if (value is List) {
       value.forEach(walk);
     }

@@ -73,6 +73,9 @@ struct SearchBarView: View {
         Image(systemName: "magnifyingglass").font(.system(size: 18.0)).foregroundColor(Color(light: Color(hex: "#64748B"), dark: Color(hex: "#94A3B8")))
     Text("Search anything").foregroundColor(Color(light: Color(hex: "#64748B"), dark: Color(hex: "#94A3B8"))).font(.system(size: 14.0)).dynamicTypeSize(.large).padding(EdgeInsets(top: 0.0, leading: 10.0, bottom: 0.0, trailing: 0.0))
     Spacer()
+    Image(systemName: "waveform").font(.system(size: 14.0)).foregroundColor(Color(red: 0.5803921568627451, green: 0.6392156862745098, blue: 0.7215686274509804, opacity: 1.0))
+    Color.clear
+        .frame(width: 10.0)
     Group {
         if let _u = URL(string: "hwdemo://search?mode=voice") {
             Link(destination: _u) {

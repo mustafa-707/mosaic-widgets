@@ -5,6 +5,45 @@ abstract class MNode {
 }
 
 /// A dynamic binding that resolves from a key-value store.
+/// Two subtrees, one per platform — the escape hatch for what genuinely cannot
+/// be expressed once.
+///
+/// Chosen at **generation time**, not at render: each generator emits only its
+/// own branch, so nothing platform-specific reaches the other side. There is no
+/// Dart on the home screen, so a runtime check is not possible.
+///
+/// Reach for this **last**. Prefer, in order: the per-node platform fields
+/// (`sfSymbol` / `androidDrawable`), `MosaicDefinition(compactRoot:)` for size,
+/// then this. Every use erodes the single-tree promise the package exists for.
+///
+/// It earns its place where a node behaves differently by platform and the DSL
+/// says so: `MFlipper` renders only its first child on iOS, `MActivityIndicator`
+/// animates only on Android, and `MFlexible` ratios hold only on Android.
+///
+/// ```dart
+/// MAdaptive(
+///   ios: MText('Swipe for more'),        // no self-cycling on iOS
+///   android: MFlipper([a, b]),
+/// )
+/// ```
+class MAdaptive extends MNode {
+  /// Rendered on iOS, macOS and watchOS.
+  final MNode ios;
+
+  /// Rendered on Android, including Android TV.
+  final MNode android;
+
+  /// Creates an [MAdaptive].
+  const MAdaptive({required this.ios, required this.android});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        '__type': 'HWAdaptive',
+        'ios': ios.toJson(),
+        'android': android.toJson(),
+      };
+}
+
 class MBind {
   final String key;
 

@@ -191,6 +191,35 @@ content changes. Prefer real DSL nodes where they exist. Keep `logicalSize`
 modest on Android — the bitmap crosses a Binder transaction with the RemoteViews
 update, and an oversized one silently drops the whole update.
 
+### MAdaptive — a different subtree per platform
+
+The escape hatch for what genuinely cannot be expressed once. Chosen at
+**generation time**: each generator emits only its own branch, so nothing
+platform-specific reaches the other side.
+
+```dart
+MAdaptive(
+  ios: MIcon(sfSymbol: 'waveform'),   // MActivityIndicator does not animate on iOS
+  android: MActivityIndicator(size: 14),
+)
+```
+
+Reach for it **last**. Prefer, in order: the per-node platform fields
+(`sfSymbol` / `androidDrawable`), then `MosaicDefinition(compactRoot:)` for
+size, then this — every use erodes the single-tree promise the package exists
+for. It earns its place where a node behaves differently by platform and this
+reference already says so: `MFlipper` renders only its first child on iOS,
+`MActivityIndicator` animates only on Android, `MFlexible` ratios hold only on
+Android.
+
+It cannot branch at **runtime**, on OS version, or on API level. The builder
+runs once at generation and feeds one tree to both generators; there is no Dart
+on the home screen to decide anything later.
+
+Everything downstream respects the split: drawable validation will not demand an
+Android resource named only in the iOS branch, and device metrics are collected
+per platform so neither side pays for a native read the other needs.
+
 ### Sizing a column inside a widget
 
 The OS chooses a widget's height, not you. `MMainAxisAlignment.spaceBetween` on

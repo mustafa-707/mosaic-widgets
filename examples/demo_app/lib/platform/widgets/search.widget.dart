@@ -62,6 +62,19 @@ MosaicDefinition buildSearchBar() => MosaicDefinition(
                 ),
               ),
               const MSpacer(),
+              // MActivityIndicator animates only on Android; on iOS it is a
+              // static glyph. Rather than ship a frozen spinner there, each
+              // platform gets what it can actually render.
+              const MAdaptive(
+                ios: MIcon(
+                  sfSymbol: 'waveform',
+                  androidDrawable: 'ic_mic',
+                  size: 14,
+                  color: MColor.hex('#94A3B8'),
+                ),
+                android: MActivityIndicator(size: 14),
+              ),
+              const MSizedBox.width(10),
               MButton(
                 action: const MLaunchUrlAction('hwdemo://search?mode=voice'),
                 child: const MIcon(

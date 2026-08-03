@@ -441,6 +441,7 @@ class AndroidGenerator {
     _register(SpacerHandler());
     _register(ActivityIndicatorHandler());
     _register(NetworkImageHandler());
+    _register(AdaptiveHandler());
     _register(FlipperHandler());
     _register(SemanticsHandler());
     _register(ButtonHandler());

@@ -395,7 +395,7 @@ ${lines.join('\n')}
     // unused values costs on every render.
     final metrics = <MosaicDeviceMetric>{};
     for (final def in definitions) {
-      metrics.addAll(deviceMetricsIn(def.root.toJson()));
+      metrics.addAll(deviceMetricsIn(def.root.toJson(), platform: 'ios'));
     }
     final needsBattery = metrics.contains(MosaicDeviceMetric.batteryLevel) ||
         metrics.contains(MosaicDeviceMetric.batteryCharging);

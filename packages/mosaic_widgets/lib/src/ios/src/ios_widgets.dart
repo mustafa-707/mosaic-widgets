@@ -181,6 +181,26 @@ class SemanticsHandler extends IosNodeHandler {
 /// container, so the cycling Android gets from `ViewFlipper` cannot be
 /// reproduced. Emitting the first child keeps the layout intact and honest
 /// rather than dropping the node.
+/// Renders only the `ios:` branch of an [MAdaptive].
+///
+/// The Android branch never reaches this generator, so anything Android-only
+/// inside it — a drawable name, a bound key — is simply absent from the Swift.
+class AdaptiveHandler extends IosNodeHandler {
+  @override
+  String get type => 'HWAdaptive';
+  @override
+  String handle(IRNode node, IosGenerator context,
+      {bool isInsideStack = false, bool isVertical = true}) {
+    final branch = node.data['ios'];
+    if (branch is! Map) return '// MAdaptive has no ios branch';
+    return context.nodeToSwiftUI(
+      IRNode.fromJson(branch.cast<String, dynamic>()),
+      isInsideStack: isInsideStack,
+      isVertical: isVertical,
+    );
+  }
+}
+
 class FlipperHandler extends IosNodeHandler {
   @override
   String get type => 'HWFlipper';
