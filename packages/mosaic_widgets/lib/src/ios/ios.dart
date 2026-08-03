@@ -774,6 +774,35 @@ $activityCases
     return keys;
   }
 
+  /// Every bind default declared in [node], keyed by bind key.
+  ///
+  /// Feeds `placeholder(in:)`, which the OS renders in the widget gallery
+  /// *before the app has ever run*. It used to ship an empty dictionary, so
+  /// every bound value in the picker preview read `--` — the first thing a
+  /// user sees when deciding whether to add the widget at all.
+  Map<String, String> collectBindDefaults(IRNode node) {
+    final out = <String, String>{};
+    void walk(Object? value) {
+      if (value is Map) {
+        if (value['__type'] == 'HWBind' &&
+            value['key'] is String &&
+            value['defaultValue'] is String) {
+          out[value['key'] as String] = value['defaultValue'] as String;
+        }
+        for (final v in value.values) {
+          walk(v);
+        }
+      } else if (value is List) {
+        for (final v in value) {
+          walk(v);
+        }
+      }
+    }
+
+    walk(node.toJson());
+    return out;
+  }
+
   void _collectFromValue(Object? value, Set<String> keys) {
     if (value is Map) {
       if (value['__type'] == 'HWBind' && value['key'] is String) {

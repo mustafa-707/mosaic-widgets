@@ -69,9 +69,9 @@ class CryptoWidgetProvider : AppWidgetProvider() {
         val prefs = context.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
         val views = RemoteViews(context.packageName, layoutRes)
 
-        views.setTextViewText(R.id.hw_text_btc_price, MosaicData.formatValue(MosaicData.resolveString(context, "btc_price"), "currency", "USD"))
-        views.setTextViewText(R.id.hw_text_btc_change, MosaicData.formatValue(MosaicData.resolveString(context, "btc_change"), "signedPercent"))
-                val target0 = 1785759558399L
+        views.setTextViewText(R.id.hw_text_btc_price, MosaicData.formatValue(MosaicData.resolveString(context, "btc_price", "64000"), "currency", "USD"))
+        views.setTextViewText(R.id.hw_text_btc_change, MosaicData.formatValue(MosaicData.resolveString(context, "btc_change", "--"), "signedPercent"))
+                val target0 = 1785760508909L
         val offset0 = target0 - System.currentTimeMillis()
         views.setChronometer(R.id.hw_timer_0, android.os.SystemClock.elapsedRealtime() + offset0, null, true)
         views.setChronometerCountDown(R.id.hw_timer_0, false)

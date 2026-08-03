@@ -109,7 +109,7 @@ MosaicDefinition buildCryptoWidget() {
               // Price Block
               MColumn(crossAxisAlignment: MCrossAxisAlignment.start, [
                 MText(
-                  MBind("btc_price"),
+                  MBind("btc_price", defaultValue: "64000"),
                   // The pair is BTC/USD, so the amount is dollars regardless of
                   // where the phone is. Without the code it rendered in the
                   // device currency — "JOD 64,510.000" on a phone set to

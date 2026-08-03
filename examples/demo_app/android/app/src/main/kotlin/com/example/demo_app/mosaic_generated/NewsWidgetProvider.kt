@@ -75,10 +75,10 @@ class NewsWidgetProvider : AppWidgetProvider() {
         val prefs = context.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
         val views = RemoteViews(context.packageName, layoutRes)
 
-        views.setTextViewText(R.id.hw_text_news_updated, MosaicData.formatValue(MosaicData.resolveString(context, "news_updated"), "relativeTime"))
-        views.setTextViewText(R.id.hw_text_news_title, MosaicData.resolveString(context, "news_title"))
-        views.setTextViewText(R.id.hw_text_news_title_2, MosaicData.resolveString(context, "news_title_2"))
-        views.setTextViewText(R.id.hw_text_news_source, MosaicData.resolveString(context, "news_source"))
+        views.setTextViewText(R.id.hw_text_news_updated, MosaicData.formatValue(MosaicData.resolveString(context, "news_updated", "--"), "relativeTime"))
+        views.setTextViewText(R.id.hw_text_news_title, MosaicData.resolveString(context, "news_title", "--"))
+        views.setTextViewText(R.id.hw_text_news_title_2, MosaicData.resolveString(context, "news_title_2", "--"))
+        views.setTextViewText(R.id.hw_text_news_source, MosaicData.resolveString(context, "news_source", "--"))
         
         
         

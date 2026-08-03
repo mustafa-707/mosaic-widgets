@@ -831,7 +831,8 @@ class BadgeHandler extends AndroidNodeHandler {
       final key = count['key'] as String;
       (usedBinds[key] ??= <String>{}).add('text');
       final viewId = context.uniqueViewId('hw_text', key);
-      context.registerBoundView(viewId, key, 'text');
+      context.registerBoundView(viewId, key, 'text',
+          fallback: AndroidGenerator.bindFallback(count));
       countIdAttr = ' android:id="@+id/$viewId"';
     } else {
       countText = count == null ? '' : count.toString();

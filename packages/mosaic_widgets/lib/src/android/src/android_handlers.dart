@@ -181,7 +181,8 @@ class TextHandler extends AndroidNodeHandler {
       final key = text['key'] as String;
       (usedBinds[key] ??= <String>{}).add('text');
       final viewId = context.uniqueViewId('hw_text', key);
-      context.registerBoundView(viewId, key, 'text');
+      context.registerBoundView(viewId, key, 'text',
+          fallback: AndroidGenerator.bindFallback(text));
       idAttr = 'android:id="@+id/$viewId"';
       // Bound text may carry a format directive applied at render time.
       final format = node.data['format'] as String?;

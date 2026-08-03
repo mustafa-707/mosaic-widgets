@@ -116,13 +116,22 @@ class IRBind {
   /// The binding key resolved at runtime against the widget's data context.
   final String key;
 
+  /// Rendered when the key has never been written. Null means the generators
+  /// fall back to `--`, which is what every bind did before this existed.
+  final String? defaultValue;
+
   /// Creates an [IRBind] for the given [key].
-  IRBind({required this.key});
+  IRBind({required this.key, this.defaultValue});
 
   /// Deserializes an [IRBind] from a JSON map.
-  factory IRBind.fromJson(Map<String, dynamic> json) =>
-      IRBind(key: json['key'] as String);
+  factory IRBind.fromJson(Map<String, dynamic> json) => IRBind(
+      key: json['key'] as String,
+      defaultValue: json['defaultValue'] as String?);
 
   /// Serializes this bind reference to its wire format.
-  Map<String, dynamic> toJson() => {'__type': 'HWBind', 'key': key};
+  Map<String, dynamic> toJson() => {
+        '__type': 'HWBind',
+        'key': key,
+        if (defaultValue != null) 'defaultValue': defaultValue,
+      };
 }

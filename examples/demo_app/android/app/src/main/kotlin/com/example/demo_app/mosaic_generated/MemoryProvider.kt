@@ -69,10 +69,10 @@ class MemoryProvider : AppWidgetProvider() {
         val prefs = context.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
         val views = RemoteViews(context.packageName, layoutRes)
 
-        views.setTextViewText(R.id.hw_text_mosaic_memory_used_percent, MosaicData.formatValue(MosaicData.resolveString(context, "mosaic_memory_used_percent"), "decimal"))
-        views.setTextViewText(R.id.hw_text_mosaic_memory_free_mb, MosaicData.formatValue(MosaicData.resolveString(context, "mosaic_memory_free_mb"), "decimal"))
+        views.setTextViewText(R.id.hw_text_mosaic_memory_used_percent, MosaicData.formatValue(MosaicData.resolveString(context, "mosaic_memory_used_percent", "--"), "decimal"))
+        views.setTextViewText(R.id.hw_text_mosaic_memory_free_mb, MosaicData.formatValue(MosaicData.resolveString(context, "mosaic_memory_free_mb", "--"), "decimal"))
         views.setProgressBar(R.id.hw_progress_mosaic_memory_used_percent, 100, MosaicData.resolveDouble(context, "mosaic_memory_used_percent").toInt(), false)
-        views.setTextViewText(R.id.hw_text_mosaic_memory_total_mb, MosaicData.formatValue(MosaicData.resolveString(context, "mosaic_memory_total_mb"), "decimal"))
+        views.setTextViewText(R.id.hw_text_mosaic_memory_total_mb, MosaicData.formatValue(MosaicData.resolveString(context, "mosaic_memory_total_mb", "--"), "decimal"))
         
         views.setViewVisibility(R.id.hw_visibility_mosaic_refreshing, if (MosaicData.resolveBool(context, "mosaic_refreshing")) android.view.View.VISIBLE else android.view.View.GONE)
         views.setViewVisibility(R.id.hw_visibility_mosaic_refreshing_alt, if (MosaicData.resolveBool(context, "mosaic_refreshing")) android.view.View.GONE else android.view.View.VISIBLE)

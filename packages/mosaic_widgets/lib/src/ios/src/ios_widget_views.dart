@@ -126,6 +126,13 @@ struct ${def.name}PushHandler: WidgetPushHandler {
       return _generateConfigurableWidget(def);
     }
     final usedKeys = collectBindKeys(def.root).toList()..sort();
+    // The gallery preview runs before the app has ever written anything, so it
+    // renders whatever defaults the binds declared rather than a wall of `--`.
+    final defaults = collectBindDefaults(def.root);
+    final placeholderData = defaults.isEmpty
+        ? '[:]'
+        : '[${defaults.entries.map((e) => '"${swiftEscape(e.key)}": "${swiftEscape(e.value)}"').join(', ')}]';
+
     final keyList = usedKeys.map((k) => '"${swiftEscape(k)}"').join(', ');
     return '''$kGeneratedSentinel
 import SwiftUI
@@ -139,7 +146,7 @@ struct ${def.name}Entry: TimelineEntry {
 
 struct ${def.name}Provider: TimelineProvider {
     func placeholder(in context: Context) -> ${def.name}Entry {
-        ${def.name}Entry(date: Date(), data: [:])
+        ${def.name}Entry(date: Date(), data: $placeholderData)
     }
 
     func getSnapshot(in context: Context, completion: @escaping (${def.name}Entry) -> ()) {
@@ -300,6 +307,13 @@ ${_pushConfiguration(def)}
   /// under `if #available(iOS 17.0, *)`.
   String _generateConfigurableWidget(IRDefinition def) {
     final usedKeys = collectBindKeys(def.root).toList()..sort();
+    // The gallery preview runs before the app has ever written anything, so it
+    // renders whatever defaults the binds declared rather than a wall of `--`.
+    final defaults = collectBindDefaults(def.root);
+    final placeholderData = defaults.isEmpty
+        ? '[:]'
+        : '[${defaults.entries.map((e) => '"${swiftEscape(e.key)}": "${swiftEscape(e.value)}"').join(', ')}]';
+
     final keyList = usedKeys.map((k) => '"${swiftEscape(k)}"').join(', ');
     final params = def.params;
 
@@ -359,7 +373,7 @@ $paramDecls
 @available(iOS 17.0, macOS 14.0, watchOS 10.0, *)
 struct ${def.name}Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> ${def.name}Entry {
-        ${def.name}Entry(date: Date(), data: [:])
+        ${def.name}Entry(date: Date(), data: $placeholderData)
     }
 
     /// What the complication picker offers before the user configures anything.

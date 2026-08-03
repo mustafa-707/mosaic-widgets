@@ -28,7 +28,7 @@ void main() {
     expect(
         kt,
         contains('formatValue(MosaicData.resolveString(context, '
-            '"change"), "signedPercent")'));
+            '"change", "--"), "signedPercent")'));
   });
 
   test('it formats with a sign and two decimals, and does not scale', () async {
@@ -50,6 +50,6 @@ void main() {
 
   test('an unknown format still falls through to the raw value', () async {
     final kt = provider(await runAndroid([irDef(formatted('nonsense'))]));
-    expect(kt, contains('resolveString(context, "change")'));
+    expect(kt, contains('resolveString(context, "change", "--")'));
   });
 }

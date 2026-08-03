@@ -69,12 +69,12 @@ class WeatherProvider : AppWidgetProvider() {
         val prefs = context.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
         val views = RemoteViews(context.packageName, layoutRes)
 
-        views.setTextViewText(R.id.hw_text_temp_f, MosaicData.resolveString(context, "temp_f"))
-        views.setTextViewText(R.id.hw_text_temp_c, MosaicData.resolveString(context, "temp_c"))
-        views.setTextViewText(R.id.hw_text_hi_f, MosaicData.resolveString(context, "hi_f"))
-        views.setTextViewText(R.id.hw_text_lo_f, MosaicData.resolveString(context, "lo_f"))
-        views.setTextViewText(R.id.hw_text_hi_c, MosaicData.resolveString(context, "hi_c"))
-        views.setTextViewText(R.id.hw_text_lo_c, MosaicData.resolveString(context, "lo_c"))
+        views.setTextViewText(R.id.hw_text_temp_f, MosaicData.resolveString(context, "temp_f", "--"))
+        views.setTextViewText(R.id.hw_text_temp_c, MosaicData.resolveString(context, "temp_c", "--"))
+        views.setTextViewText(R.id.hw_text_hi_f, MosaicData.resolveString(context, "hi_f", "--"))
+        views.setTextViewText(R.id.hw_text_lo_f, MosaicData.resolveString(context, "lo_f", "--"))
+        views.setTextViewText(R.id.hw_text_hi_c, MosaicData.resolveString(context, "hi_c", "--"))
+        views.setTextViewText(R.id.hw_text_lo_c, MosaicData.resolveString(context, "lo_c", "--"))
         
         views.setViewVisibility(R.id.hw_visibility_weather_unit_f, if (MosaicData.resolveBool(context, "weather_unit_f")) android.view.View.VISIBLE else android.view.View.GONE)
         views.setViewVisibility(R.id.hw_visibility_weather_unit_f_alt, if (MosaicData.resolveBool(context, "weather_unit_f")) android.view.View.GONE else android.view.View.VISIBLE)

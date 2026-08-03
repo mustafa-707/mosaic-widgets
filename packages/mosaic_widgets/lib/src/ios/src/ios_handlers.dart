@@ -170,7 +170,7 @@ class TextHandler extends IosNodeHandler {
             'Text(LocalizedStringKey("${swiftEscape(text['key'] as String)}"))';
       } else {
         final textValue = isBind
-            ? '"\\(mosaicStr($src["${swiftEscape(text['key'] as String)}"]) ?? "--")"'
+            ? '"\\(mosaicStr($src["${swiftEscape(text['key'] as String)}"]) ?? "${swiftEscape(bindDefault(text))}")"'
             : '"${swiftEscape(text as String)}"';
         textExpr = 'Text($textValue)';
       }
@@ -219,8 +219,15 @@ class TextHandler extends IosNodeHandler {
   /// divide by 1000.0 to obtain epoch seconds — matching Flutter's
   /// `millisecondsSinceEpoch` convention used on Android. The `.formatted`
   /// style APIs used here are iOS15+.
+  /// The literal a bind falls back to when its key was never written.
+  ///
+  /// `--` remains the default default: it is what every bind rendered before
+  /// `MBind(defaultValue:)` existed, so omitting one changes nothing.
+  String bindDefault(Map<dynamic, dynamic> bind) =>
+      (bind['defaultValue'] as String?) ?? '--';
+
   String _formattedText(String format, String key, String src,
-      {String? currencyCode}) {
+      {String? currencyCode, String fallback = '--'}) {
     // Parse a Double from the bound entry value (NSNumber or String).
     final dbl = '(mosaicNum($src["$key"]) ?? 0)';
     switch (format) {
@@ -243,7 +250,7 @@ class TextHandler extends IosNodeHandler {
         return 'Text(Date(timeIntervalSince1970: $dbl / 1000.0), style: .relative)';
       default:
         // Unknown format: fall back to the plain interpolated string.
-        return 'Text("\\(mosaicStr($src["$key"]) ?? "--")")';
+        return 'Text("\\(mosaicStr($src["$key"]) ?? "${swiftEscape(fallback)}")")';
     }
   }
 }

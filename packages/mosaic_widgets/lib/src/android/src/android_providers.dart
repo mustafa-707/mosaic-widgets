@@ -41,6 +41,9 @@ extension AndroidProviderEmitters on AndroidGenerator {
               viewId: 'hw_image_${AndroidGenerator.idForKey(e.key)}',
               key: e.key,
               kind: 'image',
+              // Image binds resolve to a URI, where the text placeholder would
+              // be a broken path rather than a caption.
+              fallback: '',
             ));
 
     final bindLogic = [..._boundViews, ...imageBinds].map((view) {
@@ -58,9 +61,9 @@ extension AndroidProviderEmitters on AndroidGenerator {
             // the device default Locale via MosaicData.formatValue.
             final code = _textCurrencies[view.key];
             final codeArg = code == null ? '' : ', "${kotlinEscape(code)}"';
-            return 'views.setTextViewText(R.id.${view.viewId}, MosaicData.formatValue(MosaicData.resolveString(context, "$lit"), "$format"$codeArg))';
+            return 'views.setTextViewText(R.id.${view.viewId}, MosaicData.formatValue(MosaicData.resolveString(context, "$lit", "${kotlinEscape(view.fallback)}"), "$format"$codeArg))';
           }
-          return 'views.setTextViewText(R.id.${view.viewId}, MosaicData.resolveString(context, "$lit"))';
+          return 'views.setTextViewText(R.id.${view.viewId}, MosaicData.resolveString(context, "$lit", "${kotlinEscape(view.fallback)}"))';
       }
     }).join('\n        ');
 

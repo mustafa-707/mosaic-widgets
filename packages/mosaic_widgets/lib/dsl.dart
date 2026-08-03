@@ -7,7 +7,16 @@ abstract class MNode {
 /// A dynamic binding that resolves from a key-value store.
 class MBind {
   final String key;
-  const MBind(this.key);
+
+  /// Rendered when [key] has never been written.
+  ///
+  /// Without one a widget shows `--` until the app runs and pushes data — and
+  /// the OS gallery preview, which runs before the app ever has, shows `--` for
+  /// every bound value. That preview is what a user sees when deciding whether
+  /// to add the widget at all.
+  final String? defaultValue;
+
+  const MBind(this.key, {this.defaultValue});
 
   @override
   String toString() => 'MBind($key)';
@@ -15,7 +24,12 @@ class MBind {
   // NOTE: the `__type` tag values (e.g. 'HWBind', 'HWText', ...) are a stable
   // internal wire-protocol identifier shared with the generators and golden
   // test fixtures. Do NOT rename them when renaming the DSL symbols.
-  Map<String, dynamic> toJson() => {'__type': 'HWBind', 'key': key};
+  Map<String, dynamic> toJson() => {
+        '__type': 'HWBind',
+        'key': key,
+        // Omitted when absent so the wire shape is unchanged for the common case.
+        if (defaultValue != null) 'defaultValue': defaultValue,
+      };
 }
 
 /// Text looked up from the platform's own string resources, so the OS picks the
@@ -889,7 +903,11 @@ enum MDeviceMetric {
 class MDeviceValue extends MBind {
   final MDeviceMetric metric;
 
-  MDeviceValue(this.metric) : super(metric.key);
+  /// [defaultValue] is forwarded, not inherited: Dart constructors do not pass
+  /// named parameters up on their own, so without this a metric could never
+  /// declare what to show before the first native read lands — which on iOS is
+  /// every gallery preview, since the extension has not run yet.
+  MDeviceValue(this.metric, {super.defaultValue}) : super(metric.key);
 }
 
 /// Gives [child] an accessibility label, so screen readers announce something

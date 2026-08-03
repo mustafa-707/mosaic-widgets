@@ -19,7 +19,7 @@ void main() {
       expect(kt, contains('R.id.hw_text_mykey'));
       expect(kt, isNot(contains('R.id.hw_text_my-key')));
       // ...but the SharedPreferences lookup key stays the original.
-      expect(kt, contains('resolveString(context, "my-key")'));
+      expect(kt, contains('resolveString(context, "my-key", "--")'));
     });
 
     test('visibility bind key is sanitized for the resource id', () async {

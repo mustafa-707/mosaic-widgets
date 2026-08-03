@@ -75,7 +75,7 @@ class TasksProvider : AppWidgetProvider() {
         val prefs = context.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
         val views = RemoteViews(context.packageName, layoutRes)
 
-        views.setTextViewText(R.id.hw_text_tasks_count, MosaicData.resolveString(context, "tasks_count"))
+        views.setTextViewText(R.id.hw_text_tasks_count, MosaicData.resolveString(context, "tasks_count", "--"))
         
         
         

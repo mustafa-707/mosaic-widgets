@@ -294,13 +294,23 @@ class AndroidGenerator {
   ///
   /// Keyed by id rather than by key, so the same value rendered in two places
   /// updates both.
-  final List<({String viewId, String key, String kind})> _boundViews = [];
+  final List<({String viewId, String key, String kind, String fallback})>
+      _boundViews = [];
 
   /// Records a bound view for the provider to update.
-  void registerBoundView(String viewId, String key, String kind) {
+  ///
+  /// [fallback] is what renders before the key has ever been written. `--` is
+  /// the historic value, so a bind that declares no default behaves exactly as
+  /// it always did.
+  void registerBoundView(String viewId, String key, String kind,
+      {String fallback = '--'}) {
     if (_boundViews.any((e) => e.viewId == viewId)) return;
-    _boundViews.add((viewId: viewId, key: key, kind: kind));
+    _boundViews.add((viewId: viewId, key: key, kind: kind, fallback: fallback));
   }
+
+  /// The literal a bind falls back to, read off its wire map.
+  static String bindFallback(Map<dynamic, dynamic> bind) =>
+      (bind['defaultValue'] as String?) ?? '--';
 
   /// Occurrence counter behind [uniqueViewId], reset per widget.
   final Map<String, int> _viewIdOccurrences = {};

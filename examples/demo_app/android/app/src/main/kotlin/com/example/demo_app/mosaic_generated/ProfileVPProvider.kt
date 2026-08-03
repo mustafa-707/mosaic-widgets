@@ -89,11 +89,11 @@ class ProfileVPProvider : AppWidgetProvider() {
         val prefs = context.getSharedPreferences("widget_data", Context.MODE_PRIVATE)
         val views = RemoteViews(context.packageName, layoutRes)
 
-        views.setTextViewText(R.id.hw_text_system_status, MosaicData.resolveString(context, "system_status"))
-        views.setTextViewText(R.id.hw_text_mosaic_battery_level, MosaicData.resolveString(context, "mosaic_battery_level"))
+        views.setTextViewText(R.id.hw_text_system_status, MosaicData.resolveString(context, "system_status", "--"))
+        views.setTextViewText(R.id.hw_text_mosaic_battery_level, MosaicData.resolveString(context, "mosaic_battery_level", "--"))
         views.setProgressBar(R.id.hw_progress_mosaic_battery_level, 100, MosaicData.resolveDouble(context, "mosaic_battery_level").toInt(), false)
-        views.setTextViewText(R.id.hw_text_mosaic_storage_free_gb, MosaicData.resolveString(context, "mosaic_storage_free_gb"))
-        views.setTextViewText(R.id.hw_text_mosaic_battery_level_2, MosaicData.resolveString(context, "mosaic_battery_level"))
+        views.setTextViewText(R.id.hw_text_mosaic_storage_free_gb, MosaicData.resolveString(context, "mosaic_storage_free_gb", "--"))
+        views.setTextViewText(R.id.hw_text_mosaic_battery_level_2, MosaicData.resolveString(context, "mosaic_battery_level", "--"))
         views.setProgressBar(R.id.hw_progress_mosaic_battery_level_2, 100, MosaicData.resolveDouble(context, "mosaic_battery_level").toInt(), false)
         
         
