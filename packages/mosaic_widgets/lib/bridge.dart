@@ -232,11 +232,14 @@ class MosaicTv {
     List<MosaicTvProgram> programs,
   ) async {
     try {
-      await _channel.invokeMethod('publishTvChannel', {
+      // The platform's own answer, not an assumption: a phone has no TV
+      // provider, and returning true there told the caller a row exists when
+      // none does.
+      final ok = await _channel.invokeMethod<bool>('publishTvChannel', {
         'channel': channel,
         'programs': programs.map((p) => p.toMap()).toList(),
       });
-      return true;
+      return ok ?? false;
     } on PlatformException {
       return false;
     } on MissingPluginException {

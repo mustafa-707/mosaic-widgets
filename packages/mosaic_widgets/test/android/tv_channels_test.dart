@@ -69,6 +69,17 @@ void main() {
     expect(kt, contains('catch (e: Exception)'));
   });
 
+  test('publish reports whether it actually wrote a row', () async {
+    // It used to return unconditionally, so a phone — which has no TV provider
+    // at all — reported success and the demo said "published" on a device
+    // where the provider does not exist. Caught by querying the emulator:
+    //   Could not find provider: android.media.tv
+    final kt = tv(await runAndroid([irDef(text('x'))], config: _config()));
+    expect(kt, contains('programs: List<Map<String, String>>): Boolean'));
+    expect(kt, contains('return false'));
+    expect(kt, contains('return true'));
+  });
+
   test('a project without tv_channels generates nothing', () async {
     // WRITE_EPG_DATA and a TV receiver are not things a phone-only app should
     // carry because it happens to use this package.

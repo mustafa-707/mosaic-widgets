@@ -580,8 +580,7 @@ $table
                         result.error("INVALID_ARGUMENTS",
                             "channel and programs are required", null)
                     } else {
-                        MosaicTv.publish(context, channel, programs)
-                        result.success(null)
+                        result.success(MosaicTv.publish(context, channel, programs))
                     }''';
 
     // Declared name -> provider class, so installedWidgets can query each
@@ -982,11 +981,15 @@ object MosaicTv {
     /// Each entry needs "title"; "description", "poster" (a URI) and "link"
     /// (a deep link) are optional. Replacing wholesale rather than diffing
     /// keeps the row consistent with what the app just published.
-    fun publish(context: Context, channel: String, programs: List<Map<String, String>>) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+    /// Returns true only when the row was actually written. A phone has no TV
+    /// provider at all, and reporting success there would be a lie the caller
+    /// cannot detect — the demo happily said "published" on a device where the
+    /// provider does not exist.
+    fun publish(context: Context, channel: String, programs: List<Map<String, String>>): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
         ensureChannels(context)
         val id = prefs(context).getLong(channel, -1L)
-        if (id == -1L) return
+        if (id == -1L) return false
 
         try {
             context.contentResolver.delete(
@@ -1015,8 +1018,10 @@ object MosaicTv {
                 context.contentResolver.insert(
                     TvContract.PreviewPrograms.CONTENT_URI, values)
             }
+            return true
         } catch (e: Exception) {
             // Same reasoning as above: no provider means nothing to publish to.
+            return false
         }
     }
 }

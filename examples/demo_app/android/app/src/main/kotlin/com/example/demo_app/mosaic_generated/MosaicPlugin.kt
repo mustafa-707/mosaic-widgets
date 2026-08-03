@@ -137,8 +137,7 @@ class MosaicPlugin {
                         result.error("INVALID_ARGUMENTS",
                             "channel and programs are required", null)
                     } else {
-                        MosaicTv.publish(context, channel, programs)
-                        result.success(null)
+                        result.success(MosaicTv.publish(context, channel, programs))
                     }
                 }
                 "refreshAll" -> {

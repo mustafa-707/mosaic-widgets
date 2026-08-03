@@ -405,6 +405,34 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  /// Fills the declared Android TV channel.
+  ///
+  /// A TV home screen has no widgets at all, so this is the equivalent surface:
+  /// a row of cards the launcher draws itself. Declared in mosaic.yaml under
+  /// `tv_channels:`; a no-op on a phone with no TV provider, and on iOS.
+  Future<void> _publishTv() async {
+    final ok = await MosaicTv.publish('featured', [
+      const MosaicTvProgram(
+        title: 'Bitcoin',
+        description: 'Live BTC/USD price',
+        link: 'hwdemo://crypto',
+      ),
+      const MosaicTvProgram(
+        title: 'Weather',
+        description: 'San Francisco, updated hourly',
+        link: 'hwdemo://weather',
+      ),
+    ]);
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(ok
+            ? 'Published 2 cards to the TV channel'
+            : 'No TV channel here — phone without a TV provider, or iOS'),
+      ),
+    );
+  }
+
   /// Reads back what the widget itself wrote, which used to be impossible.
   Future<void> _readBack() async {
     final torch = await MosaicBridge.getValue<bool>('torch_on') ?? false;
@@ -491,6 +519,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   onPressed: _renderChart,
                   icon: const Icon(Icons.donut_large, size: 18),
                   label: const Text('Render Flutter widget'),
+                  style:
+                      OutlinedButton.styleFrom(foregroundColor: Colors.white70),
+                ),
+                OutlinedButton.icon(
+                  onPressed: _publishTv,
+                  icon: const Icon(Icons.tv_outlined, size: 18),
+                  label: const Text('Publish TV channel'),
                   style:
                       OutlinedButton.styleFrom(foregroundColor: Colors.white70),
                 ),
