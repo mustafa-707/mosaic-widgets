@@ -1,6 +1,6 @@
 name: mosaic_widgets
 description: "Build native iOS and Android home-screen widgets, lock-screen widgets, and Live Activities from a single Flutter-style Dart DSL."
-version: 0.2.0
+version: 0.3.0
 repository: https://github.com/mustafa-707/mosaic-widgets
 homepage: https://github.com/mustafa-707/mosaic-widgets
 issue_tracker: https://github.com/mustafa-707/mosaic-widgets/issues
