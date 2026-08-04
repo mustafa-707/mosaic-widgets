@@ -53,7 +53,12 @@ void main() {
   /// `MAdaptive` holds one subtree per platform and each generator emits only
   /// its own, so "Android never reads .ios" is the feature working, not a
   /// dropped property.
-  const bothExemptTypes = {'HWAdaptive': 'MAdaptive'};
+  const bothExemptTypes = {
+    'HWAdaptive': 'MAdaptive',
+    // Same shape: MRaw holds one snippet per platform and each generator emits
+    // only its own, so "iOS never reads androidXml" is the feature.
+    'HWRaw': 'MRaw',
+  };
 
   /// Keys the DSL emits, grouped by wire type.
   Map<String, Set<String>> emittedByType() {

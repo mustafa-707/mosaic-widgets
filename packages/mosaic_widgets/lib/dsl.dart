@@ -44,6 +44,58 @@ class MAdaptive extends MNode {
       };
 }
 
+/// Verbatim native code, for anything the DSL cannot express.
+///
+/// This is the ceiling remover. Everything else in Mosaic is a bounded
+/// vocabulary; here you write the platform's own UI language and Mosaic drops
+/// it in unchanged, while still generating the plumbing around it — the App
+/// Group wiring, the timeline, the data store, the update path.
+///
+/// ```dart
+/// MRaw(
+///   swift: 'Gauge(value: 0.7) { Text("CPU") }.gaugeStyle(.accessoryCircular)',
+///   androidXml: '<TextView android:text="CPU 70%" '
+///       'android:layout_width="wrap_content" android:layout_height="wrap_content" />',
+/// )
+/// ```
+///
+/// **What you give up.** Mosaic cannot see inside the snippet, so nothing in it
+/// is validated, adapted for light/dark, or checked against the RemoteViews
+/// whitelist — a class Android refuses to inflate fails at run time on the home
+/// screen, not at build time. Bind keys inside raw code are not collected
+/// either; declare them in [binds] so the generated provider still resolves
+/// them.
+///
+/// **Reading data.** On iOS the entry is in scope: `entry.data["key"]`. On
+/// Android a RemoteViews update is applied by id, so give your view an
+/// `android:id` and list the key in [binds] — Mosaic then writes it like any
+/// other bound view.
+///
+/// A platform with no snippet renders nothing there, which is a legitimate way
+/// to ship a feature on one platform only.
+class MRaw extends MNode {
+  /// SwiftUI source, inserted into the widget's view body.
+  final String? swift;
+
+  /// A single Android layout XML element, inserted into the generated layout.
+  final String? androidXml;
+
+  /// Bind keys the snippet reads, so the generated provider still resolves
+  /// them. Without this Mosaic has no way to know the snippet needs them.
+  final List<String> binds;
+
+  /// Creates an [MRaw].
+  const MRaw({this.swift, this.androidXml, this.binds = const []});
+
+  @override
+  Map<String, dynamic> toJson() => {
+        '__type': 'HWRaw',
+        if (swift != null) 'swift': swift,
+        if (androidXml != null) 'androidXml': androidXml,
+        if (binds.isNotEmpty) 'binds': binds,
+      };
+}
+
 class MBind {
   final String key;
 

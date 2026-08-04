@@ -185,6 +185,26 @@ class SemanticsHandler extends IosNodeHandler {
 ///
 /// The Android branch never reaches this generator, so anything Android-only
 /// inside it — a drawable name, a bound key — is simply absent from the Swift.
+/// Emits an [MRaw]'s SwiftUI verbatim.
+///
+/// Nothing here is escaped or inspected — that is the point. `entry` is in
+/// scope, so the snippet can read `entry.data["key"]` like generated code does.
+class RawHandler extends IosNodeHandler {
+  @override
+  String get type => 'HWRaw';
+  @override
+  String handle(IRNode node, IosGenerator context,
+      {bool isInsideStack = false, bool isVertical = true}) {
+    final swift = node.data['swift'];
+    if (swift is! String || swift.isEmpty) {
+      // A snippet for the other platform only. Rendering nothing is the
+      // documented behaviour, not a failure.
+      return 'EmptyView()';
+    }
+    return '// MRaw — hand-written, not generated\n$swift';
+  }
+}
+
 class AdaptiveHandler extends IosNodeHandler {
   @override
   String get type => 'HWAdaptive';

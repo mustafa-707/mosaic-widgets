@@ -103,7 +103,11 @@ Text(" MB total").foregroundColor(Color(red: 0.39215686274509803, green: 0.45490
 }
 }.accessibilityLabel(Text("Memory in use"))
 Color.clear
-    .frame(height: 10.0)
+    .frame(height: 8.0)
+// MRaw — hand-written, not generated
+Gauge(value: (mosaicNum(entry.data["mosaic_memory_used_percent"]) ?? 0) / 100.0) { EmptyView() }.gaugeStyle(.accessoryLinearCapacity).tint(.green)
+Color.clear
+    .frame(height: 8.0)
 Group {
     if mosaicBool(entry.data["mosaic_refreshing"]) {
         ProgressView().progressViewStyle(.circular).frame(width: 14.0, height: 14.0)

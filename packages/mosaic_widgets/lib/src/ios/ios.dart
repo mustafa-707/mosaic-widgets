@@ -82,6 +82,7 @@ class IosGenerator {
     _register(SpacerHandler());
     _register(ActivityIndicatorHandler());
     _register(NetworkImageHandler());
+    _register(RawHandler());
     _register(AdaptiveHandler());
     _register(FlipperHandler());
     _register(SemanticsHandler());
@@ -810,6 +811,15 @@ $activityCases
     if (value is Map) {
       if (value['__type'] == 'HWBind' && value['key'] is String) {
         keys.add(value['key'] as String);
+      }
+      // MRaw is opaque: the generator cannot find bind keys inside a snippet it
+      // does not parse, so the node declares them and they are honoured here.
+      // Without this the raw view reads entry.data for a key loadData() never
+      // fetched, and renders nothing with no error.
+      if (value['__type'] == 'HWRaw' && value['binds'] is List) {
+        for (final k in value['binds'] as List) {
+          if (k is String) keys.add(k);
+        }
       }
       for (final v in mosaicWalkChildren(value, platform: 'ios')) {
         _collectFromValue(v, keys);

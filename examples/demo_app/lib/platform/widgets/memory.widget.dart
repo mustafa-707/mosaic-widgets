@@ -124,7 +124,24 @@ MosaicDefinition buildMemory() => MosaicDefinition(
             ]),
           ),
 
-          const MSizedBox.height(10),
+          const MSizedBox.height(8),
+
+          // Escape hatch: SwiftUI's Gauge has no DSL node, and RemoteViews has
+          // no gauge at all — so iOS gets the real control and Android a plain
+          // line of text. Mosaic still wires the data.
+          MRaw(
+            swift:
+                'Gauge(value: (mosaicNum(entry.data["mosaic_memory_used_percent"]) ?? 0) / 100.0) '
+                '{ EmptyView() }.gaugeStyle(.accessoryLinearCapacity).tint(.green)',
+            androidXml:
+                '<TextView android:layout_width="wrap_content" '
+                'android:layout_height="wrap_content" '
+                'android:text="RAM" android:textSize="9sp" '
+                'android:textColor="#64748B" />',
+            binds: const ['mosaic_memory_used_percent'],
+          ),
+
+          const MSizedBox.height(8),
 
           // Swaps to a spinner mid-run rather than sitting there looking inert.
           MVisibility(

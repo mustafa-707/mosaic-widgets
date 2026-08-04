@@ -257,6 +257,34 @@ content changes. Prefer real DSL nodes where they exist. Keep `logicalSize`
 modest on Android — the bitmap crosses a Binder transaction with the RemoteViews
 update, and an oversized one silently drops the whole update.
 
+### MRaw — verbatim native code
+
+The ceiling remover. Every other node is a bounded vocabulary; here you write
+the platform's own UI language and Mosaic drops it in unchanged, while still
+generating everything around it — App Group wiring, timeline, data store,
+update path.
+
+```dart
+MRaw(
+  swift: 'Gauge(value: pct) { EmptyView() }.gaugeStyle(.accessoryLinearCapacity)',
+  androidXml: '<TextView android:text="RAM" '
+      'android:layout_width="wrap_content" android:layout_height="wrap_content" />',
+  binds: ['mosaic_memory_used_percent'],
+)
+```
+
+**Reading data.** On iOS `entry` is in scope: `entry.data["key"]`. On Android a
+RemoteViews update is applied by id, so give your view an `android:id` and list
+the key. Either way **declare the keys in `binds`** — Mosaic cannot parse a
+snippet, so a key it does not know about is never fetched, and the view renders
+empty with no error.
+
+**What you give up.** Nothing inside the snippet is validated, adapted for
+light/dark, or checked against the RemoteViews whitelist — a class Android
+refuses to inflate fails on the home screen at run time ("Can't load widget"),
+not at build time. A platform with no snippet renders nothing there, which is a
+legitimate way to ship a feature on one platform only.
+
 ### MAdaptive — a different subtree per platform
 
 The escape hatch for what genuinely cannot be expressed once. Chosen at

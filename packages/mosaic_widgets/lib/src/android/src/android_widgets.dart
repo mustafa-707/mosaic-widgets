@@ -72,6 +72,38 @@ $rendered
 /// iOS-only node inside it produces no XML — and, because the bind and button
 /// collectors are threaded through this traversal, nothing from that branch is
 /// registered for the provider either.
+/// Emits an [MRaw]'s layout XML verbatim.
+///
+/// Unchecked by design. Note RemoteViews only inflates whitelisted classes, so
+/// a view Android refuses to inflate fails on the home screen at run time —
+/// "Can't load widget" — rather than at build time.
+class RawHandler extends AndroidNodeHandler {
+  @override
+  String get type => 'HWRaw';
+  @override
+  String handle(
+    IRNode node,
+    Map<String, Set<String>> usedBinds,
+    List<String> visibilityKeys,
+    Map<String, String> timers,
+    List<Map<String, dynamic>> buttons,
+    AndroidGenerator context, {
+    bool isInsideLinearLayout = false,
+    bool isVertical = true,
+  }) {
+    // Declared binds are registered so the provider still resolves them; the
+    // generator cannot see inside the snippet to discover them itself.
+    for (final key in (node.data['binds'] as List?) ?? const []) {
+      if (key is String) (usedBinds[key] ??= <String>{}).add('text');
+    }
+    final xml = node.data['androidXml'];
+    if (xml is! String || xml.isEmpty) {
+      return '<!-- MRaw: no androidXml for this platform -->';
+    }
+    return '<!-- MRaw — hand-written, not generated -->\n$xml';
+  }
+}
+
 class AdaptiveHandler extends AndroidNodeHandler {
   @override
   String get type => 'HWAdaptive';
