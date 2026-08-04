@@ -251,19 +251,56 @@ class MosaicTv {
 class MosaicBridge {
   static const MethodChannel _channel = MethodChannel('mosaic_bridge');
   static final _onDeepLinkController = StreamController<String>.broadcast();
+
+  /// The last deep link that arrived with nobody listening.
+  ///
+  /// A broadcast stream drops events that have no subscriber, and the native
+  /// side delivers a cold-launch tap during plugin registration — before
+  /// `runApp` has run, let alone before anything subscribed. Without holding
+  /// it, opening the app *from a widget* lost the route that made it open.
+  static String? _pendingDeepLink;
   static String? _appGroupId;
 
   static bool _initialized = false;
 
   /// Sets the App Group ID for iOS data sharing.
   static Future<void> setAppGroupId(String groupId) async {
+    // Arms the method-call handler as early as possible: apps set the group in
+    // main(), which is well before anything subscribes to onDeepLink.
+    _ensureInitialized();
     _appGroupId = groupId;
   }
 
   /// Stream of deep links received from widgets.
+  ///
+  /// Replays a link that arrived before anyone was listening, so a tap that
+  /// cold-launched the app is not lost between registration and `runApp`.
   static Stream<String> get onDeepLink {
     _ensureInitialized();
-    return _onDeepLinkController.stream;
+    final pending = _pendingDeepLink;
+    if (pending == null) return _onDeepLinkController.stream;
+    _pendingDeepLink = null;
+    return _onDeepLinkController.stream.transform(_prependTransformer(pending));
+  }
+
+  static StreamTransformer<String, String> _prependTransformer(String first) =>
+      StreamTransformer<String, String>.fromBind(
+        (source) async* {
+          yield first;
+          yield* source;
+        },
+      );
+
+  /// The deep link that launched the app, if a widget tap did.
+  ///
+  /// A pull alternative to [onDeepLink] for routing at startup: read it once
+  /// in `main` before deciding the initial route. Returns null when the app
+  /// was opened normally, and clears itself so a later read does not re-route.
+  static Future<String?> initialDeepLink() async {
+    _ensureInitialized();
+    final pending = _pendingDeepLink;
+    _pendingDeepLink = null;
+    return pending;
   }
 
   static void _ensureInitialized() {
@@ -272,7 +309,11 @@ class MosaicBridge {
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'onDeepLink') {
         final args = call.arguments as Map?;
-        _onDeepLinkController.add(args?['url'] ?? '');
+        final url = (args?['url'] as String?) ?? '';
+        if (!_onDeepLinkController.hasListener) {
+          _pendingDeepLink = url;
+        }
+        _onDeepLinkController.add(url);
       } else if (call.method == 'backgroundCallback') {
         final args = call.arguments as Map?;
         final callbackName = args?['callbackName'] as String?;

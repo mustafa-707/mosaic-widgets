@@ -204,6 +204,22 @@ hidden — the same class of documented lossiness as `spaceAround` on Android.
   - **Rounded containers**: a bound background on an `MContainer` with a `radius` keeps its corners. The layout carries a real shape and the provider *tints* it (`setBackgroundTintList`) rather than replacing the background — `setBackgroundColor` installs a flat `ColorDrawable` and would discard the shape. Tinting is **API 31+**; on older Android the flat fill is the only option RemoteViews offers, so the colour is right and the corners are square there.
 - **Lock-screen note**: on iOS accessory (Lock Screen) widgets the OS renders content tinted/monochrome, so custom colors are largely ignored; Mosaic emits `.widgetAccentable()` on accent-able content.
 
+### Routing a tap that launched the app
+
+`MosaicBridge.onDeepLink` is a broadcast stream, and broadcast streams drop
+events with no subscriber. A tap that *cold-launches* the app is delivered
+during plugin registration — before `runApp`, let alone before a `StreamBuilder`
+exists — so route on the pull API at startup:
+
+```dart
+final launchedFrom = await MosaicBridge.initialDeepLink();  // null if opened normally
+runApp(MyApp(initialRoute: launchedFrom));
+```
+
+It clears itself, so a later read will not send the user somewhere a second
+time. The stream also replays a link that arrived early, so an app that only
+listens still sees it — but reading it explicitly is clearer about intent.
+
 ### Reading back, files, and rendering Flutter into a widget
 
 The shared store is not write-only. The widget writes to it too — an
