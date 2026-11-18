@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.1 - 2026-11-18
+### Added
+- UIScene lifecycle support. The generated `MosaicPlugin` now also registers a
+  scene delegate, so deep links (including the tap that cold-launches the app)
+  and the pending widget-callback drain keep working in apps on the scene
+  lifecycle, which Flutter 3.50 makes the default. Hosts that have not migrated
+  keep working unchanged. `docs/IOS_SETUP.md` shows the scene-based
+  `AppDelegate`.
+
+### Changed
+- Verified against Flutter 3.50.0 / Dart 3.14: library tests and analysis pass,
+  and the generated code builds in the demo app for iOS and Android (Gradle
+  9.5, AGP 9.3, Kotlin 2.4). The package SDK constraint is unchanged.
+
 ## 0.3.0 - 2026-08-04
 ### Added
 - `MRaw(swift:, androidXml:, binds:)` — verbatim native code. Your SwiftUI or
