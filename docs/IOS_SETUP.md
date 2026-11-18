@@ -66,27 +66,49 @@ Two one-time steps:
    joins the Runner target. (The widget extension folder is auto-synced;
    `Runner` is not.) Skip this and the build fails with
    `Cannot find 'MosaicPlugin' in scope`.
-2. Register it in `AppDelegate.swift`:
+2. Register it in `AppDelegate.swift`. Flutter 3.50 apps use the UIScene
+   lifecycle (the `flutter create` default), where plugins register from
+   `didInitializeImplicitFlutterEngine`:
 
 ```swift
 import Flutter
 import UIKit
 
 @main
-@objc class AppDelegate: FlutterAppDelegate {
+@objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    GeneratedPluginRegistrant.register(with: self)
-    MosaicPlugin.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
+  }
+
+  func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
+    GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
+    MosaicPlugin.register(with: engineBridge.pluginRegistry)
   }
 }
 ```
 
+   The scene lifecycle also needs `Runner/SceneDelegate.swift`
+   (`class SceneDelegate: FlutterSceneDelegate {}`, added to the Runner target)
+   and a `UIApplicationSceneManifest` in `Info.plist` naming it. Both are in
+   `examples/demo_app/ios/Runner/`; Flutter's
+   [UIScene migration guide](https://flutter.dev/to/uiscene-migration) covers
+   existing apps.
+
+   Not migrated yet? The older form still works, because the plugin serves both
+   lifecycles:
+
+```swift
+GeneratedPluginRegistrant.register(with: self)
+MosaicPlugin.register(with: self)
+```
+
 That is the whole integration — there is no channel boilerplate to copy. The
-reference is `examples/demo_app/ios/Runner/AppDelegate.swift`.
+reference is `examples/demo_app/ios/Runner/AppDelegate.swift`. Deep links
+(including the one that cold-launches the app) and the pending-callback drain
+behave the same on either lifecycle.
 
 `MosaicBridge.setAppGroupId(...)` is optional: the plugin falls back to the
 `ios_app_group` from `mosaic.yaml`. An explicit call still wins.

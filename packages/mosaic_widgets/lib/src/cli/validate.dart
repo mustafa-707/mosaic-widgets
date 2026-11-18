@@ -348,7 +348,7 @@ List<Problem> validateProject(MosaicConfig config, String projectRoot) {
   if (appDelegate.existsSync() &&
       !appDelegate.readAsStringSync().contains('MosaicPlugin.register')) {
     problems.add(Problem(
-      'ios/Runner/AppDelegate.swift never calls MosaicPlugin.register(with: self). '
+      'ios/Runner/AppDelegate.swift never calls MosaicPlugin.register(with:). '
       'Without it the mosaic_bridge channel is dead: saves, refreshes and '
       'Live Activities all fail at runtime.',
       fatal: true,

@@ -61,6 +61,20 @@ void main() {
     expect(readFile(r.file(pluginPath)), contains('onDeepLink'));
   });
 
+  test('serves the UIScene lifecycle so scene-based hosts keep working',
+      () async {
+    final r = await runIos([irDef(text('hi'))]);
+    final swift = readFile(r.file(pluginPath));
+    expect(swift, contains('FlutterSceneLifeCycleDelegate'));
+    expect(swift, contains('registrar.addSceneDelegate(instance)'));
+    // A cold-launch URL arrives in connectionOptions, not openURLContexts.
+    expect(swift, contains('willConnectTo session: UISceneSession'));
+    expect(swift, contains('connectionOptions?.urlContexts'));
+    expect(swift, contains('openURLContexts URLContexts'));
+    expect(swift, contains('sceneWillEnterForeground'));
+    expect(swift, contains('sceneDidBecomeActive'));
+  });
+
   test('falls back to the configured App Group so setAppGroupId is optional',
       () async {
     final r = await runIos([irDef(text('hi'))]);
