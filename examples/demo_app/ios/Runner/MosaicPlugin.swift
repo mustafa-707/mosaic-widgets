@@ -12,7 +12,7 @@ import WidgetKit
 /// That is the whole integration — the channel, App Group writes, widget
 /// reloads, Live Activity lifecycle, deep links and pending-callback draining
 /// are all handled here.
-public class MosaicPlugin: NSObject, FlutterPlugin {
+public class MosaicPlugin: NSObject, FlutterPlugin, FlutterSceneLifeCycleDelegate {
     /// The App Group from mosaic.yaml. Used when Dart has not called
     /// `MosaicBridge.setAppGroupId(...)`, so that call is optional.
     public static let appGroup = "group.com.example.demo_app.widgets"
@@ -28,6 +28,7 @@ public class MosaicPlugin: NSObject, FlutterPlugin {
         instance.channel = channel
         registrar.addMethodCallDelegate(instance, channel: channel)
         registrar.addApplicationDelegate(instance)
+        registrar.addSceneDelegate(instance)
         // Publish battery from the app process and keep it current: the widget
         // extension cannot enable monitoring, so this is the only place the
         // value can come from.
@@ -351,7 +352,46 @@ public class MosaicPlugin: NSObject, FlutterPlugin {
         open url: URL,
         options: [UIApplication.OpenURLOptionsKey: Any] = [:]
     ) -> Bool {
-        channel?.invokeMethod("onDeepLink", arguments: ["url": url.absoluteString])
+        forwardDeepLink(url)
         return false
+    }
+
+    private func forwardDeepLink(_ url: URL) {
+        channel?.invokeMethod("onDeepLink", arguments: ["url": url.absoluteString])
+    }
+
+    // MARK: - UISceneDelegate
+    //
+    // Apps on the UIScene lifecycle no longer receive the UIApplicationDelegate
+    // URL and foreground callbacks above; Flutter forwards the scene
+    // equivalents here instead. Both paths share the same handlers, so hosts
+    // on either lifecycle behave identically.
+
+    public func scene(
+        _ scene: UIScene,
+        willConnectTo session: UISceneSession,
+        options connectionOptions: UIScene.ConnectionOptions?
+    ) -> Bool {
+        drainPendingCallback()
+        guard let url = connectionOptions?.urlContexts.first?.url else { return false }
+        forwardDeepLink(url)
+        return false
+    }
+
+    public func scene(
+        _ scene: UIScene,
+        openURLContexts URLContexts: Set<UIOpenURLContext>
+    ) -> Bool {
+        guard let url = URLContexts.first?.url else { return false }
+        forwardDeepLink(url)
+        return false
+    }
+
+    public func sceneWillEnterForeground(_ scene: UIScene) {
+        drainPendingCallback()
+    }
+
+    public func sceneDidBecomeActive(_ scene: UIScene) {
+        drainPendingCallback()
     }
 }
