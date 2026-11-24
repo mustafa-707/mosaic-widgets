@@ -50,6 +50,11 @@ class IRDefinition {
   /// an empty list (no configuration).
   final List<Map<String, dynamic>> params;
 
+  /// Widget-level tap URL: a `String` literal or an `HWBind` map
+  /// (`{__type: HWBind, key, defaultValue?}`). Null when the definition does
+  /// not declare one.
+  final Object? widgetUrl;
+
   /// Creates an [IRDefinition].
   IRDefinition({
     required this.name,
@@ -61,7 +66,23 @@ class IRDefinition {
     this.previewImage,
     this.resizeMode = 'none',
     this.params = const [],
+    this.widgetUrl,
   });
+
+  /// The literal widget URL, or null when absent or bound.
+  String? get widgetUrlLiteral {
+    final u = widgetUrl;
+    return u is String && u.isNotEmpty ? u : null;
+  }
+
+  /// The bind map `{key, defaultValue?}` when the widget URL is an `MBind`.
+  Map<String, dynamic>? get widgetUrlBind {
+    final u = widgetUrl;
+    if (u is Map && u['__type'] == 'HWBind' && u['key'] is String) {
+      return u.cast<String, dynamic>();
+    }
+    return null;
+  }
 
   /// Deserializes an [IRDefinition] from a JSON map.
   factory IRDefinition.fromJson(Map<String, dynamic> json) =>

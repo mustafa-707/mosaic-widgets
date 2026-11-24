@@ -2,4 +2,4 @@
 ///
 /// Kept in step with `pubspec.yaml` by a test, so `--version` cannot drift from
 /// what was actually released.
-const String packageVersion = '0.3.2';
+const String packageVersion = '0.3.3';

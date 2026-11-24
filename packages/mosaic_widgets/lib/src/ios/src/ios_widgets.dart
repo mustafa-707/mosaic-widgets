@@ -434,6 +434,37 @@ class TimerHandler extends IosNodeHandler {
     final modifiers = '$bold$color$size.monospacedDigit()';
 
     final countUp = node.data['countUp'] == true;
+    if (isBind) {
+      // A pushed target may be absent (the app has not run yet) or, for a
+      // countdown, already in the past. `.timer` would then count UP from the
+      // epoch / from expiry, so show zero instead — matching the Android
+      // provider, which leaves a stopped 00:00 chronometer.
+      final key = swiftEscape(targetEpoch['key'] as String);
+      final read = 'mosaicNum(${context.bindSource}["$key"])';
+      final live = countUp ? '' : ', _ms / 1000.0 > Date().timeIntervalSince1970';
+      final running = countUp
+          ? '''if #available(iOS 16.0, *) {
+            Text(timerInterval: _d...Date.distantFuture, countsDown: false)
+        } else {
+            Text(_d, style: .timer)
+        }'''
+          // timerInterval (iOS 16+) stops at 0:00 on its own at expiry, between
+          // timeline reloads; `.timer` alone would start counting up.
+          : '''if #available(iOS 16.0, *) {
+            Text(timerInterval: Date()..._d, countsDown: true)
+        } else {
+            Text(_d, style: .timer)
+        }''';
+      return '''
+Group {
+    if let _ms = $read$live {
+        let _d = Date(timeIntervalSince1970: _ms / 1000.0)
+        $running
+    } else {
+        Text("0:00")
+    }
+}$modifiers''';
+    }
     if (countUp) {
       // Counting up: SwiftUI's relative timer Text counts down by default, so
       // we use Text(timerInterval:countsDown:) with countsDown: false to show

@@ -519,6 +519,7 @@ class AndroidGenerator {
         visibilityKeys,
         timers,
         buttons,
+        wrapRoot: def.widgetUrl != null,
       );
       await layoutFile.writeAsString(layoutXml);
 
@@ -538,6 +539,7 @@ class AndroidGenerator {
           visibilityKeys,
           timers,
           buttons,
+          wrapRoot: def.widgetUrl != null,
         );
         await File(p.join(layoutDir.path, '${layoutName}_compact.xml'))
             .writeAsString(compactXml);
@@ -821,17 +823,37 @@ $body
     Map<String, Set<String>> usedBinds,
     List<String> visibilityKeys,
     Map<String, String> timers,
-    List<Map<String, dynamic>> buttons,
-  ) {
+    List<Map<String, dynamic>> buttons, {
+    bool wrapRoot = false,
+  }) {
     final buffer = StringBuffer();
     // The XML declaration MUST be the very first bytes of the file or AAPT
     // rejects it ("processing instruction target matching xml is not allowed").
     buffer.writeln('<?xml version="1.0" encoding="utf-8"?>');
     buffer.writeln(xmlSentinel);
     // Root element should always be match_parent to fill the widget cell
-    buffer.write(
-      nodeToXml(node, usedBinds, visibilityKeys, timers, buttons, isRoot: true),
+    final root = nodeToXml(
+      node,
+      usedBinds,
+      visibilityKeys,
+      timers,
+      buttons,
+      isRoot: true,
     );
+    if (wrapRoot) {
+      // A definition with a widget-level URL needs one view the provider can
+      // attach the tap to. The wrapper is a plain FrameLayout with a fixed id,
+      // so the tree below it (and any button inside it) is untouched; taps on
+      // a button reach the button, every other tap bubbles up to this view.
+      buffer.write('<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"\n'
+          '    android:id="@+id/hw_root"\n'
+          '    android:layout_width="match_parent"\n'
+          '    android:layout_height="match_parent">\n'
+          '$root\n'
+          '</FrameLayout>');
+    } else {
+      buffer.write(root);
+    }
     return buffer.toString();
   }
 

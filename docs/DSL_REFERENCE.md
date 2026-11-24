@@ -23,6 +23,34 @@ name and file if they disagree.
 - `resizeMode`: `MResizeMode` (`none` | `horizontal` | `vertical` | `both`).
 - `compactRoot`: `MNode?` — an alternate tree for the smallest sizes. **iOS
   only** (see below).
+- `widgetUrl`: `String` or `MBind`, optional — the URL a tap opens anywhere that
+  has no button of its own (see below).
+
+#### `widgetUrl` — the tap target of the whole widget
+
+WidgetKit supports exactly **one** tap target on `systemSmall`: a single
+`widgetURL`. `Link` views inside the tree (every `MButton(MLaunchUrlAction(...))`)
+do nothing at that size. Set `widgetUrl:` to give the widget one:
+
+```dart
+MosaicDefinition(
+  name: 'EndingSoon',
+  widgetUrl: MBind('offer_url', defaultValue: 'mosaic://offers'), // or a literal
+  root: ...,
+);
+```
+
+- A `String` is used as written; an `MBind` is read from the shared store on
+  every update, so the app can point it at the offer currently shown
+  (`MosaicBridge.saveString('offer_url', 'mosaic://offer/42')`). An unset bind
+  with no default, or an empty string, leaves the widget with no tap target.
+- **iOS** emits `.widgetURL(...)` on the widget view. Without `widgetUrl:` the
+  view keeps reading the legacy `global_url` key, as before; with a bound
+  `widgetUrl:` that key is the fallback if the bound one is unset.
+- **Android** attaches it as the click action of the widget's root view. A tap
+  on a button still runs the button's own action; every other tap opens the URL.
+- A literal URL is checked like `MLaunchUrlAction`: use `http(s)` or the
+  `deep_link_scheme` from `mosaic.yaml`.
 
 #### `compactRoot` — a second tree for small tiles
 
@@ -95,7 +123,11 @@ the directory your existing entries already use.
   - Follows `http`→`https` redirects manually and retries over https, because `HttpURLConnection` silently drops cross-protocol redirects and cleartext is blocked by default in release builds.
   - Decoded **downsampled** (longest side ≤ 320px). A full-resolution photo would exceed Android's RemoteViews transaction limit and silently blank the entire widget — every bound value at once, with nothing logged.
 - **MProgressBar**: Native progress bar. Props: `value` (`double` or `MBind`), `max`, `color`. _Runtime binding: `value` supports `MBind`._
-- **MTimer**: Native chronometer counting up or down to a `target` (`DateTime`). Props: `countUp`, `style`. _Runtime binding: the timer target is resolvable at runtime._
+- **MTimer**: Native chronometer counting up or down to a `target` (`DateTime`). Props: `countUp`, `style`. _Runtime binding: use `MTimer.bound(MBind('ends_at'))` for a target the app pushes at runtime._
+  - `MTimer.bound(MBind('ends_at'), countUp: false)` reads **epoch milliseconds** from the shared store (`MosaicBridge.saveString('ends_at', '1767225600000')` or a number) — the way to show a per-item end time such as an offer expiry, which a `DateTime target:` baked in at build time cannot. Not `const`.
+  - **Android**: the provider recomputes the `setChronometer` base (`elapsedRealtime() + (epoch - now)`) on every update, with `setChronometerCountDown(true)` for a countdown. **iOS**: `Text(date, style: .timer)` from the timeline entry.
+  - A missing key, or a countdown that had already passed when the widget last updated, shows zero (`00:00` on Android, `0:00` on iOS) instead of a runaway count. A count-up only needs the key to exist.
+  - On iOS 16+ a countdown stops at `0:00` by itself at expiry. **Limitation on Android:** the base is set when the provider updates, not live, so a countdown that expires *between* updates keeps ticking into negative time until the next update (a `Chronometer` has no stop-at-zero). Pushing a new target and calling `MosaicBridge.refreshAll()`, or `updateInterval`, refreshes it. On iOS 14/15 an expired countdown counts up until the next timeline reload.
 - **MButton**: Makes its `child` clickable, triggering an `MAction`.
 
 ### Charts

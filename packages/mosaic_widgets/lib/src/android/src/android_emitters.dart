@@ -850,6 +850,11 @@ $activityCases
         if (receiverRegistered) return
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context, intent: Intent) {
+                // Below API 33 a dynamically registered receiver cannot be made
+                // private, so any app could broadcast this action. Only our own
+                // components know the per-install token, so anything else is
+                // dropped (on 33+ the receiver is also registered NOT_EXPORTED).
+                if (!MosaicCallbackAuth.accepts(ctx, intent.getStringExtra(MosaicCallbackAuth.EXTRA))) return
                 val name = intent.getStringExtra("callbackName") ?: return
                 channel?.invokeMethod("backgroundCallback", mapOf("callbackName" to name))
             }
@@ -880,6 +885,28 @@ $activityCases
 $pinEntries
         )
     }
+}
+
+/// Per-install secret that authenticates the in-app MOSAIC_CALLBACK broadcast.
+///
+/// A receiver registered at runtime is reachable by every app on API < 33, and
+/// the SDK offers no permission-free way to prevent that. The token lives in
+/// app-private storage, so only this app's own senders (the Quick Settings
+/// tile) can attach it. It needs no manifest entry and no extra dependency.
+object MosaicCallbackAuth {
+    const val EXTRA = "mosaicToken"
+
+    fun token(context: Context): String {
+        val prefs = context.getSharedPreferences("mosaic_internal", Context.MODE_PRIVATE)
+        prefs.getString("callback_token", null)?.let { return it }
+        val fresh = java.util.UUID.randomUUID().toString()
+        prefs.edit().putString("callback_token", fresh).apply()
+        return fresh
+    }
+
+    fun accepts(context: Context, presented: String?): Boolean =
+        presented != null && java.security.MessageDigest.isEqual(
+            presented.toByteArray(), token(context).toByteArray())
 }
 ''');
   }

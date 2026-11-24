@@ -194,6 +194,9 @@ Set<String> referencedLaunchUrls(List<IRDefinition> definitions) {
 
   for (final def in definitions) {
     walk(def.root.toJson());
+    // A literal widget-level URL is routed exactly like a launch action.
+    final widgetUrl = def.widgetUrlLiteral;
+    if (widgetUrl != null) urls.add(widgetUrl);
   }
   return urls;
 }

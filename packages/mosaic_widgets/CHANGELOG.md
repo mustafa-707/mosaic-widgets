@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.3.3 - 2026-11-24
+### Fixed
+- Security: the generated widget `<receiver>` entries are now
+  `android:exported="false"`. Their `onReceive` handles `MOSAIC_TOGGLE`,
+  `MOSAIC_CALLBACK` and refresh actions with no sender check, so while exported
+  any app could flip stored values or trigger callbacks. The system still
+  delivers `APPWIDGET_UPDATE`, and widget buttons are the app's own immutable
+  `PendingIntent`s, so widgets behave as before. The configuration activity and
+  Quick Settings tiles stay exported because the platform must reach them.
+  `mosaic build` rewrites the manifest entries, so re-running it applies this.
+- Security: the in-app `MOSAIC_CALLBACK` receiver registered by `MosaicPlugin`
+  was reachable by other apps below API 33. Broadcasts must now carry a
+  per-install token held in app-private storage (the Quick Settings tile adds
+  it); anything else is dropped. No new Gradle dependency or manifest entry.
+- Android: the repeating alarm armed when the first widget is added is now
+  cancelled in `onDisabled` when the last one is removed, instead of waking the
+  app forever. `updatePeriodMillis` is unaffected.
+- iOS: `systemSmall` supports one `widgetURL` only (`Link` views inside the tree
+  do nothing there) and the generated view resolved it from an unset
+  `global_url` key, i.e. to nil. See `MosaicDefinition(widgetUrl:)` below.
+
+### Added
+- `MosaicDefinition(widgetUrl:)` — a `String` or an `MBind`: the URL a tap opens
+  anywhere that has no button of its own. iOS emits it as `.widgetURL(...)`
+  (the only tap target on `systemSmall`); Android attaches it to the root view,
+  so buttons keep their own action. Optional: definitions without it generate
+  the same output as before. A literal is validated against `deep_link_scheme`
+  like `MLaunchUrlAction`.
+- `MTimer.bound(MBind('key'))` — a timer whose target is epoch milliseconds the
+  app pushes at runtime (an offer's own end time). Android computes the
+  `setChronometer` base on every provider update; iOS reads the timeline entry.
+  A missing key, or a count-down already past at the last update, shows zero;
+  on iOS 16+ a countdown also stops at `0:00` by itself. Limitation: the
+  Android base is set only when the provider updates, so a countdown expiring
+  between updates ticks into negative time until the next one. Push a new
+  target and `refreshAll()` (or use `updateInterval`) to refresh it.
+- Upgrade note: the in-app `MOSAIC_CALLBACK` receiver now requires the
+  `MosaicCallbackAuth.EXTRA` token. Only the generated Quick Settings tile sends
+  that broadcast and it adds the token; hand-written senders must do the same.
+
 ## 0.3.2 - 2026-11-24
 ### Fixed
 - The generated Android `MosaicPlugin.register(...)` and its callback-receiver

@@ -3,6 +3,32 @@
 part of '../ios.dart';
 
 extension IosWidgetViews on IosGenerator {
+  /// Every shared-store key the generated provider must load: the root's binds
+  /// plus the widget URL's own bind, when it declares one.
+  Set<String> _definitionBindKeys(IRDefinition def) {
+    final keys = collectBindKeys(def.root);
+    final urlBind = def.widgetUrlBind;
+    if (urlBind != null) keys.add(urlBind['key'] as String);
+    return keys;
+  }
+
+  /// The Swift expression `loadGlobalUrl()` returns. Without a declared
+  /// `widgetUrl` it is the legacy `global_url` key, byte-for-byte as before.
+  ///
+  /// WidgetKit honours exactly one `widgetURL` on `systemSmall`; `Link` views in
+  /// the tree do nothing there, so this is the only tap target a small widget
+  /// can have.
+  String _widgetUrlSwiftExpr(IRDefinition def) {
+    final literal = def.widgetUrlLiteral;
+    if (literal != null) return '"${swiftEscape(literal)}"';
+    final bind = def.widgetUrlBind;
+    if (bind == null) return 'entry.data["global_url"] as? String ?? ""';
+    final key = swiftEscape(bind['key'] as String);
+    final fallback = swiftEscape((bind['defaultValue'] as String?) ?? '');
+    return '(entry.data["$key"] as? String) ?? '
+        '(entry.data["global_url"] as? String) ?? "$fallback"';
+  }
+
   String _pushConfiguration(IRDefinition def, {bool configurable = false}) {
     final configuration = configurable
         ? 'AppIntentConfiguration(kind: kind, intent: ${def.name}ConfigIntent.self, provider: ${def.name}Provider())'
@@ -125,7 +151,7 @@ struct ${def.name}PushHandler: WidgetPushHandler {
     if (def.params.isNotEmpty) {
       return _generateConfigurableWidget(def);
     }
-    final usedKeys = collectBindKeys(def.root).toList()..sort();
+    final usedKeys = _definitionBindKeys(def).toList()..sort();
     // The gallery preview runs before the app has ever written anything, so it
     // renders whatever defaults the binds declared rather than a wall of `--`.
     final defaults = collectBindDefaults(def.root);
@@ -213,7 +239,7 @@ ${_familyEnvironment(def)}
     }
 
     private func loadGlobalUrl() -> String {
-        return entry.data["global_url"] as? String ?? ""
+        return ${_widgetUrlSwiftExpr(def)}
     }
 }
 
@@ -306,7 +332,7 @@ ${_pushConfiguration(def)}
   /// `WidgetConfigurationIntent` are iOS-17 APIs; the WidgetBundle registers it
   /// under `if #available(iOS 17.0, *)`.
   String _generateConfigurableWidget(IRDefinition def) {
-    final usedKeys = collectBindKeys(def.root).toList()..sort();
+    final usedKeys = _definitionBindKeys(def).toList()..sort();
     // The gallery preview runs before the app has ever written anything, so it
     // renders whatever defaults the binds declared rather than a wall of `--`.
     final defaults = collectBindDefaults(def.root);
@@ -441,7 +467,7 @@ struct ${def.name}View: View {
     }
 
     private func loadGlobalUrl() -> String {
-        return entry.data["global_url"] as? String ?? ""
+        return ${_widgetUrlSwiftExpr(def)}
     }
 }
 

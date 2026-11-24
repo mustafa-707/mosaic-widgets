@@ -124,6 +124,20 @@ Future<void> main() async {
         'align': 'center',
       }),
       _text(_bind('news_title'), style: {'align': 'end'}),
+      // Timers whose target the app pushes at runtime (MTimer.bound), count
+      // down and count up.
+      {
+        '__type': 'HWTimer',
+        'target': _bind('ends_at'),
+        'countUp': false,
+        'style': {'bold': true, 'size': 14},
+      },
+      {
+        '__type': 'HWTimer',
+        'target': _bind('started_at'),
+        'countUp': true,
+        'style': <String, dynamic>{},
+      },
       // Container shadow + per-corner radius
       {
         '__type': 'HWContainer',
@@ -156,7 +170,13 @@ Future<void> main() async {
     ],
   };
 
-  final def = IRDefinition(name: 'TestW', root: IRNode.fromJson(root));
+  // widgetUrl as an MBind, so the bound `loadGlobalUrl()` expression is
+  // type-checked too.
+  final def = IRDefinition(
+    name: 'TestW',
+    root: IRNode.fromJson(root),
+    widgetUrl: {'__type': 'HWBind', 'key': 'offer_url', 'defaultValue': 'a://b'},
+  );
   final cfg = MosaicConfig.fromJson({
     'app': {
       'bundle_id': 'com.acme.app',

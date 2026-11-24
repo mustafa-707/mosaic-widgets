@@ -80,6 +80,26 @@ extension AndroidProviderEmitters on AndroidGenerator {
       // so the base lands in the past) gives a growing positive. Negating the
       // offset for count-up put the base in the future and rendered a negative
       // timer that grew more negative.
+      if (targetEpoch.startsWith('bind:')) {
+        // Target pushed by the app as epoch milliseconds. Recomputed against the
+        // elapsedRealtime clock on every update, so the countdown stays right
+        // however long the widget has been on screen. Missing or already-past
+        // (count-down) leaves a stopped chronometer reading 00:00.
+        final lit = kotlinEscape(targetEpoch.substring('bind:'.length));
+        final live = countDown
+            ? 'epoch$id > System.currentTimeMillis()'
+            : 'epoch$id > 0L';
+        return '''
+        val epoch$id = MosaicData.resolveDouble(context, "$lit").toLong()
+        if ($live) {
+            views.setChronometer(R.id.hw_timer_$id, android.os.SystemClock.elapsedRealtime() + (epoch$id - System.currentTimeMillis()), null, true)
+            views.setChronometerCountDown(R.id.hw_timer_$id, $countDown)
+        } else {
+            views.setChronometer(R.id.hw_timer_$id, android.os.SystemClock.elapsedRealtime(), null, false)
+            views.setChronometerCountDown(R.id.hw_timer_$id, false)
+        }
+      ''';
+      }
       return '''
         val target$id = ${targetEpoch}L
         val offset$id = target$id - System.currentTimeMillis()
@@ -409,6 +429,30 @@ $fillBlock                canvas.drawPath(path, paint)
       }
     }).join('\n        ');
 
+    // Widget-level tap target: the click action of the wrapper the layout
+    // generator adds around the root (see `wrapRoot`). Buttons keep their own
+    // action because a tap on them never reaches the wrapper.
+    final widgetUrlLiteral = def.widgetUrlLiteral;
+    final widgetUrlBind = def.widgetUrlBind;
+    final String? widgetUrlExpr = widgetUrlLiteral != null
+        ? '"${kotlinEscape(widgetUrlLiteral)}"'
+        : widgetUrlBind == null
+            ? null
+            : 'MosaicData.resolveString(context, '
+                '"${kotlinEscape(widgetUrlBind['key'] as String)}", '
+                '"${kotlinEscape((widgetUrlBind['defaultValue'] as String?) ?? '')}")';
+    final widgetUrlLogic = widgetUrlExpr == null
+        ? ''
+        : '''
+
+        val widgetUrl: String = $widgetUrlExpr
+        if (widgetUrl.isNotBlank()) {
+            val widgetIntent = android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(widgetUrl))
+            val widgetPendingIntent = android.app.PendingIntent.getActivity(context, appWidgetId * 100 + 99, widgetIntent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+            views.setOnClickPendingIntent(R.id.hw_root, widgetPendingIntent)
+        }
+        ''';
+
     // Per-size trees. API 31+ takes a map of minimum size -> RemoteViews and
     // the launcher picks the largest entry that fits; below 31 there is no way
     // to switch, so the full tree is used at every size.
@@ -500,7 +544,22 @@ $refreshReceive        if (intent.action == mosaicToggleAction) {
         alarmManager.setRepeating(android.app.AlarmManager.RTC, System.currentTimeMillis(), ${def.updateInterval}, pendingIntent)
         ''' : ''}
     }
-
+${def.updateInterval != null ? '''
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        // The last widget of this provider is gone: stop the repeating alarm
+        // armed in onEnabled, or it keeps waking the app for nothing. The
+        // PendingIntent must match onEnabled's (same component, action and
+        // request code) for AlarmManager to recognise it.
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = android.content.Intent(context, $className::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        }
+        val pendingIntent = android.app.PendingIntent.getBroadcast(context, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
+    }
+''' : ''}
     /// Inflates [layoutRes] and applies every update this widget declares.
     ///
     /// Actions naming a view the layout does not contain are skipped by
@@ -520,7 +579,7 @@ $refreshReceive        if (intent.action == mosaicToggleAction) {
         $sparklineLogic
         $barChartLogic
         $listAdapterLogic
-        $buttonLogic
+        $buttonLogic$widgetUrlLogic
 
         return views
     }

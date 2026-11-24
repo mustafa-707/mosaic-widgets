@@ -663,7 +663,11 @@ class TimerHandler extends AndroidNodeHandler {
   }) {
     final target = node.data['target'];
     final id = timers.length.toString();
-    timers[id] = target.toString();
+    // A bound target is read from the shared store by the provider at update
+    // time; it travels through the same map as a `bind:<key>` marker.
+    timers[id] = target is Map && target['__type'] == 'HWBind'
+        ? 'bind:${target['key']}'
+        : target.toString();
     if (node.data['countUp'] == true) {
       context.registerTimerCountUp(id);
     }

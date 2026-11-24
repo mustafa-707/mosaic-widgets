@@ -889,16 +889,37 @@ class MTimer extends MNode {
   final bool countUp;
   final MTextStyle style;
 
+  /// Set by [MTimer.bound]: the shared-store key holding the target as epoch
+  /// milliseconds. When non-null, [target] is a placeholder and ignored.
+  final MBind? targetBind;
+
   const MTimer({
     required this.target,
     this.countUp = false,
     this.style = const MTextStyle(),
-  });
+  }) : targetBind = null;
+
+  /// A timer whose target the app pushes at runtime, as epoch milliseconds
+  /// under [targetBind]'s key (`MosaicBridge.saveString(key, '1767225600000')`
+  /// or a number). Use it for a per-item end time such as an offer expiry,
+  /// which cannot be known when the widget is generated.
+  ///
+  /// The target is re-read on every widget update: on iOS from the timeline
+  /// entry, on Android from the provider via `RemoteViews.setChronometer`.
+  /// While the key is missing, or a count-down target is already in the past,
+  /// the timer shows zero (`0:00` on iOS, `00:00` on Android) rather than a
+  /// runaway count. Not `const`, because the placeholder [target] is a
+  /// [DateTime].
+  MTimer.bound(
+    MBind this.targetBind, {
+    this.countUp = false,
+    this.style = const MTextStyle(),
+  }) : target = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   Map<String, dynamic> toJson() => {
         '__type': 'HWTimer',
-        'target': target.millisecondsSinceEpoch,
+        'target': targetBind?.toJson() ?? target.millisecondsSinceEpoch,
         'countUp': countUp,
         'style': style.toJson(),
       };
@@ -1610,6 +1631,21 @@ class MosaicDefinition {
   /// Defaults to no params.
   final List<MParam> params;
 
+  /// The URL opened when the widget is tapped anywhere that has no button of
+  /// its own: a `String` literal, or an [MBind] whose key the app pushes at
+  /// runtime (for example the offer currently on display).
+  ///
+  /// This is the only tap target iOS honours on `systemSmall`: WidgetKit
+  /// supports a single `widgetURL` there and ignores `Link` views inside the
+  /// tree. On Android it becomes the click action of the widget's root view, so
+  /// a tap on a button still runs the button's own action.
+  ///
+  /// An [MBind] that is unset, or an empty string, leaves the widget without a
+  /// tap target. Optional: when null nothing changes (iOS keeps reading the
+  /// legacy `global_url` key). Use a scheme registered in `deep_link_scheme`
+  /// or `http(s)`.
+  final Object? widgetUrl;
+
   const MosaicDefinition({
     required this.name,
     required this.root,
@@ -1620,12 +1656,18 @@ class MosaicDefinition {
     this.previewImage,
     this.resizeMode = MResizeMode.none,
     this.params = const [],
-  });
+    this.widgetUrl,
+  }) : assert(widgetUrl == null || widgetUrl is String || widgetUrl is MBind,
+            'widgetUrl must be a String or an MBind');
 
   Map<String, dynamic> toJson() => {
         'name': name,
         'root': root.toJson(),
         if (compactRoot != null) 'compactRoot': compactRoot!.toJson(),
+        if (widgetUrl != null)
+          'widgetUrl': widgetUrl is MBind
+              ? (widgetUrl as MBind).toJson()
+              : widgetUrl,
         'updateInterval': updateInterval?.inMilliseconds,
         'width': width,
         'height': height,

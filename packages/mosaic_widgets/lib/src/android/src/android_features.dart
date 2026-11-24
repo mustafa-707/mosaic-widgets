@@ -435,6 +435,7 @@ $clickBody
         val callbackIntent = Intent(mosaicCallbackAction).apply {
             setPackage(packageName)
             putExtra("callbackName", "$callbackName")
+            putExtra(MosaicCallbackAuth.EXTRA, MosaicCallbackAuth.token(this@$className))
         }
         sendBroadcast(callbackIntent)''';
   }

@@ -66,6 +66,20 @@ class NewsWidgetProvider : AppWidgetProvider() {
         alarmManager.setRepeating(android.app.AlarmManager.RTC, System.currentTimeMillis(), 900000, pendingIntent)
         
     }
+    override fun onDisabled(context: Context) {
+        super.onDisabled(context)
+        // The last widget of this provider is gone: stop the repeating alarm
+        // armed in onEnabled, or it keeps waking the app for nothing. The
+        // PendingIntent must match onEnabled's (same component, action and
+        // request code) for AlarmManager to recognise it.
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+        val intent = android.content.Intent(context, NewsWidgetProvider::class.java).apply {
+            action = AppWidgetManager.ACTION_APPWIDGET_UPDATE
+        }
+        val pendingIntent = android.app.PendingIntent.getBroadcast(context, 0, intent, android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE)
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
+    }
 
     /// Inflates [layoutRes] and applies every update this widget declares.
     ///

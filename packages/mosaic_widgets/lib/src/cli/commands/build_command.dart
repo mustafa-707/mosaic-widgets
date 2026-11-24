@@ -178,8 +178,13 @@ String receiverTag(String androidPackage, String widgetName, {String? label}) {
   // Without android:label the widget picker falls back to the application
   // label, so every widget appears under the app's name (and Flutter's icon).
   final labelAttr = ' android:label="${_xmlAttr(label ?? widgetName)}"';
+  // Not exported: the provider's onReceive acts on MOSAIC_TOGGLE / CALLBACK /
+  // REFRESH with no sender check, so an exported receiver would let any app
+  // flip stored values or trigger callbacks. The platform still reaches it:
+  // APPWIDGET_UPDATE/ENABLED/DELETED are sent by the system server, and the
+  // widget buttons are the app's own immutable PendingIntents (app uid).
   return '''
-        <receiver android:name="$receiverName" android:exported="true"$labelAttr>
+        <receiver android:name="$receiverName" android:exported="false"$labelAttr>
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>

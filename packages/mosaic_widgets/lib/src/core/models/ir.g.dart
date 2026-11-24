@@ -21,6 +21,7 @@ IRDefinition _$IRDefinitionFromJson(Map<String, dynamic> json) => IRDefinition(
               ?.map((e) => e as Map<String, dynamic>)
               .toList() ??
           const [],
+      widgetUrl: json['widgetUrl'],
     );
 
 Map<String, dynamic> _$IRDefinitionToJson(IRDefinition instance) =>
@@ -34,4 +35,5 @@ Map<String, dynamic> _$IRDefinitionToJson(IRDefinition instance) =>
       'previewImage': instance.previewImage,
       'resizeMode': instance.resizeMode,
       'params': instance.params,
+      'widgetUrl': instance.widgetUrl,
     };

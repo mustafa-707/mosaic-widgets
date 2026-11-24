@@ -39,6 +39,7 @@ class TorchTileService : TileService() {
         val callbackIntent = Intent(mosaicCallbackAction).apply {
             setPackage(packageName)
             putExtra("callbackName", "toggle_torch")
+            putExtra(MosaicCallbackAuth.EXTRA, MosaicCallbackAuth.token(this@TorchTileService))
         }
         sendBroadcast(callbackIntent)
     }
