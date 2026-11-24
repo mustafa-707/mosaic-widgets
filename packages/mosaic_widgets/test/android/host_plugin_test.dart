@@ -94,4 +94,30 @@ void main() {
       expect(kt, contains('No live_activities declared in mosaic.yaml'));
     });
   });
+
+  // local_auth forces MainActivity onto FlutterFragmentActivity, which is not a
+  // FlutterActivity. The host methods only need a Context and the launch
+  // intent, so they must accept the plain android.app.Activity supertype.
+  group('activity supertype', () {
+    test('register and receiver take android.app.Activity', () async {
+      final kt = (await runAndroid([irDef(text('hi'))])).file(pluginPath);
+      expect(kt, contains('import android.app.Activity'));
+      expect(kt,
+          contains('fun register(activity: Activity, engine: FlutterEngine)'));
+      expect(kt,
+          contains('private fun registerCallbackReceiver(activity: Activity)'));
+    });
+
+    test('no executable code references FlutterActivity', () async {
+      final kt = (await runAndroid([irDef(text('hi'))],
+              liveActivities: [orderActivity()]))
+          .file(pluginPath);
+      final code = kt
+          .split('\n')
+          .where((l) => !l.trimLeft().startsWith('///'))
+          .join('\n');
+      expect(code, isNot(contains('FlutterActivity')));
+      expect(code, isNot(contains('import io.flutter.embedding.android')));
+    });
+  });
 }

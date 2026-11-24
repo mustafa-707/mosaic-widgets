@@ -655,14 +655,15 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
-import io.flutter.embedding.android.FlutterActivity
+import android.app.Activity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
 /// Host-app side of the Mosaic bridge.
 ///
-/// Wire it up with two overrides:
+/// Wire it up with two overrides (works with FlutterActivity and
+/// FlutterFragmentActivity alike, which local_auth requires):
 ///
 ///     class MainActivity : FlutterActivity() {
 ///         private val mosaic = MosaicPlugin()
@@ -681,7 +682,7 @@ import io.flutter.plugin.common.MethodChannel
 class MosaicPlugin {
     private var channel: MethodChannel? = null
 
-    fun register(activity: FlutterActivity, engine: FlutterEngine) {
+    fun register(activity: Activity, engine: FlutterEngine) {
         val context = activity.applicationContext
         val channel = MethodChannel(engine.dartExecutor.binaryMessenger, "mosaic_bridge")
         this.channel = channel
@@ -845,7 +846,7 @@ $activityCases
         channel?.invokeMethod("onDeepLink", mapOf("url" to url))
     }
 
-    private fun registerCallbackReceiver(activity: FlutterActivity) {
+    private fun registerCallbackReceiver(activity: Activity) {
         if (receiverRegistered) return
         val receiver = object : BroadcastReceiver() {
             override fun onReceive(ctx: Context, intent: Intent) {

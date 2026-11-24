@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.2 - 2026-11-24
+### Fixed
+- The generated Android `MosaicPlugin.register(...)` and its callback-receiver
+  registration now take `android.app.Activity` instead of `FlutterActivity`.
+  Apps whose `MainActivity` extends `FlutterFragmentActivity` (required by
+  `local_auth` for biometrics) can now call `mosaic.register(this, flutterEngine)`.
+  Only `applicationContext` and the launch `intent` were ever used, so behaviour
+  is unchanged and existing `FlutterActivity` hosts compile as before.
+  Re-run `dart run mosaic_widgets:mosaic build` to regenerate.
+
 ## 0.3.1 - 2026-11-18
 ### Added
 - UIScene lifecycle support. The generated `MosaicPlugin` now also registers a

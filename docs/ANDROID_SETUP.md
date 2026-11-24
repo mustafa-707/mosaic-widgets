@@ -63,6 +63,29 @@ the launch intent itself, so a cold start from a widget keeps its deep link.
 The reference is `examples/demo_app/.../MainActivity.kt` — 24 lines, all of it
 above.
 
+**`FlutterFragmentActivity` works too** (since 0.3.2). `register` accepts any
+`android.app.Activity`, so apps that must extend `FlutterFragmentActivity`
+(for example `local_auth` biometrics) use the same two overrides:
+
+```kotlin
+import io.flutter.embedding.android.FlutterFragmentActivity
+
+class MainActivity : FlutterFragmentActivity() {
+    private val mosaic = MosaicPlugin()
+
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        mosaic.register(this, flutterEngine)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        mosaic.handleIntent(intent)
+    }
+}
+```
+
 > Earlier versions of this guide had you write the channel by hand. If you still
 > have that code, delete it and call `MosaicPlugin` instead: the generated
 > version also registers the callback receiver on the application context behind
