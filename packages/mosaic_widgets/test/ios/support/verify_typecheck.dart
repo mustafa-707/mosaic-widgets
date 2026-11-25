@@ -175,7 +175,11 @@ Future<void> main() async {
   final def = IRDefinition(
     name: 'TestW',
     root: IRNode.fromJson(root),
-    widgetUrl: {'__type': 'HWBind', 'key': 'offer_url', 'defaultValue': 'a://b'},
+    widgetUrl: {
+      '__type': 'HWBind',
+      'key': 'offer_url',
+      'defaultValue': 'a://b'
+    },
   );
   final cfg = MosaicConfig.fromJson({
     'app': {

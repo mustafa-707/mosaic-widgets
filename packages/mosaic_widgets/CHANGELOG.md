@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.5.0 - 2026-11-26
+### Added
+- `MFont` and `MTextStyle(font:)`: bundled custom fonts in widgets, named once per
+  platform (`MFont(android: 'zain_bold', ios: 'Zain-Bold')`).
+  - `mosaic build` copies `assets/widgets/fonts/*.ttf|otf` to
+    `android/app/src/main/res/font/` (resource names lowercased) and to
+    `ios/HomeWidgetExtension/Fonts/`.
+  - Android writes `android:fontFamily="@font/<name>"` on `MText` and `MTimer`
+    (API 26+; older devices use the default font). iOS writes
+    `.font(.custom("<PostScriptName>", size: N))`; a glyph the font lacks falls back
+    to the system font.
+  - A font is one weight, so `weight:` and `bold:` are ignored on a style that sets
+    `font:`. Names are validated before they reach the generated XML or Swift.
+  - iOS still needs a one-time Xcode step: add the font files to the widget
+    extension target and list them under `UIAppFonts`.
+
+### Fixed
+- iOS: a container that is the direct child of an `MFlexible` now fills its slot.
+  Before, only the outermost container filled; a nested card kept its content size
+  and sat centred in a large empty frame (Android, whose weighted wrapper gives the
+  container the whole slot, was already right).
+- iOS: an `MNetworkImage` with `fit: cover` can no longer grow past the box it is
+  given. An aspect-fill image reports the size of its scaled picture, so inside a
+  flexible slot it pushed its siblings out of the widget; it is now an overlay on a
+  clear box and clipped.
+
+
 ## 0.4.0 - 2026-11-25
 ### Added
 - `MosaicDefinition(largeRoot:)`: a third layout for the largest sizes, so one

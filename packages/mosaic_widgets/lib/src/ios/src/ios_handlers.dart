@@ -145,6 +145,23 @@ HStack(alignment: $alignment, spacing: 0) {$alignComment
   }
 }
 
+/// The SwiftUI `Font` expression for a style's bundled [MFont], or null.
+///
+/// `Font.custom` falls back to the system font for any glyph the file lacks, so
+/// a Latin shop name inside an Arabic-only font still draws. The size defaults
+/// to the system body size when the style names none. The PostScript name is
+/// restricted to the characters font names use, so it cannot break out of the
+/// string literal in the generated Swift.
+String? iosCustomFont(Object? font, Object? size) {
+  if (font is! Map) return null;
+  final name = font['ios'];
+  if (name is! String || !RegExp(r'^[A-Za-z0-9._\- ]+$').hasMatch(name)) {
+    return null;
+  }
+  final points = size is num ? size : 17;
+  return '.custom("$name", size: $points)';
+}
+
 class TextHandler extends IosNodeHandler {
   @override
   String get type => 'HWText';
@@ -190,10 +207,14 @@ class TextHandler extends IosNodeHandler {
       'w800': 'heavy',
       'w900': 'black',
     };
+    // A bundled font is one weight already, so no weight is layered on it.
+    final customFont = iosCustomFont(style['font'], style['size']);
     final weightName = swiftWeights[style['weight']];
-    final bold = weightName != null
-        ? '.fontWeight(.$weightName)'
-        : (style['bold'] == true ? '.bold()' : '');
+    final bold = customFont != null
+        ? ''
+        : weightName != null
+            ? '.fontWeight(.$weightName)'
+            : (style['bold'] == true ? '.bold()' : '');
     final italic = style['italic'] == true ? '.italic()' : '';
     final color = style['color'] != null
         ? '.foregroundColor(${context._colorToSwift(style['color'])})'
@@ -201,9 +222,11 @@ class TextHandler extends IosNodeHandler {
     // An explicit size wins over a role: naming a number is the more specific
     // instruction. Otherwise the role supplies the platform's own type case.
     final roleFont = style['roleSwiftFont'];
-    final size = style['size'] != null
-        ? '.font(.system(size: ${style['size']}))'
-        : (roleFont != null ? '.font(.$roleFont)' : '');
+    final size = customFont != null
+        ? '.font($customFont)'
+        : style['size'] != null
+            ? '.font(.system(size: ${style['size']}))'
+            : (roleFont != null ? '.font(.$roleFont)' : '');
     final opacity =
         style['opacity'] != null ? '.opacity(${style['opacity']})' : '';
     // maxLines → .lineLimit(n); align (start|center|end) →

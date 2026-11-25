@@ -676,12 +676,15 @@ class TimerHandler extends AndroidNodeHandler {
       node.data['style']?['color'] ?? {'hex': '#FFFFFF'},
     );
     final size = node.data['style']?['size'] ?? 14;
-    final style = node.data['style']?['bold'] == true ? 'bold' : 'normal';
+    final customFont = androidCustomFontFamily(node.data['style']?['font']);
+    final style = customFont.isEmpty && node.data['style']?['bold'] == true
+        ? 'bold'
+        : 'normal';
     // Standalone opacity applies to the whole view (mirror TextHandler).
     final opacity = node.data['style']?['opacity'];
     final alphaAttr = opacity != null ? ' android:alpha="$opacity"' : '';
 
-    return '<Chronometer android:id="@+id/hw_timer_$id" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style"$alphaAttr />';
+    return '<Chronometer android:id="@+id/hw_timer_$id" android:layout_width="wrap_content" android:layout_height="wrap_content" android:textColor="$color" android:textSize="${size}sp" android:textStyle="$style"$customFont$alphaAttr />';
   }
 }
 

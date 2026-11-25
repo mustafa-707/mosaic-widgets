@@ -1356,11 +1356,49 @@ enum MTextRole {
   final int androidSp;
 }
 
+/// A bundled custom font, named once per platform.
+///
+/// The font files are not declared here: put the `.ttf` / `.otf` files in
+/// `assets/widgets/fonts/` and `mosaic build` copies them to
+/// `android/app/src/main/res/font/` (names lowercased, `-` and spaces to `_`) and
+/// to `ios/HomeWidgetExtension/Fonts/` (names unchanged).
+///
+/// Android takes the **resource name**: the file name without its extension,
+/// lowercased, for example `zain_bold` for `Zain-Bold.ttf`. iOS takes the
+/// **PostScript name**, which is usually the file name without its extension,
+/// for example `Zain-Bold`, and the file must be a member of the widget
+/// extension target and listed under `UIAppFonts` in its `Info.plist`.
+///
+/// One [MFont] is one weight: a custom font carries its own weight, so [MFontWeight]
+/// and `bold:` are ignored on a style that sets [MTextStyle.font]. Declare a
+/// second [MFont] for the bold cut.
+///
+/// Android honours it from API 26; below that the platform's default font is
+/// used. A glyph the font lacks falls back to the platform font on both.
+class MFont {
+  /// The Android font resource name, without `@font/`.
+  final String? android;
+
+  /// The iOS PostScript font name.
+  final String? ios;
+
+  const MFont({this.android, this.ios});
+
+  Map<String, dynamic> toJson() => {
+        if (android != null) 'android': android,
+        if (ios != null) 'ios': ios,
+      };
+}
+
 class MTextStyle {
   final double? size;
   final MColor? color;
   final double? opacity;
   final bool? bold;
+
+  /// A bundled custom font. When set, [weight] and [bold] are ignored: the font
+  /// file is the weight.
+  final MFont? font;
 
   /// Font weight. Takes precedence over [bold] when both are set.
   final MFontWeight? weight;
@@ -1382,6 +1420,7 @@ class MTextStyle {
     this.color,
     this.opacity,
     this.bold,
+    this.font,
     this.weight,
     this.italic,
     this.role,
@@ -1394,6 +1433,7 @@ class MTextStyle {
     MColor? color,
     double? opacity,
     bool? bold,
+    MFont? font,
     MFontWeight? weight,
     bool? italic,
     MTextRole? role,
@@ -1403,6 +1443,7 @@ class MTextStyle {
         color: color ?? this.color,
         opacity: opacity ?? this.opacity,
         bold: bold ?? this.bold,
+        font: font ?? this.font,
         weight: weight ?? this.weight,
         italic: italic ?? this.italic,
         role: role ?? this.role,
@@ -1419,6 +1460,7 @@ class MTextStyle {
       color: color ?? flat.color,
       opacity: opacity ?? flat.opacity,
       bold: bold ?? flat.bold,
+      font: font ?? flat.font,
       weight: weight ?? flat.weight,
       italic: italic ?? flat.italic,
       role: role ?? flat.role,
@@ -1434,6 +1476,7 @@ class MTextStyle {
       'bold': s.bold,
       // Omitted when unset so the wire shape is unchanged for existing styles.
       if (s.weight != null) 'weight': s.weight!.name,
+      if (s.font != null) 'font': s.font!.toJson(),
       if (s.italic != null) 'italic': s.italic,
       if (s.role != null) 'role': s.role!.name,
       // Carried so each generator can resolve the role without a shared table.
@@ -1679,9 +1722,8 @@ class MosaicDefinition {
         if (compactRoot != null) 'compactRoot': compactRoot!.toJson(),
         if (largeRoot != null) 'largeRoot': largeRoot!.toJson(),
         if (widgetUrl != null)
-          'widgetUrl': widgetUrl is MBind
-              ? (widgetUrl as MBind).toJson()
-              : widgetUrl,
+          'widgetUrl':
+              widgetUrl is MBind ? (widgetUrl as MBind).toJson() : widgetUrl,
         'updateInterval': updateInterval?.inMilliseconds,
         'width': width,
         'height': height,

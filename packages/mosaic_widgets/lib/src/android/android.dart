@@ -860,7 +860,8 @@ $body
       // attach the tap to. The wrapper is a plain FrameLayout with a fixed id,
       // so the tree below it (and any button inside it) is untouched; taps on
       // a button reach the button, every other tap bubbles up to this view.
-      buffer.write('<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"\n'
+      buffer.write(
+          '<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"\n'
           '    android:id="@+id/hw_root"\n'
           '    android:layout_width="match_parent"\n'
           '    android:layout_height="match_parent">\n'

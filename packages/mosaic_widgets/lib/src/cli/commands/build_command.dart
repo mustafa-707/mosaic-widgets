@@ -431,6 +431,7 @@ class BuildCommand extends Command {
 
     print('Syncing assets...');
     await _syncAssets(runner.projectRoot, config);
+    await _syncFonts(runner.projectRoot);
 
     print('Build complete!');
     print('\n🚀 NEXT STEPS FOR iOS:');
@@ -474,6 +475,52 @@ class BuildCommand extends Command {
 
         print('Synced asset: $fileName');
       }
+    }
+  }
+
+  /// Copies `assets/widgets/fonts/*.ttf|otf` to where each platform reads them.
+  ///
+  /// Android gets `res/font/<resource>.<ext>`, the resource name being the file
+  /// name lowercased with anything outside `a-z0-9_` turned into `_` (Android
+  /// accepts nothing else), which is the name an `MFont(android:)` refers to.
+  /// iOS gets `ios/HomeWidgetExtension/Fonts/<file>` with the name unchanged,
+  /// because the PostScript name inside the font is what `MFont(ios:)` uses.
+  /// Adding the iOS file to the extension target and to `UIAppFonts` is a
+  /// one-time Xcode step; nothing here edits the project file.
+  Future<void> _syncFonts(String projectRoot) async {
+    final fontsDir =
+        Directory(p.join(projectRoot, 'assets', 'widgets', 'fonts'));
+    if (!fontsDir.existsSync()) return;
+
+    final fonts = fontsDir.listSync().whereType<File>().where((file) {
+      final extension = p.extension(file.path).toLowerCase();
+      return extension == '.ttf' || extension == '.otf';
+    }).toList()
+      ..sort((a, b) => a.path.compareTo(b.path));
+    if (fonts.isEmpty) return;
+
+    final androidFontDir = Directory(
+      p.join(projectRoot, 'android', 'app', 'src', 'main', 'res', 'font'),
+    )..createSync(recursive: true);
+    final iosFontDir =
+        Directory(p.join(projectRoot, 'ios', 'HomeWidgetExtension', 'Fonts'));
+    final iosExtension =
+        Directory(p.join(projectRoot, 'ios', 'HomeWidgetExtension'));
+
+    for (final font in fonts) {
+      final extension = p.extension(font.path).toLowerCase();
+      var resource = p
+          .basenameWithoutExtension(font.path)
+          .toLowerCase()
+          .replaceAll(RegExp(r'[^a-z0-9_]'), '_');
+      if (!RegExp(r'^[a-z]').hasMatch(resource)) resource = 'f_$resource';
+
+      await font.copy(p.join(androidFontDir.path, '$resource$extension'));
+      if (iosExtension.existsSync()) {
+        iosFontDir.createSync(recursive: true);
+        await font.copy(p.join(iosFontDir.path, p.basename(font.path)));
+      }
+      print('Synced font: ${p.basename(font.path)} (android: $resource)');
     }
   }
 

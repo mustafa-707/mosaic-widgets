@@ -30,7 +30,8 @@ void main() {
     final kt = provider(r);
     expect(kt, contains('val widgetUrl: String = "mosaic://offer/1"'));
     expect(kt, contains('Intent.ACTION_VIEW'));
-    expect(kt, contains('PendingIntent.getActivity(context, appWidgetId * 100 + 99'));
+    expect(kt,
+        contains('PendingIntent.getActivity(context, appWidgetId * 100 + 99'));
     expect(kt, contains('FLAG_IMMUTABLE'));
     expect(kt, contains('views.setOnClickPendingIntent(R.id.hw_root'));
   });
@@ -94,8 +95,10 @@ void main() {
       })
     ]);
     final kt = provider(r);
-    expect(kt,
-        contains('val epoch0 = MosaicData.resolveDouble(context, "ends_at").toLong()'));
+    expect(
+        kt,
+        contains(
+            'val epoch0 = MosaicData.resolveDouble(context, "ends_at").toLong()'));
     expect(kt, contains('if (epoch0 > System.currentTimeMillis())'));
     expect(
         kt,

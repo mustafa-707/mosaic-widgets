@@ -325,12 +325,22 @@ class NetworkImageHandler extends IosNodeHandler {
         : 'Color.clear';
 
     final clip = iosImageClip(node);
+    // `cover` is drawn as an overlay on a clear box, not as a bare aspect-fill
+    // image. An aspect-fill image reports the size of its scaled picture, so
+    // inside a flexible slot it grew past the slot, pushed the text beneath it
+    // out of the widget and bled over its neighbours. The clear box takes the
+    // size it is offered and the overlay cannot change it; `.clipped()` trims
+    // the part of the picture that falls outside.
+    final isCover = node.data['fit'] == 'cover';
+    final image = isCover
+        ? 'Color.clear.overlay(Image(mosaic: _img)${parts.image}${iosAccentedRendering(node)}${parts.view}).clipped()$clip'
+        : 'Image(mosaic: _img)${parts.image}${iosAccentedRendering(node)}${parts.view}$clip';
     // Wrapped in Group for the same reason as MVisibility: a bare if/else is a
     // statement, so a parent applying modifiers to it would not compile.
     return '''
 Group {
     if let _img = MosaicImageCache.cached($urlExpr) {
-        Image(mosaic: _img)${parts.image}${iosAccentedRendering(node)}${parts.view}$clip
+        $image
     } else {
         $placeholderView$clip
     }
@@ -425,12 +435,16 @@ class TimerHandler extends IosNodeHandler {
     }
 
     final style = node.data['style'] ?? {};
-    final bold = style['bold'] == true ? '.bold()' : '';
+    final customFont = iosCustomFont(style['font'], style['size']);
+    final bold = customFont == null && style['bold'] == true ? '.bold()' : '';
     final color = style['color'] != null
         ? '.foregroundColor(${context._colorToSwift(style['color'])})'
         : '';
-    final size =
-        style['size'] != null ? '.font(.system(size: ${style['size']}))' : '';
+    final size = customFont != null
+        ? '.font($customFont)'
+        : style['size'] != null
+            ? '.font(.system(size: ${style['size']}))'
+            : '';
     final modifiers = '$bold$color$size.monospacedDigit()';
 
     final countUp = node.data['countUp'] == true;
@@ -441,7 +455,8 @@ class TimerHandler extends IosNodeHandler {
       // provider, which leaves a stopped 00:00 chronometer.
       final key = swiftEscape(targetEpoch['key'] as String);
       final read = 'mosaicNum(${context.bindSource}["$key"])';
-      final live = countUp ? '' : ', _ms / 1000.0 > Date().timeIntervalSince1970';
+      final live =
+          countUp ? '' : ', _ms / 1000.0 > Date().timeIntervalSince1970';
       final running = countUp
           ? '''if #available(iOS 16.0, *) {
             Text(timerInterval: _d...Date.distantFuture, countsDown: false)
@@ -753,6 +768,14 @@ class FlexibleHandler extends IosNodeHandler {
     final childJson = node.data['child'];
     if (childJson == null) return '// missing child';
     final child = IRNode.fromJson(childJson as Map<String, dynamic>);
+    // A container that is the flexible's direct child is the card the slot is
+    // for, so it fills the slot itself: the frame goes on the container before
+    // its background, as it does for the root. Without this the infinite frame
+    // below only centred an intrinsically sized card inside the slot, leaving a
+    // coloured box floating in empty space — while Android, whose weighted
+    // wrapper hands the container the whole slot, filled it. A non-container
+    // child keeps the old behaviour, since there is no background to extend.
+    if (child.type == 'HWContainer') context.fillRoot = true;
     // SwiftUI has no proportional flex: an infinite frame divides the free
     // space equally among siblings that ask for it, so `flex` cannot be
     // honoured as a ratio here. Documented on MFlexible rather than faked with

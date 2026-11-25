@@ -171,9 +171,38 @@ the directory your existing entries already use.
 - `bold`: `bool`
 - `italic`: `bool`
 - `weight`: `MFontWeight` — takes precedence over `bold` when both are set.
+- `font`: `MFont` — a bundled custom font; `weight` and `bold` are ignored when set.
 - `role`: `MTextRole` — a semantic type role. An explicit `size` overrides it.
 - `baseStyle`: `MTextStyle` — inherit from another style; own fields win. Flattened before serialization, so nothing downstream sees a chain.
-- `copyWith({size, color, opacity, bold, weight, italic})`
+- `copyWith({size, color, opacity, bold, font, weight, italic, role})`
+
+### MFont
+
+A bundled custom font, named once per platform. Set it on `MTextStyle(font:)`.
+
+```dart
+const zainBold = MFont(android: 'zain_bold', ios: 'Zain-Bold');
+
+MText('فرصتك', style: MTextStyle(font: zainBold, size: 18, color: white));
+```
+
+Put the `.ttf` / `.otf` files in `assets/widgets/fonts/`; `mosaic build` copies
+them to `android/app/src/main/res/font/` (name lowercased, anything outside
+`a-z0-9_` turned into `_`) and to `ios/HomeWidgetExtension/Fonts/` (name
+unchanged).
+
+- `android`: the **resource name**, the file name without its extension in the
+  form above (`Zain-Bold.ttf` is `zain_bold`). Honoured from API 26; older
+  devices use the default font.
+- `ios`: the **PostScript name**, usually the file name without its extension
+  (`Zain-Bold`). The file must be a member of the widget extension target and
+  listed under `UIAppFonts` in the extension's `Info.plist`. That is a one-time
+  Xcode step the build does not do for you.
+
+One `MFont` is one weight. A custom font carries its own weight, so `weight:`
+and `bold:` are ignored on a style that sets `font:`; declare a second `MFont`
+for the bold cut. A glyph the font lacks falls back to the platform font.
+
 
 ### MTextRole
 

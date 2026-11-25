@@ -23,21 +23,24 @@ void main() {
       root: root,
       widgetUrl: MBind('offer_url', defaultValue: 'mosaic://home'),
     ).toJson();
-    expect(json['widgetUrl'],
-        {'__type': 'HWBind', 'key': 'offer_url', 'defaultValue': 'mosaic://home'});
+    expect(json['widgetUrl'], {
+      '__type': 'HWBind',
+      'key': 'offer_url',
+      'defaultValue': 'mosaic://home'
+    });
     final ir = IRDefinition.fromJson(json);
     expect(ir.widgetUrlBind!['key'], 'offer_url');
     expect(ir.widgetUrlLiteral, isNull);
   });
 
   test('widgetUrl must be a String or an MBind', () {
-    expect(
-        () => MosaicDefinition(name: 'W', root: root, widgetUrl: 42),
+    expect(() => MosaicDefinition(name: 'W', root: root, widgetUrl: 42),
         throwsA(isA<AssertionError>()));
   });
 
   test('MTimer keeps its literal wire shape', () {
-    final json = MTimer(target: DateTime.fromMillisecondsSinceEpoch(5)).toJson();
+    final json =
+        MTimer(target: DateTime.fromMillisecondsSinceEpoch(5)).toJson();
     expect(json['target'], 5);
   });
 

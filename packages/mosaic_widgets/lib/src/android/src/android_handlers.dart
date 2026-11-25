@@ -172,6 +172,20 @@ String androidFontFamily(String? weight) {
   return family == null ? '' : ' android:fontFamily="$family"';
 }
 
+/// The `android:fontFamily` attribute for a style's bundled [MFont], or nothing.
+///
+/// Points at `@font/<resource>`, which `mosaic build` fills from
+/// `assets/widgets/fonts/`. The resource name is restricted to what Android
+/// accepts for a resource, so a stray character cannot break the layout XML.
+String androidCustomFontFamily(Object? font) {
+  if (font is! Map) return '';
+  final name = font['android'];
+  if (name is! String || !RegExp(r'^[a-z][a-z0-9_]*$').hasMatch(name)) {
+    return '';
+  }
+  return ' android:fontFamily="@font/$name"';
+}
+
 class TextHandler extends AndroidNodeHandler {
   @override
   String get type => 'HWText';
@@ -232,7 +246,11 @@ class TextHandler extends AndroidNodeHandler {
     // because android:textFontWeight is API 28 and the floor here is 21 —
     // emitting it unconditionally would be silently ignored on older devices.
     final st = node.data['style'] as Map? ?? const {};
-    final isBold = st['bold'] == true || st['weight'] == 'w700';
+    // A custom font is already one weight, so bold is not layered on top of it
+    // (that would fake-embolden the file).
+    final customFont = androidCustomFontFamily(st['font']);
+    final isBold =
+        customFont.isEmpty && (st['bold'] == true || st['weight'] == 'w700');
     final isItalic = st['italic'] == true;
     final style = isBold && isItalic
         ? 'bold|italic'
@@ -241,7 +259,9 @@ class TextHandler extends AndroidNodeHandler {
             : isItalic
                 ? 'italic'
                 : 'normal';
-    final fontFamily = androidFontFamily(st['weight'] as String?);
+    final fontFamily = customFont.isNotEmpty
+        ? customFont
+        : androidFontFamily(st['weight'] as String?);
     // Standalone opacity applies to the whole view regardless of color alpha.
     final opacity = node.data['style']?['opacity'];
     final alphaAttr = opacity != null ? ' android:alpha="$opacity"' : '';
