@@ -70,7 +70,7 @@ One-time native wiring (an Xcode Widget Extension target, one line in your
 | **Interactive** | Buttons, toggles, deep links, background callbacks |
 | **Live data** | `MBind` for text, images, progress, visibility, timers, colours |
 | **Refresh with the app closed** | Declare an endpoint; the widget fetches it itself |
-| **Per-size layouts** | `compactRoot:` gives small tiles their own tree |
+| **Per-size layouts** | `compactRoot:` and `largeRoot:` give small and large sizes their own trees |
 | **Theming** | Light/dark, Material You (`MColor.system`), iOS tinted mode |
 | **Device metrics** | Battery, storage and RAM, read in the widget process |
 | **Render any Flutter widget** | `renderFlutterWidget` rasterises to a PNG for what the DSL cannot express |

@@ -20,6 +20,10 @@ class IRDefinition {
   /// Null means every size renders [root].
   final IRNode? compactRoot;
 
+  /// Alternate tree for the largest sizes, when the definition declares one.
+  /// Null means the large sizes render [root].
+  final IRNode? largeRoot;
+
   /// Optional polling interval in **milliseconds** — the DSL emits
   /// `Duration.inMilliseconds`. `null` means no automatic update.
   ///
@@ -60,6 +64,7 @@ class IRDefinition {
     required this.name,
     required this.root,
     this.compactRoot,
+    this.largeRoot,
     this.updateInterval,
     this.width = 2,
     this.height = 2,

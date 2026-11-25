@@ -13,7 +13,7 @@ abstract class MNode {
 /// Dart on the home screen, so a runtime check is not possible.
 ///
 /// Reach for this **last**. Prefer, in order: the per-node platform fields
-/// (`sfSymbol` / `androidDrawable`), `MosaicDefinition(compactRoot:)` for size,
+/// (`sfSymbol` / `androidDrawable`), `MosaicDefinition(compactRoot:, largeRoot:)` for size,
 /// then this. Every use erodes the single-tree promise the package exists for.
 ///
 /// It earns its place where a node behaves differently by platform and the DSL
@@ -1620,6 +1620,18 @@ class MosaicDefinition {
   /// declared minimum size, and falls back to [root] below API 31.
   final MNode? compactRoot;
 
+  /// An alternate tree for the largest sizes — `systemLarge` and
+  /// `systemExtraLarge` on iOS, and a widget resized two rows or more taller
+  /// than its declared size on Android.
+  ///
+  /// [root] stays the tree for the default (medium) size and [compactRoot] for
+  /// the smallest, so one widget can carry three real layouts instead of one
+  /// layout stretched. Optional — when null the large sizes render [root].
+  ///
+  /// On Android this needs API 31+, like [compactRoot]; below that [root] is
+  /// used at every size.
+  final MNode? largeRoot;
+
   final Duration? updateInterval;
   final int width;
   final int height;
@@ -1650,6 +1662,7 @@ class MosaicDefinition {
     required this.name,
     required this.root,
     this.compactRoot,
+    this.largeRoot,
     this.updateInterval,
     this.width = 2,
     this.height = 2,
@@ -1664,6 +1677,7 @@ class MosaicDefinition {
         'name': name,
         'root': root.toJson(),
         if (compactRoot != null) 'compactRoot': compactRoot!.toJson(),
+        if (largeRoot != null) 'largeRoot': largeRoot!.toJson(),
         if (widgetUrl != null)
           'widgetUrl': widgetUrl is MBind
               ? (widgetUrl as MBind).toJson()

@@ -521,9 +521,10 @@ ${_pushConfiguration(def, configurable: true)}
   ///
   /// Declared only when a compact tree exists — an unused environment property
   /// is a warning in generated code a developer cannot edit away.
-  String _familyEnvironment(IRDefinition def) => def.compactRoot == null
-      ? '    '
-      : '    @Environment(\\.widgetFamily) private var family\n    ';
+  String _familyEnvironment(IRDefinition def) =>
+      def.compactRoot == null && def.largeRoot == null
+          ? '    '
+          : '    @Environment(\\.widgetFamily) private var family\n    ';
 
   /// The view body: one tree, or a switch on family when a compact variant is
   /// declared.
@@ -532,14 +533,23 @@ ${_pushConfiguration(def, configurable: true)}
   /// no room for a full layout, so they take the compact tree.
   String _rootForFamily(IRDefinition def) {
     final compact = def.compactRoot;
-    if (compact == null) return renderRoot(def.root);
-    // The decision goes through a helper rather than naming the accessory cases
-    // inline: those enum cases do not exist on macOS, and a view body is an
+    final large = def.largeRoot;
+    if (compact == null && large == null) return renderRoot(def.root);
+    // The decision goes through helpers rather than naming the family cases
+    // inline: some of them do not exist on macOS, and a view body is an
     // awkward place to put a compile fence.
-    return '''Group {
-                if mosaicPrefersCompact(family) {
+    final compactBranch = compact == null
+        ? ''
+        : '''if mosaicPrefersCompact(family) {
                     ${renderRoot(compact)}
-                } else {
+                } else ''';
+    final largeBranch = large == null
+        ? ''
+        : '''if mosaicPrefersLarge(family) {
+                    ${renderRoot(large)}
+                } else ''';
+    return '''Group {
+                $compactBranch$largeBranch{
                     ${renderRoot(def.root)}
                 }
             }''';

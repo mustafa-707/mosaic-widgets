@@ -86,8 +86,11 @@ List<String> pruneOrphanedGeneratedFiles(
     // own. Without this it is classified as an orphan on every build; that
     // happens to be survivable only because pruning runs before generation
     // rewrites it, which is not a property worth depending on.
-    if (bare.endsWith('_compact')) {
-      bare = bare.substring(0, bare.length - '_compact'.length);
+    for (final suffix in const ['_compact', '_large']) {
+      if (bare.endsWith(suffix)) {
+        bare = bare.substring(0, bare.length - suffix.length);
+        break;
+      }
     }
     for (final n in liveNames) {
       if (n.toLowerCase() == bare) return n;

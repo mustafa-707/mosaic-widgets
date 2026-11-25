@@ -464,12 +464,24 @@ $fillBlock                canvas.drawPath(path, paint)
     final layoutRes = 'R.layout.hw_${safe.toLowerCase()}';
     final minW = (70 * def.width - 30).clamp(1, 1 << 20);
     final minH = (70 * def.height - 30).clamp(1, 1 << 20);
-    final rootViewsExpr = def.compactRoot == null
+    // The large tree takes over two rows (140dp) above the declared height, at
+    // the declared width, so it never shares a key with the root's entry.
+    final largeH = minH + 140;
+    String entry(num w, num h, String layout) =>
+        'android.util.SizeF(${w}f, ${h}f) to buildViews(context, appWidgetManager, appWidgetId, $layout)';
+    final hasCompact = def.compactRoot != null;
+    final hasLarge = def.largeRoot != null;
+    final entries = <String>[
+      if (hasCompact) entry(1, 1, '${layoutRes}_compact'),
+      if (hasCompact) entry(minW, minH, layoutRes),
+      if (!hasCompact && hasLarge) entry(1, 1, layoutRes),
+      if (hasLarge) entry(minW, largeH, '${layoutRes}_large'),
+    ];
+    final rootViewsExpr = entries.isEmpty
         ? 'buildViews(context, appWidgetManager, appWidgetId, $layoutRes)'
         : '''if (android.os.Build.VERSION.SDK_INT >= 31) {
             RemoteViews(mapOf(
-                android.util.SizeF(1f, 1f) to buildViews(context, appWidgetManager, appWidgetId, ${layoutRes}_compact),
-                android.util.SizeF(${minW}f, ${minH}f) to buildViews(context, appWidgetManager, appWidgetId, $layoutRes)
+                ${entries.join(',\n                ')}
             ))
         } else {
             buildViews(context, appWidgetManager, appWidgetId, $layoutRes)

@@ -254,6 +254,10 @@ class IosGenerator {
       if (compact != null) {
         metrics.addAll(deviceMetricsIn(compact.toJson(), platform: 'ios'));
       }
+      final large = def.largeRoot;
+      if (large != null) {
+        metrics.addAll(deviceMetricsIn(large.toJson(), platform: 'ios'));
+      }
     }
     final needsBattery = metrics.contains(MosaicDeviceMetric.batteryLevel) ||
         metrics.contains(MosaicDeviceMetric.batteryCharging);

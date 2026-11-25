@@ -542,6 +542,20 @@ func mosaicPrefersCompact(_ family: WidgetFamily) -> Bool {
     #endif
 }
 
+/// Whether [family] should render a definition's `largeRoot`: `systemLarge`, and
+/// `systemExtraLarge` (iPad, iOS 15+) where it exists. Fenced for the same reason
+/// as [mosaicPrefersCompact].
+func mosaicPrefersLarge(_ family: WidgetFamily) -> Bool {
+    #if os(iOS)
+    if #available(iOS 15.0, *) {
+        if family == .systemExtraLarge { return true }
+    }
+    return family == .systemLarge
+    #else
+    return false
+    #endif
+}
+
 let kMosaicAppGroup = "${config.app.iosAppGroup}"
 
 /// Resolves a file-image path to a native image. Absolute paths are loaded directly;

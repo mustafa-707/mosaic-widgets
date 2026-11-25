@@ -545,6 +545,21 @@ class AndroidGenerator {
             .writeAsString(compactXml);
       }
 
+      // A third tree for the large sizes, in its own layout file and generated
+      // the same way as the compact one.
+      if (def.largeRoot != null) {
+        final largeXml = _generateLayoutXml(
+          def.largeRoot!,
+          usedBinds,
+          visibilityKeys,
+          timers,
+          buttons,
+          wrapRoot: def.widgetUrl != null,
+        );
+        await File(p.join(layoutDir.path, '${layoutName}_large.xml'))
+            .writeAsString(largeXml);
+      }
+
       // Flush any per-row item layouts discovered while rendering HWListViews.
       for (final entry in _pendingItemLayouts.entries) {
         await File(p.join(layoutDir.path, '${entry.key}.xml'))

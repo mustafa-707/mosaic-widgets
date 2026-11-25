@@ -12,6 +12,9 @@ IRDefinition _$IRDefinitionFromJson(Map<String, dynamic> json) => IRDefinition(
       compactRoot: json['compactRoot'] == null
           ? null
           : IRNode.fromJson(json['compactRoot'] as Map<String, dynamic>),
+      largeRoot: json['largeRoot'] == null
+          ? null
+          : IRNode.fromJson(json['largeRoot'] as Map<String, dynamic>),
       updateInterval: (json['updateInterval'] as num?)?.toInt(),
       width: (json['width'] as num?)?.toInt() ?? 2,
       height: (json['height'] as num?)?.toInt() ?? 2,
@@ -29,6 +32,7 @@ Map<String, dynamic> _$IRDefinitionToJson(IRDefinition instance) =>
       'name': instance.name,
       'root': instance.root.toJson(),
       'compactRoot': instance.compactRoot?.toJson(),
+      'largeRoot': instance.largeRoot?.toJson(),
       'updateInterval': instance.updateInterval,
       'width': instance.width,
       'height': instance.height,

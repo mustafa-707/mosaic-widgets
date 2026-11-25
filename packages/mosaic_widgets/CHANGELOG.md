@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.4.0 - 2026-11-25
+### Added
+- `MosaicDefinition(largeRoot:)`: a third layout for the largest sizes, so one
+  widget can carry a small, a medium and a large tree instead of one stretched
+  layout. `compactRoot` stays the small tree and `root` the default (medium)
+  one; `largeRoot` is optional and, when null, the large sizes render `root`.
+  - iOS: `systemLarge` and `systemExtraLarge` take `largeRoot`, picked from
+    `@Environment(\.widgetFamily)` through the new `mosaicPrefersLarge` helper.
+  - Android (API 31+): the launcher's size map gets a `largeRoot` entry two rows
+    (140dp) above the declared height, written to `hw_<name>_large.xml`. Below
+    API 31 `root` is used at every size, as with `compactRoot`.
+  - `mosaic build` keeps `hw_<name>_large.xml` as part of its widget rather than
+    pruning it as an orphan.
+
 ## 0.3.3 - 2026-11-24
 ### Fixed
 - Security: the generated widget `<receiver>` entries are now
