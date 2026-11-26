@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.5.2 - 2026-11-26
+### Fixed
+- iOS: a widget with network images could stay on its placeholder for good. The
+  cache stored each picture as downloaded, and a widget extension is killed at
+  about 30MB, so one decoded 12-megapixel photo took the whole widget down; the
+  downloads were also sequential on a 60-second timeout, so a slow one kept the
+  timeline from ever completing. Pictures are now decoded straight to a 640px
+  thumbnail (PNG when they have transparency, JPEG otherwise), fetched together
+  on a session with 6s/9s timeouts, and files older than 14 days are pruned.
+  Cache files moved to `.t640`; the old full-size `.img` files are deleted.
+- iOS: when a picture is still missing at the end of a pass, the timeline asks for
+  another pass in a minute instead of waiting out `updateInterval` (or never
+  refreshing, with no interval).
+
 ## 0.5.1 - 2026-11-26
 ### Fixed
 - iOS: a network image was never found again after the widget process restarted.

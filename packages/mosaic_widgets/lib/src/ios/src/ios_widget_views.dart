@@ -7,10 +7,10 @@ extension IosWidgetViews on IosGenerator {
   /// ones when declared. Everything the provider loads, refreshes or downloads
   /// has to cover all of them, because the family is only known at render time.
   List<IRNode> _definitionRoots(IRDefinition def) => [
-        def.root,
-        if (def.compactRoot != null) def.compactRoot!,
-        if (def.largeRoot != null) def.largeRoot!,
-      ];
+    def.root,
+    if (def.compactRoot != null) def.compactRoot!,
+    if (def.largeRoot != null) def.largeRoot!,
+  ];
 
   /// Every shared-store key the generated provider must load: the binds of every
   /// tree plus the widget URL's own bind, when it declares one.
@@ -50,7 +50,8 @@ extension IosWidgetViews on IosGenerator {
     final fallbackDescription = configurable
         ? 'This is an auto-generated configurable widget.'
         : 'This is an auto-generated home widget.';
-    final base = '''$configuration { entry in
+    final base =
+        '''$configuration { entry in
             ${def.name}View(entry: entry)
                 .mosaicContainerBackground(.clear)
                 .widgetAccentable()
@@ -118,7 +119,8 @@ struct ${def.name}PushHandler: WidgetPushHandler {
           final url = value['url'];
           if (url is Map && url['__type'] == 'HWBind') {
             binds.add(
-                'mosaicStr(loadData()["${swiftEscape(url['key'] as String)}"])');
+              'mosaicStr(loadData()["${swiftEscape(url['key'] as String)}"])',
+            );
           } else if (url != null) {
             literals.add('"${swiftEscape(url.toString())}"');
           }
@@ -208,14 +210,19 @@ struct ${def.name}Provider: TimelineProvider {
             // Network images: download after the refresh, so a URL that arrived
             // in this same pass is fetched immediately rather than one timeline
             // later. Cached URLs cost nothing.
-            await MosaicImageCache.prefetch(${_networkImageUrls(def)})
+            let imagesReady = await MosaicImageCache.prefetch(${_networkImageUrls(def)})
             let entry = ${def.name}Entry(date: Date(), data: loadData())
 
+            // A picture that did not arrive in time asks for another pass in a
+            // minute rather than waiting out the whole interval with a placeholder.
             ${def.updateInterval != null ? '''
-            let nextUpdate = Calendar.current.date(byAdding: .second, value: ${def.updateInterval! ~/ 1000}, to: Date())!
+            let interval: TimeInterval = ${def.updateInterval! ~/ 1000}
+            let nextUpdate = Date().addingTimeInterval(imagesReady ? interval : min(interval, 60))
             let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
             ''' : '''
-            let timeline = Timeline(entries: [entry], policy: .atEnd)
+            let timeline = Timeline(
+                entries: [entry],
+                policy: imagesReady ? .atEnd : .after(Date().addingTimeInterval(60)))
             '''}
 
             completion(timeline)
@@ -364,27 +371,31 @@ ${_pushConfiguration(def)}
     final keyList = usedKeys.map((k) => '"${swiftEscape(k)}"').join(', ');
     final params = def.params;
 
-    final paramDecls = params.map((pm) {
-      final key = pm['key'] as String;
-      final type = pm['type'] as String;
-      final label = (pm['label'] as String?) ?? key;
-      final swiftType = _paramSwiftType(type);
-      final def0 = _paramDefaultLiteral(type, pm['defaultValue']);
-      final choices = (pm['choices'] as List?)?.cast<Object?>() ?? const [];
-      final choiceDoc = (type == 'choice' && choices.isNotEmpty)
-          ? '    // choices: ${choices.map((c) => '"${swiftEscape('$c')}"').join(', ')}\n'
-          : '';
-      return '$choiceDoc'
-          '    @Parameter(title: "${swiftEscape(label)}", default: $def0)\n'
-          '    var $key: $swiftType';
-    }).join('\n\n');
+    final paramDecls = params
+        .map((pm) {
+          final key = pm['key'] as String;
+          final type = pm['type'] as String;
+          final label = (pm['label'] as String?) ?? key;
+          final swiftType = _paramSwiftType(type);
+          final def0 = _paramDefaultLiteral(type, pm['defaultValue']);
+          final choices = (pm['choices'] as List?)?.cast<Object?>() ?? const [];
+          final choiceDoc = (type == 'choice' && choices.isNotEmpty)
+              ? '    // choices: ${choices.map((c) => '"${swiftEscape('$c')}"').join(', ')}\n'
+              : '';
+          return '$choiceDoc'
+              '    @Parameter(title: "${swiftEscape(label)}", default: $def0)\n'
+              '    var $key: $swiftType';
+        })
+        .join('\n\n');
 
-    final copyLines = params.map((pm) {
-      final key = pm['key'] as String;
-      final type = pm['type'] as String;
-      final varName = key;
-      return '        data["${swiftEscape(key)}"] = ${_stringifyParam(type, varName)}';
-    }).join('\n');
+    final copyLines = params
+        .map((pm) {
+          final key = pm['key'] as String;
+          final type = pm['type'] as String;
+          final varName = key;
+          return '        data["${swiftEscape(key)}"] = ${_stringifyParam(type, varName)}';
+        })
+        .join('\n');
 
     final timelinePolicy = def.updateInterval != null
         ? '''
@@ -544,8 +555,8 @@ ${_pushConfiguration(def, configurable: true)}
   /// is a warning in generated code a developer cannot edit away.
   String _familyEnvironment(IRDefinition def) =>
       def.compactRoot == null && def.largeRoot == null
-          ? '    '
-          : '    @Environment(\\.widgetFamily) private var family\n    ';
+      ? '    '
+      : '    @Environment(\\.widgetFamily) private var family\n    ';
 
   /// The view body: one tree, or a switch on family when a compact variant is
   /// declared.
@@ -580,7 +591,8 @@ ${_pushConfiguration(def, configurable: true)}
     final widget = config.widgets.firstWhere(
       (w) => w.name == def.name,
       orElse: () => throw StateError(
-          'No widget config entry named "${def.name}". Add it to mosaic.yaml.'),
+        'No widget config entry named "${def.name}". Add it to mosaic.yaml.',
+      ),
     );
     final families = widget.ios.families;
     final List<String> resolved;
@@ -621,10 +633,12 @@ ${_pushConfiguration(def, configurable: true)}
         final valid = [
           ..._systemFamilies,
           ..._accessoryFamilies,
-          _watchOnlyFamily
+          _watchOnlyFamily,
         ].join(', ');
-        throw StateError('Unknown ios.family "$f" for widget "${def.name}". '
-            'Valid families: $valid.');
+        throw StateError(
+          'Unknown ios.family "$f" for widget "${def.name}". '
+          'Valid families: $valid.',
+        );
       }
     }
 

@@ -35,7 +35,7 @@ MosaicDefinition buildNews() => MosaicDefinition(
 ```yaml
 # pubspec.yaml
 dependencies:
-  mosaic_widgets: ^0.5.1
+  mosaic_widgets: ^0.5.2
 ```
 
 ```bash

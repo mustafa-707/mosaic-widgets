@@ -118,20 +118,26 @@ struct MosaicCallbackIntent: AppIntent {
   /// intents above compile unconditionally.
   Future<void> _generateRefreshSources(Directory iosDir) async {
     final entries = config.refresh.entries.map((e) {
-      final sources = e.value.map((source) {
-        final headers = source.headers.entries
-            .map((h) => '"${swiftEscape(h.key)}": "${swiftEscape(h.value)}"')
-            .join(', ');
-        final map = source.map.entries
-            .map((m) => '"${swiftEscape(m.key)}": "${swiftEscape(m.value)}"')
-            .join(', ');
-        return '''            MosaicRefreshSource(
+      final sources = e.value
+          .map((source) {
+            final headers = source.headers.entries
+                .map(
+                  (h) => '"${swiftEscape(h.key)}": "${swiftEscape(h.value)}"',
+                )
+                .join(', ');
+            final map = source.map.entries
+                .map(
+                  (m) => '"${swiftEscape(m.key)}": "${swiftEscape(m.value)}"',
+                )
+                .join(', ');
+            return '''            MosaicRefreshSource(
                 url: "${swiftEscape(source.url)}",
                 method: "${swiftEscape(source.method)}",
                 headers: [${headers.isEmpty ? ':' : headers}],
                 map: [${map.isEmpty ? ':' : map}]
             ),''';
-      }).join('\n');
+          })
+          .join('\n');
       return '''        "${swiftEscape(e.key)}": [
 $sources
         ],''';
@@ -337,11 +343,13 @@ $table
     // under an `if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *)` gate. Non-configurable widgets stay
     // available on iOS 16 and register unconditionally.
     final lines = <String>[
-      ...definitions.map((def) => def.params.isNotEmpty
-          ? '''        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
+      ...definitions.map(
+        (def) => def.params.isNotEmpty
+            ? '''        if #available(iOS 17.0, macOS 14.0, watchOS 10.0, *) {
             ${def.name}Widget()
         }'''
-          : '        ${def.name}Widget()'),
+            : '        ${def.name}Widget()',
+      ),
     ];
 
     // Live Activities are iOS 16.1+ Widgets; register each under an
@@ -397,11 +405,14 @@ ${lines.join('\n')}
     for (final def in definitions) {
       metrics.addAll(deviceMetricsIn(def.root.toJson(), platform: 'ios'));
     }
-    final needsBattery = metrics.contains(MosaicDeviceMetric.batteryLevel) ||
+    final needsBattery =
+        metrics.contains(MosaicDeviceMetric.batteryLevel) ||
         metrics.contains(MosaicDeviceMetric.batteryCharging);
-    final needsStorage = metrics.contains(MosaicDeviceMetric.storageFreeGb) ||
+    final needsStorage =
+        metrics.contains(MosaicDeviceMetric.storageFreeGb) ||
         metrics.contains(MosaicDeviceMetric.storageUsedPercent);
-    final needsMemory = metrics.contains(MosaicDeviceMetric.memoryFreeMb) ||
+    final needsMemory =
+        metrics.contains(MosaicDeviceMetric.memoryFreeMb) ||
         metrics.contains(MosaicDeviceMetric.memoryTotalMb) ||
         metrics.contains(MosaicDeviceMetric.memoryUsedPercent);
 
@@ -499,6 +510,7 @@ ${lines.join('\n')}
     await coreFile.writeAsString('''$kGeneratedSentinel
 import SwiftUI
 import WidgetKit
+import ImageIO
 
 // WidgetKit is shared across iOS, macOS and watchOS, but the image and device
 // types are not: UIKit does not exist on the Mac. Aliasing here keeps every
@@ -612,8 +624,32 @@ enum MosaicImageCache {
             hash ^= UInt64(byte)
             hash = hash &* 0x100000001b3
         }
-        return dir.appendingPathComponent(String(hash, radix: 16) + ".img")
+        // `.t640` marks a file already scaled down to 640px. Older builds stored
+        // the original download under `.img`; those are ignored and pruned below.
+        return dir.appendingPathComponent(String(hash, radix: 16) + ".t640")
     }
+
+    /// Longest edge, in pixels, a cached picture is stored at. A widget
+    /// extension is killed at roughly 30MB, and one decoded 12-megapixel photo is
+    /// ~48MB: storing the original made the whole widget fall back to its
+    /// placeholder. A tile is at most ~180pt wide, so 640px is sharp at 3x.
+    private static let maxPixel = 640
+
+    /// Cached files older than this are removed, so the folder cannot grow
+    /// without bound as offers come and go.
+    private static let maxAge: TimeInterval = 14 * 24 * 3600
+
+    /// An ephemeral session with short timeouts. The timeline provider is on a
+    /// clock: WidgetKit abandons it after a few seconds, and when it never
+    /// completes the widget stays on its placeholder. The default 60s request
+    /// timeout let one slow download do exactly that.
+    private static let session: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = 6
+        config.timeoutIntervalForResource = 9
+        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        return URLSession(configuration: config)
+    }()
 
     static func cached(_ url: String?) -> MosaicImage? {
         guard let url = url, !url.isEmpty, let file = fileURL(for: url) else {
@@ -622,19 +658,89 @@ enum MosaicImageCache {
         return MosaicImage(contentsOfFile: file.path)
     }
 
-    /// Downloads any of [urls] not already cached. Safe to call on every
-    /// timeline pass — a cached URL costs nothing.
-    static func prefetch(_ urls: [String]) async {
-        for url in urls where !url.isEmpty {
-            guard let file = fileURL(for: url),
-                  !FileManager.default.fileExists(atPath: file.path),
-                  let remote = URL(string: url)
-            else { continue }
-            do {
-                let (data, _) = try await URLSession.shared.data(from: remote)
-                try data.write(to: file)
-            } catch {
-                NSLog("[Mosaic] image download failed: \\(url)")
+    /// Downloads any of [urls] not already cached, all at once, each scaled down
+    /// before it is stored. Safe to call on every timeline pass: a cached URL
+    /// costs nothing, and every request is bounded by [session]'s timeouts.
+    ///
+    /// Answers whether every URL is cached on return, so the provider can ask
+    /// for another pass soon instead of waiting a whole interval for a picture
+    /// that did not arrive in time.
+    @discardableResult
+    static func prefetch(_ urls: [String]) async -> Bool {
+        let wanted = Array(Set(urls.filter { !\$0.isEmpty }))
+        prune()
+        await withTaskGroup(of: Void.self) { group in
+            for url in wanted {
+                guard let file = fileURL(for: url),
+                      !FileManager.default.fileExists(atPath: file.path),
+                      let remote = URL(string: url),
+                      remote.scheme == "https"
+                else { continue }
+                group.addTask { await download(remote, to: file) }
+            }
+        }
+        return wanted.allSatisfy { url in
+            guard let file = fileURL(for: url) else { return false }
+            return FileManager.default.fileExists(atPath: file.path)
+        }
+    }
+
+    private static func download(_ remote: URL, to file: URL) async {
+        do {
+            let (data, response) = try await session.data(from: remote)
+            if let http = response as? HTTPURLResponse,
+               !(200..<300).contains(http.statusCode) {
+                return
+            }
+            guard let scaled = scaledDown(data) else { return }
+            try scaled.write(to: file, options: .atomic)
+        } catch {
+            NSLog("[Mosaic] image download failed: " + remote.absoluteString)
+        }
+    }
+
+    /// Decodes [data] straight to a thumbnail, never holding the full-size bitmap.
+    /// A picture with transparency (a logo) is stored as PNG so it keeps it; any
+    /// other is stored as JPEG.
+    private static func scaledDown(_ data: Data) -> Data? {
+        let sourceOptions = [kCGImageSourceShouldCache: false] as CFDictionary
+        guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions)
+        else { return nil }
+        let thumbnailOptions = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceShouldCacheImmediately: true,
+            kCGImageSourceThumbnailMaxPixelSize: maxPixel,
+        ] as CFDictionary
+        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions)
+        else { return nil }
+        let hasAlpha: Bool
+        switch image.alphaInfo {
+        case .none, .noneSkipFirst, .noneSkipLast: hasAlpha = false
+        default: hasAlpha = true
+        }
+        let output = NSMutableData()
+        let type = (hasAlpha ? "public.png" : "public.jpeg") as CFString
+        guard let destination = CGImageDestinationCreateWithData(output, type, 1, nil)
+        else { return nil }
+        let properties = [kCGImageDestinationLossyCompressionQuality: 0.82] as CFDictionary
+        CGImageDestinationAddImage(destination, image, properties)
+        guard CGImageDestinationFinalize(destination) else { return nil }
+        return output as Data
+    }
+
+    private static func prune() {
+        guard let dir = fileURL(for: "mosaic")?.deletingLastPathComponent(),
+              let files = try? FileManager.default.contentsOfDirectory(
+                at: dir,
+                includingPropertiesForKeys: [.contentModificationDateKey])
+        else { return }
+        let cutoff = Date().addingTimeInterval(-maxAge)
+        for file in files {
+            let modified = (try? file.resourceValues(forKeys: [.contentModificationDateKey]))?
+                .contentModificationDate
+            if file.pathExtension != "t640" || (modified ?? .distantPast) < cutoff {
+                try? FileManager.default.removeItem(at: file)
             }
         }
     }
