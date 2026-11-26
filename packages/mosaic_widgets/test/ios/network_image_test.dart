@@ -65,6 +65,9 @@ void main() {
         core,
         contains(
             'containerURL(forSecurityApplicationGroupIdentifier: kMosaicAppGroup)'));
-    expect(core, contains('String(abs(url.hashValue))'));
+    // Keyed by a deterministic FNV-1a hash of the URL. The old key,
+    // `String.hashValue`, is seeded per launch and so never matched again.
+    expect(core, contains('0xcbf29ce484222325'));
+    expect(core, isNot(contains('url.hashValue')));
   });
 }
