@@ -3,10 +3,24 @@
 part of '../ios.dart';
 
 extension IosWidgetViews on IosGenerator {
-  /// Every shared-store key the generated provider must load: the root's binds
-  /// plus the widget URL's own bind, when it declares one.
+  /// The trees a definition renders: the default one, plus the compact and large
+  /// ones when declared. Everything the provider loads, refreshes or downloads
+  /// has to cover all of them, because the family is only known at render time.
+  List<IRNode> _definitionRoots(IRDefinition def) => [
+        def.root,
+        if (def.compactRoot != null) def.compactRoot!,
+        if (def.largeRoot != null) def.largeRoot!,
+      ];
+
+  /// Every shared-store key the generated provider must load: the binds of every
+  /// tree plus the widget URL's own bind, when it declares one.
+  ///
+  /// Only the default tree used to be read, so a key that appeared solely in the
+  /// compact or the large tree was never loaded and rendered as a blank.
   Set<String> _definitionBindKeys(IRDefinition def) {
-    final keys = collectBindKeys(def.root);
+    final keys = <String>{
+      for (final root in _definitionRoots(def)) ...collectBindKeys(root),
+    };
     final urlBind = def.widgetUrlBind;
     if (urlBind != null) keys.add(urlBind['key'] as String);
     return keys;
@@ -115,13 +129,16 @@ struct ${def.name}PushHandler: WidgetPushHandler {
       }
     }
 
-    walk(def.root.toJson());
+    for (final root in _definitionRoots(def)) {
+      walk(root.toJson());
+    }
     if (literals.isEmpty && binds.isEmpty) return '[]';
-    final parts = [
+    // Several trees often bind the same key; a set keeps each URL once.
+    final parts = <String>{
       ...literals,
       // Bound URLs may be absent; compactMap drops the nils.
       ...binds,
-    ];
+    }.toList();
     return '[${parts.join(', ')}].compactMap { \$0 }';
   }
 
@@ -154,7 +171,9 @@ struct ${def.name}PushHandler: WidgetPushHandler {
     final usedKeys = _definitionBindKeys(def).toList()..sort();
     // The gallery preview runs before the app has ever written anything, so it
     // renders whatever defaults the binds declared rather than a wall of `--`.
-    final defaults = collectBindDefaults(def.root);
+    final defaults = {
+      for (final root in _definitionRoots(def)) ...collectBindDefaults(root),
+    };
     final placeholderData = defaults.isEmpty
         ? '[:]'
         : '[${defaults.entries.map((e) => '"${swiftEscape(e.key)}": "${swiftEscape(e.value)}"').join(', ')}]';
@@ -335,7 +354,9 @@ ${_pushConfiguration(def)}
     final usedKeys = _definitionBindKeys(def).toList()..sort();
     // The gallery preview runs before the app has ever written anything, so it
     // renders whatever defaults the binds declared rather than a wall of `--`.
-    final defaults = collectBindDefaults(def.root);
+    final defaults = {
+      for (final root in _definitionRoots(def)) ...collectBindDefaults(root),
+    };
     final placeholderData = defaults.isEmpty
         ? '[:]'
         : '[${defaults.entries.map((e) => '"${swiftEscape(e.key)}": "${swiftEscape(e.value)}"').join(', ')}]';

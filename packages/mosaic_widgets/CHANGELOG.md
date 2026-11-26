@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.5.1 - 2026-11-26
+### Fixed
+- iOS: a network image was never found again after the widget process restarted.
+  The cache file name came from `String.hashValue`, which Swift seeds per launch,
+  so the image downloaded by one run was looked up under another name by the next
+  and the widget showed its placeholder forever. The name now comes from FNV-1a,
+  which is the same in every process.
+- iOS: the keys a widget loads, refreshes and downloads images for came from the
+  default tree only. Anything bound solely in `compactRoot` or `largeRoot`
+  rendered blank (the large widget's third and fourth offers, for example), and
+  its images were never prefetched. All trees are now read, and the same URL
+  bound by several trees is fetched once.
+
 ## 0.5.0 - 2026-11-26
 ### Added
 - `MFont` and `MTextStyle(font:)`: bundled custom fonts in widgets, named once per

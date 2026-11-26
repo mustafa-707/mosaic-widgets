@@ -602,8 +602,17 @@ enum MosaicImageCache {
         let dir = container.appendingPathComponent("mosaic_images", isDirectory: true)
         try? FileManager.default.createDirectory(
             at: dir, withIntermediateDirectories: true)
-        // Hash rather than the raw URL: query strings are not path-safe.
-        return dir.appendingPathComponent(String(abs(url.hashValue)) + ".img")
+        // Hash rather than the raw URL: query strings are not path-safe. The hash
+        // has to be stable. `String.hashValue` is seeded per process, so a file
+        // written by one launch of the extension was looked up under a different
+        // name by the next, and a cached image was never found: the widget showed
+        // its placeholder forever. FNV-1a is deterministic across launches.
+        var hash: UInt64 = 0xcbf29ce484222325
+        for byte in url.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 0x100000001b3
+        }
+        return dir.appendingPathComponent(String(hash, radix: 16) + ".img")
     }
 
     static func cached(_ url: String?) -> MosaicImage? {
